@@ -1,5 +1,5 @@
-// Comportement interactif de la page, porté depuis la maquette (onglets, sommaire,
-// numéro sticky, mise en gras des noms, aperçu de lien au survol).
+// Comportement interactif de la page, porté depuis la maquette (onglets FR/EN, sommaire,
+// numéro sticky, mise en gras des noms, aperçu de lien au survol, pont entre les onglets).
 // Retourne une fonction de nettoyage pour l'effet React qui l'appelle.
 export function initPitWall(){
   var cleanups = [];
@@ -73,6 +73,55 @@ export function initPitWall(){
   }).join('');
   document.getElementById('team-table').innerHTML = teamRows;
 
+  // ---- English driver/team data (same deltas, translated analysis) ----
+  var driversEn = [
+    ["Lando Norris","McLaren","1","1","The benchmark. Loses the lead at the restart, doesn't panic, preserves his tyres enough, lifts his pace on hards and lands the decisive move on Antonelli. The strategy creates the opportunity; his overtake converts it."],
+    ["Kimi Antonelli","Mercedes","3","2","Two outstanding starts and a very well-controlled first half of the race. He genuinely put Norris under pressure. Less comfortable on the second set of hards and slightly hesitant behind Hamilton, but P2 is the ceiling once Norris gets past."],
+    ["George Russell","Mercedes","2","3","Disappointing starts: beaten by Antonelli, then Piastri. He recovers P3 thanks to McLaren's slow stop, then delivers a top-tier closing stint to hold off the Ferraris. His podium is deserved, even if the late VSC helped him."],
+    ["Lewis Hamilton","Ferrari","5","4","A very strong race and probably Ferrari's best pace over a stint. He passes Piastri, closes on Leclerc, then on Russell. The podium was possible, though not guaranteed. His frustration is justified; his radio sarcasm, less useful."],
+    ["Charles Leclerc","Ferrari","6","5","Aggressive and precise in his overtakes, especially on Piastri. Pace close to Hamilton's, and good management. But extending by a lap complicates his teammate's race, and his own second slow stop all but ends his podium chances."],
+    ["Oscar Piastri","McLaren","4","6","An excellent move on Russell at the restart, then a race in free fall. The slow stop costs him P3, but doesn't explain the seven tenths a lap lost to Norris on a comparable stint. The weekend's biggest technical question mark."],
+    ["Liam Lawson","Red Bull","8","7","Very good adaptation to a difficult Red Bull, stepping in for Hadjar. Close to Verstappen in qualifying and the best of the rest in the race. The penalty for insufficient slowing under yellows slightly tarnishes the performance."],
+    ["Nico Hülkenberg","Audi","13","8","One of the drives of the day: a spectacular reaction to avoid Bortoleto, clean overtakes, and a pace clearly above the rest of the midfield. P8 owed to more than just other retirements."],
+    ["Fernando Alonso","Aston Martin","18","9","An exceptional performance. Softs made to last 32 laps after the restart, then 37 laps on hards to the flag. Management, clean-air pace and a strong defence against Gasly: driver and team turned a back-of-the-grid car into points."],
+    ["Pierre Gasly","Alpine","11","10","Very good starts, avoids Verstappen and stays constantly in the points fight. Several successful battles, but never able to get past Alonso despite sustained pressure. Confirms the progress of Alpine's new package."],
+    ["Yuki Tsunoda","Racing Bulls","12","11","A very creditable showing for a one-off stand-in at Racing Bulls. Some nice overtakes and competitive pace, but a track excursion and a less efficient three-stop strategy than Alonso's cost him the point."],
+    ["Arvid Lindblad","Racing Bulls","10","12","His drive-through for overtaking under yellows wrecks his race. After that, his pace and overtakes are good, and he plays the team game by holding up Gasly to help Tsunoda. Too big an early mistake to hope for more."],
+    ["Gabriel Bortoleto","Audi","9","13","A poor getaway, then a genuinely dangerous spin, thankfully without contact. He climbs from 18th to 13th, but Hülkenberg shows the Audi had the pace to score. A missed opportunity."],
+    ["Franco Colapinto","Alpine","14","14","An impressive start gaining four places, immediately wiped out by an overtake under yellows and a drive-through. A second penalty late on. Real potential, but not enough discipline around the neutralisations."],
+    ["Sergio Pérez","Cadillac","PL","15","A pit-lane start and setup change is fairly logical given the early lack of pace. He pulls off the overcut on Bottas and finishes, but remains far from the points. Unfavourable VSC timing."],
+    ["Carlos Sainz","Williams","17","16","An interesting long first stint and a brief spell in the provisional top ten, but the strategy leaves him on badly worn hards. His lock-up at Turn 1 and the collision with Albon remain on him, though."],
+    ["Alex Albon","Williams","16","DNF","Decent pace in clean air, but Williams brings him in too early to cover an undercut, sending him back into traffic and blue flags. His race ends because of Sainz's mistake."],
+    ["Valtteri Bottas","Cadillac","21","DNF","A largely anonymous race at the back before a hydraulic issue affecting the rear wing. Hard to judge his driving, but Cadillac simply lacked pace."],
+    ["Esteban Ocon","Haas","15","DNF","Never really in the points fight. His stops are well executed, but his Haas lacked the pace even before the presumed power-unit failure."],
+    ["Lance Stroll","Aston Martin","19","DNF","Damage or a handling issue from early on, significant sliding and no pace. The retirement is understandable, but the contrast with Alonso's recovery drive is stark."],
+    ["Oliver Bearman","Haas","20","DNF","Impossible to assess: a complete power-unit shutdown during the formation lap ahead of the restart."],
+    ["Max Verstappen","Red Bull","7","DNF","Already a weak weekend on raw pace, then a first lap too aggressive on a still-tricky track. The margin was tiny, but the mistake is his own. A rare, clean off-day for the driver."]
+  ];
+  var teamsEn = [
+    ["McLaren","An excellent read with Norris: the decisive extension, trust in the hard tyre, no reflex stop under the VSC. Much less clean with Piastri: a slow stop and a poor understanding of his lack of pace. A brilliant win, but an overall result below what both cars could deliver."],
+    ["Mercedes","A maximised double podium. A logical, defensive early stop, good use of the VSC, a sound call to leave Russell out, and a rational team order. The swap itself could have been executed more smoothly. The win was lost mainly on hard-tyre pace, not on the pit wall."],
+    ["Ferrari","A car probably capable of a podium. The initial strategic split made sense, but imprecise communication, slow decision-making, a slow stop for Leclerc and no clear instruction between the drivers held it back. P4-P5 is fine on paper, disappointing given the pace."],
+    ["Red Bull","A genuinely worrying weekend on performance. No strategic call could have put Verstappen back into the fight among the top three teams. Lawson salvages six points in a car he was still learning."],
+    ["Audi","A very good race for Hülkenberg: clean calls, quick stops, a competitive car. The strategy also lets Bortoleto recover several positions, but his first-lap incident made points almost impossible."],
+    ["Aston Martin","Perhaps the best strategy in the midfield. The team turns an initial two-stop plan into an effective one-stopper for Alonso after the red flag. Very good adaptation. Stroll's issue prevents a full team verdict."],
+    ["Alpine","Gasly's upgraded package looks like it's working. A strategy solid enough to hold onto the last point, but no answer for getting past Alonso. Colapinto's penalties are mostly on the driver."],
+    ["Racing Bulls","Good cooperation between the cars, with Lindblad holding up Gasly to help Tsunoda. But Tsunoda's three-stop strategy and long final stint on softs don't beat Alonso's simpler plan. A missed points opportunity."],
+    ["Williams","A bad Sunday. Albon brought in too early, Sainz left out on badly worn tyres and, in the end, a collision between the two cars. Even with a weak car, the team should have brought both home."],
+    ["Cadillac","Pérez's pit-lane start and setup change made sense as a search for a better balance. The internal overcut works, but pace remains insufficient, and Bottas's hydraulic failure confirms a reliability concern."],
+    ["Haas","A double retirement likely tied to the power unit. The stops themselves are quick, including the team's best of the season for Ocon, but the pace was never going to be enough for points anyway."]
+  ];
+  var driverRowsEn = driversEn.map(function(d){
+    return '<tr><td class="driver">'+dot(d[1])+d[0]+'</td><td class="pos">'+d[2]+' → '+d[3]+deltaChip(d[2],d[3])+'</td><td>'+d[4]+'</td></tr>';
+  }).join('');
+  var driverTableEn = document.getElementById('driver-table-en');
+  if(driverTableEn) driverTableEn.innerHTML = driverRowsEn;
+  var teamRowsEn = teamsEn.map(function(t){
+    return '<tr><td class="driver">'+dot(t[0])+t[0]+'</td><td>'+t[1]+'</td></tr>';
+  }).join('');
+  var teamTableEn = document.getElementById('team-table-en');
+  if(teamTableEn) teamTableEn.innerHTML = teamRowsEn;
+
   // ---- Mise en gras des noms de pilotes / écuries dans le texte courant ----
   var NAMES = ["Antonelli","Hülkenberg","Verstappen","Bortoleto","Colapinto","Lindblad","Tsunoda","Bearman","Stroll",
     "Alonso","Gasly","Sainz","Albon","Bottas","Ocon","Lawson","Pérez","Norris","Russell","Piastri","Leclerc","Hamilton",
@@ -121,14 +170,27 @@ export function initPitWall(){
   }
   document.querySelectorAll('.prose p, .callout, .subverdict, .verdict, .verdictgrid li').forEach(highlightNames);
 
-  // ---- Tabs ----
+  // ---- Tabs + language (2D state: view × lang) ----
   var tabRace = document.getElementById('tab-race');
   var tabPreview = document.getElementById('tab-preview');
   var viewRace = document.getElementById('view-race');
+  var viewRaceEn = document.getElementById('view-race-en');
   var viewPreview = document.getElementById('view-preview');
+  var viewPreviewEn = document.getElementById('view-preview-en');
   var tocRace = document.getElementById('toc-race');
+  var tocRaceEn = document.getElementById('toc-race-en');
   var tocPreview = document.getElementById('toc-preview');
+  var tocPreviewEn = document.getElementById('toc-preview-en');
   var clock = document.getElementById('readclock');
+  var langToggle = document.getElementById('langtoggle');
+  var langLabel = document.getElementById('langlabel');
+  var langNote = document.getElementById('langnote');
+
+  var state = { view: 'race', lang: 'fr' };
+  try{
+    state.view = localStorage.getItem('pitwall-tab') || 'race';
+    state.lang = localStorage.getItem('pitwall-lang') || 'fr';
+  }catch(e){}
 
   function wordCount(el){ return el.innerText.trim().split(/\s+/).length; }
   function updateClock(el){
@@ -136,32 +198,59 @@ export function initPitWall(){
     clock.textContent = '≈ '+minutes+' min de lecture';
   }
 
-  function showRace(){
-    viewRace.classList.remove('hidden');
-    viewPreview.classList.add('hidden');
-    tocRace.classList.remove('hidden');
-    tocPreview.classList.add('hidden');
-    tabRace.setAttribute('aria-selected','true');
-    tabPreview.setAttribute('aria-selected','false');
-    updateClock(viewRace);
-    try{ localStorage.setItem('pitwall-tab','race'); }catch(e){}
-  }
-  function showPreview(){
-    viewPreview.classList.remove('hidden');
-    viewRace.classList.add('hidden');
-    tocPreview.classList.remove('hidden');
-    tocRace.classList.add('hidden');
-    tabPreview.setAttribute('aria-selected','true');
-    tabRace.setAttribute('aria-selected','false');
-    updateClock(viewPreview);
-    try{ localStorage.setItem('pitwall-tab','preview'); }catch(e){}
-  }
-  tabRace.addEventListener('click', showRace);
-  tabPreview.addEventListener('click', showPreview);
+  var allViews = [viewRace, viewRaceEn, viewPreview, viewPreviewEn];
+  var allTocs = [tocRace, tocRaceEn, tocPreview, tocPreviewEn];
 
-  var initial = 'race';
-  try{ initial = localStorage.getItem('pitwall-tab') || 'race'; }catch(e){}
-  if(initial === 'preview') showPreview(); else showRace();
+  function render(){
+    allViews.forEach(function(v){ if(v) v.classList.add('hidden'); });
+    allTocs.forEach(function(t){ if(t) t.classList.add('hidden'); });
+
+    var activeView, activeToc;
+    if(state.view === 'race'){
+      activeView = state.lang === 'en' ? viewRaceEn : viewRace;
+      activeToc = state.lang === 'en' ? tocRaceEn : tocRace;
+    } else {
+      activeView = state.lang === 'en' ? viewPreviewEn : viewPreview;
+      activeToc = state.lang === 'en' ? tocPreviewEn : tocPreview;
+    }
+    activeView.classList.remove('hidden');
+    activeToc.classList.remove('hidden');
+    updateClock(activeView);
+
+    tabRace.setAttribute('aria-selected', state.view === 'race' ? 'true' : 'false');
+    tabPreview.setAttribute('aria-selected', state.view === 'preview' ? 'true' : 'false');
+
+    langLabel.textContent = state.lang.toUpperCase();
+    langToggle.setAttribute('aria-label', state.lang === 'fr' ? 'Switch to English' : 'Passer en français');
+    if(langNote) langNote.classList.remove('show');
+
+    try{
+      localStorage.setItem('pitwall-tab', state.view);
+      localStorage.setItem('pitwall-lang', state.lang);
+    }catch(e){}
+  }
+
+  tabRace.addEventListener('click', function(){ state.view = 'race'; render(); });
+  tabPreview.addEventListener('click', function(){ state.view = 'preview'; render(); });
+  if(langToggle){
+    langToggle.addEventListener('click', function(){
+      state.lang = state.lang === 'fr' ? 'en' : 'fr';
+      render();
+    });
+  }
+
+  function bridgeToPreview(){
+    state.view = 'preview';
+    render();
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({top:0, behavior: reduced ? 'auto' : 'smooth'});
+  }
+  ['bridge-to-preview', 'bridge-to-preview-en'].forEach(function(id){
+    var btn = document.getElementById(id);
+    if(btn) btn.addEventListener('click', bridgeToPreview);
+  });
+
+  render();
 
   // ---- Sommaire cliquable : scroll jusqu'à la section ----
   document.querySelectorAll('.tocitem').forEach(function(item){
@@ -190,7 +279,6 @@ export function initPitWall(){
       });
     }, {rootMargin:'-40% 0px -55% 0px', threshold:0});
     sectionEls.forEach(function(s){ spy.observe(s); });
-    cleanups.push(function(){ spy.disconnect(); });
   }
 
   // ---- Numéro sticky : révèle le titre une fois le vrai titre scrollé au-dessus ----
@@ -217,7 +305,6 @@ export function initPitWall(){
       var h2 = sec.querySelector('h2.sectitle');
       if(h2) titleSpy.observe(h2);
     });
-    cleanups.push(function(){ titleSpy.disconnect(); });
   }
 
   // ---- Aperçu au survol des liens (badge + description, pas une capture d'écran) ----
@@ -284,7 +371,6 @@ export function initPitWall(){
       entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
     }, {threshold:0.08});
     document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
-    cleanups.push(function(){ io.disconnect(); });
   } else {
     document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('in'); });
   }

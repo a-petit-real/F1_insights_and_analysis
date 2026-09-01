@@ -7,6 +7,18 @@ export const PAGE_BODY_HTML = `
       <button class="tabbtn" role="tab" id="tab-race" aria-selected="true" aria-controls="view-race">Dernière course</button>
       <button class="tabbtn" role="tab" id="tab-preview" aria-selected="false" aria-controls="view-preview">Prochain GP</button>
     </nav>
+    <button class="langtoggle" id="langtoggle" type="button" aria-label="Passer en anglais">
+      <svg class="wheel-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3.5" y="7" width="17" height="12.5" rx="5"/>
+        <path d="M8.5 7 Q12 3 15.5 7"/>
+        <circle cx="12" cy="13.5" r="1.7"/>
+        <path d="M12 13.5 L6.5 17"/>
+        <path d="M12 13.5 L17.5 17"/>
+        <circle cx="7" cy="11.5" r="0.9" fill="currentColor" stroke="none"/>
+        <circle cx="17" cy="11.5" r="0.9" fill="currentColor" stroke="none"/>
+      </svg>
+      <span class="langlabel" id="langlabel">FR</span>
+    </button>
     <div class="clock mono" id="readclock">≈ 0 min de lecture</div>
   </div>
   <nav class="toc" id="toc-race" aria-label="Sommaire — dernière course">
@@ -16,6 +28,7 @@ export const PAGE_BODY_HTML = `
     <a class="tocitem" href="#sec-r4" data-target="sec-r4">04 Pilotes</a>
     <a class="tocitem" href="#sec-r5" data-target="sec-r5">05 Écuries</a>
     <a class="tocitem" href="#sec-r6" data-target="sec-r6">Verdict</a>
+    <a class="tocitem" href="#sec-r-next" data-target="sec-r-next">À suivre</a>
     <a class="tocitem" href="#sec-r7" data-target="sec-r7">Sources</a>
   </nav>
   <nav class="toc hidden" id="toc-preview" aria-label="Sommaire — prochain GP">
@@ -27,6 +40,26 @@ export const PAGE_BODY_HTML = `
     <a class="tocitem" href="#sec-p6" data-target="sec-p6">06 Hiérarchie</a>
     <a class="tocitem" href="#sec-p7" data-target="sec-p7">Verdict</a>
     <a class="tocitem" href="#sec-p8" data-target="sec-p8">Sources</a>
+  </nav>
+  <nav class="toc hidden" id="toc-race-en" aria-label="Contents — last race">
+    <a class="tocitem" href="#sec-r1-en" data-target="sec-r1-en">01 Context</a>
+    <a class="tocitem" href="#sec-r2-en" data-target="sec-r2-en">02 Race</a>
+    <a class="tocitem" href="#sec-r3-en" data-target="sec-r3-en">03 Strategy</a>
+    <a class="tocitem" href="#sec-r4-en" data-target="sec-r4-en">04 Drivers</a>
+    <a class="tocitem" href="#sec-r5-en" data-target="sec-r5-en">05 Teams</a>
+    <a class="tocitem" href="#sec-r6-en" data-target="sec-r6-en">Verdict</a>
+    <a class="tocitem" href="#sec-r-next-en" data-target="sec-r-next-en">Next up</a>
+    <a class="tocitem" href="#sec-r7-en" data-target="sec-r7-en">Sources</a>
+  </nav>
+  <nav class="toc hidden" id="toc-preview-en" aria-label="Contents — next GP">
+    <a class="tocitem" href="#sec-p1-en" data-target="sec-p1-en">01 Differences</a>
+    <a class="tocitem" href="#sec-p2-en" data-target="sec-p2-en">02 Developments</a>
+    <a class="tocitem" href="#sec-p3-en" data-target="sec-p3-en">03 Teams</a>
+    <a class="tocitem" href="#sec-p4-en" data-target="sec-p4-en">04 Midfield</a>
+    <a class="tocitem" href="#sec-p5-en" data-target="sec-p5-en">05 Strategy</a>
+    <a class="tocitem" href="#sec-p6-en" data-target="sec-p6-en">06 Hierarchy</a>
+    <a class="tocitem" href="#sec-p7-en" data-target="sec-p7-en">Verdict</a>
+    <a class="tocitem" href="#sec-p8-en" data-target="sec-p8-en">Sources</a>
   </nav>
 </header>
 
@@ -183,6 +216,19 @@ export const PAGE_BODY_HTML = `
       </div>
     </section>
 
+    <section class="block reveal" id="sec-r-next">
+      <div class="prose">
+        <h2 class="sectitle">Enseignements pour la suite</h2>
+        <p>Trois points issus de Zandvoort à surveiller au prochain rendez-vous :</p>
+        <ol style="padding-left:20px; margin:0 0 16px;">
+          <li style="margin-bottom:10px;">La gestion de <strong>Piastri</strong> reste la vraie zone d'ombre chez <strong>McLaren</strong> : sept dixièmes perdus face à <strong>Norris</strong> sur un relais comparable, sans explication pneus ni stratégie suffisante. Si ça se reproduit, la question ne sera plus circonstancielle.</li>
+          <li style="margin-bottom:10px;"><strong>Mercedes</strong> a gagné son double podium en résistant, pas en attaquant — beaucoup doit au VSC et à l'usure de <strong>Norris</strong> en fin de relais. Sur un circuit qui, sur le papier, avantage plus nettement la W17, on saura si l'équipe peut refaire ça en primant l'attaque plutôt que la défense.</li>
+          <li><strong>Ferrari</strong> a le rythme mais pas la coordination : Vasseur devra clarifier ses consignes s'il veut éviter un nouveau Hamilton-Leclerc raté, surtout si le nouveau moteur change la donne.</li>
+        </ol>
+        <button type="button" class="bridge-btn" id="bridge-to-preview">Lire la pré-analyse du prochain GP →</button>
+      </div>
+    </section>
+
     <section class="block" id="sec-r7">
       <details class="sources">
         <summary>Sources utilisées — GP des Pays-Bas (17 liens)</summary>
@@ -223,6 +269,217 @@ export const PAGE_BODY_HTML = `
             <li><a href="https://www.reuters.com/sports/formula1/norris-wins-dutch-gp-complete-mclaren-hat-trick-2026-08-23/?utm_source=chatgpt.com" data-desc="Vérification indépendante du déroulement et du contexte.">Compte rendu Reuters</a><span class="desc">Reuters — vérification indépendante</span></li>
             <li><a href="https://www.reuters.com/sports/formula1/mercedes-no-longer-have-fastest-car-f1-says-antonelli-2026-08-24/?utm_source=chatgpt.com" data-desc="Déclarations d'Antonelli et de Norris sur les forces relatives des deux voitures.">Antonelli : « Mercedes n'a plus la voiture la plus rapide »</a><span class="desc">Reuters</span></li>
             <li><a href="https://www.reddit.com/r/formula1/comments/1vw9nnh/2026_dutch_grand_prix_postrace_discussion/?utm_source=chatgpt.com" data-desc="Perceptions communautaires, jamais utilisées comme preuve technique.">Discussion d'après-course</a><span class="desc">r/formula1 — perceptions communautaires, jamais une preuve technique</span></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+  </section>
+
+  <!-- ===================== VIEW 1 (EN) : LAST RACE ===================== -->
+  <section id="view-race-en" class="view hidden" role="tabpanel" aria-labelledby="tab-race" lang="en">
+
+    <div class="hero prose">
+      <p class="eyebrow">Dutch Grand Prix · Zandvoort · 2026</p>
+      <p class="verdict">Norris and McLaren won a race that <em>Mercedes</em> had first taken control of.</p>
+      <div class="resultstrip">
+        <div class="chip"><span class="pos">P1</span> <span class="dot" style="background:#FF8000"></span><span class="drv">Norris</span> <span class="gap">McLaren</span></div>
+        <div class="chip"><span class="pos">P2</span> <span class="dot" style="background:#00A19B"></span><span class="drv">Antonelli</span> <span class="gap">Mercedes · +11.536s</span></div>
+        <div class="chip"><span class="pos">P3</span> <span class="dot" style="background:#00A19B"></span><span class="drv">Russell</span> <span class="gap">Mercedes · +0.849s over Hamilton</span></div>
+        <div class="chip"><span class="pos">P4</span> <span class="dot" style="background:#E8002D"></span><span class="drv">Hamilton</span> <span class="gap">Ferrari</span></div>
+        <div class="chip"><span class="pos">P5</span> <span class="dot" style="background:#E8002D"></span><span class="drv">Leclerc</span> <span class="gap">Ferrari</span></div>
+      </div>
+      <p class="subverdict">This isn't a victory handed out by the VSC, nor a huge Mercedes strategic error. McLaren mainly created a tyre-age gap by extending Norris's final stint, and Norris then made perfect use of that window. Behind them, Mercedes maximised its points. Ferrari probably had the pace to reach the podium, but not the execution quality needed.</p>
+    </div>
+
+    <section class="block reveal" data-num="01" id="sec-r1-en">
+      <div class="sec-marker"><span class="n">01</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">01</span> The build-up to the race</h2>
+        <p>Zandvoort is a narrow, twisty circuit where overtaking stays difficult. Track position therefore carries huge weight. Norris started on pole ahead of Russell, Antonelli, Piastri, Hamilton, Leclerc, Verstappen and Lawson. Alonso was only 18th, Bottas 21st, and Pérez had to start from the pit lane after changes made under parc fermé. <a href="https://www.formula1.com/en/results/2026/races/1292/netherlands/starting-grid?utm_source=chatgpt.com" data-desc="Official starting grid for the 2026 Dutch Grand Prix.">Official grid</a></p>
+        <p>The Sprint had given the impression of relatively low degradation: Russell had won it, and Leclerc had even made the softs last 24 laps. But rain that fell before the Grand Prix washed the track and changed its grip. Pirelli estimates that this "reset" track, slicker and hotter than during the Sprint, sharply increased wear. The expected one-stop scenario had all but disappeared by the restart.</p>
+        <p>That explains the extraordinary strategic diversity: 60 pit visits, around ten different strategies, and none of the top ten running the exact same tyre sequence. <a href="https://press.pirelli.com/sixty-pit-stops-in-norriss-winning-farewell-at-zandvoort/?utm_source=chatgpt.com" data-desc="Pirelli details the 60 stops and the strategic diversity of the race.">Official Pirelli analysis</a></p>
+      </div>
+    </section>
+
+    <section class="block reveal" data-num="02" id="sec-r2-en">
+      <div class="sec-marker"><span class="n">02</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">02</span> How the race unfolded</h2>
+
+        <h3 class="subtitle">Initial start: Antonelli pounces, Verstappen cracks</h3>
+        <p>Almost everyone starts on slicks despite the still-damp patches. The top four choose mediums; a large part of the field goes for softs.</p>
+        <p>Norris keeps the lead, but Antonelli immediately takes second from Russell. Leclerc passes Piastri. Behind them, Verstappen finds himself in a scrappy sequence with Hamilton and Lawson. At the final corner, he puts the car onto a still-damp patch and over the white lines, loses the rear and slams into the wall.</p>
+        <p>It's a driving error, even if the circumstances are genuinely treacherous: slicks, an unevenly dry track, traffic and low grip. The red flag is unavoidable.</p>
+        <p>At the same moment, Bortoleto spins at the same spot. Hülkenberg narrowly avoids his teammate in the smoke.</p>
+
+        <h3 class="subtitle">Restart: tyre choices rebuild the race</h3>
+        <p>During the stoppage: Norris switches from mediums to softs; Antonelli and Russell keep their mediums; Piastri opts for hards, initially thinking he could go very long; the Ferraris go back out on softs; Alonso also fits fresh softs.</p>
+        <p>Even before the restart, Bearman breaks down on the formation lap.</p>
+        <p>At the second start, Antonelli gets an excellent launch and takes the lead from Norris. Piastri, very incisive, passes Russell and slots into third.</p>
+        <p>In the first stint, Antonelli controls Norris. He manages to hold the gap around 1 to 1.5 seconds, often denying the McLaren its Overtake Mode. Norris complains about a lack of pace and balance on the softs. At this point, the Mercedes genuinely looks like the fastest car at the front.</p>
+
+        <h3 class="subtitle">First pit-stop cycle: Russell recovers P3, Piastri's race unravels</h3>
+        <p>Russell stops on lap 17 for hards. Piastri responds a lap later, but his pit-lane time costs him roughly 2.3 seconds more than Russell's: 20.267 seconds against 18.010. That difference is enough to swap their positions. <a href="https://www.formula1.com/en/results/2026/races/1292/netherlands/race-result?utm_source=chatgpt.com" data-desc="Official race results, times and gaps.">Official stop summary</a></p>
+        <p>Antonelli and Norris stop together around laps 21-22, also for hards. Leclerc fits mediums, Hamilton extends to laps 25-26 before switching to hards.</p>
+        <p>From here, the shape of the race changes: Norris's McLaren works much better on hards; Antonelli increasingly starts to suffer from the rear end; the Ferraris look very fast; Piastri never finds a pace comparable to Norris's.</p>
+        <p>Leclerc, then Hamilton, pass Piastri. By mid-race, the Australian, who had been third after the restart, has dropped to sixth.</p>
+
+        <h3 class="subtitle">The decisive moment: Mercedes covers, McLaren extends</h3>
+        <p>Around lap 40, Norris closes to roughly seven tenths of Antonelli. Mercedes is in a difficult spot: if Antonelli stays out, Norris can stop and try the undercut; if Mercedes stops first, it keeps the position for now, but hands Norris fresher tyres late in the stint.</p>
+        <p>Mercedes chooses to cover: Antonelli, then Russell, switch to hards on lap 40. McLaren leaves Norris out until laps 47-48.</p>
+        <div class="callout">It's the winning call. Norris rejoins about five seconds behind Antonelli, but on hards seven laps fresher. He closes the gap very quickly. So this isn't a simple "overcut": McLaren first accepts losing track position in order to manufacture a tyre advantage big enough to pass on-track, even at Zandvoort.</div>
+        <p>Long-run analysis confirms Norris and Antonelli were fairly close on overall pace, but that the main gaps were created by their respective pit windows. <span class="note">RaceOptiData analysis</span></p>
+
+        <h3 class="subtitle">Hamilton the interim leader, and the moment Norris seizes perfectly</h3>
+        <p>Hamilton, who has extended his stint, now leads ahead of Antonelli and Norris. His presence matters: Antonelli has Overtake Mode available thanks to his proximity to the Ferrari, and can use it to defend against Norris.</p>
+        <p>But Antonelli hesitates in his move on Hamilton and loses some momentum. Norris attacks immediately around the outside of Turn 1 and takes second. He then passes Hamilton to reclaim the lead; Antonelli also gets by the Ferrari.</p>
+        <p>This is probably the single most important piece of driving in the race. The strategy had brought Norris into range, but he still had to overtake. His outside move at Turn 1 is firm, clean and perfectly timed.</p>
+
+        <h3 class="subtitle">The final VSC: Mercedes locks in rather than attacks</h3>
+        <p>Ocon's retirement triggers a VSC. Antonelli, Hamilton, Leclerc and Piastri all stop for softs. Norris and Russell stay out.</p>
+        <p>Norris wonders, too late, whether he should have stopped, but staying out turns out to be entirely viable. At the restart, he has roughly a 6.8-second lead over Russell, who is himself about 5.6 seconds ahead of Antonelli.</p>
+        <p>Mercedes couldn't reasonably bring Russell in: he would likely have rejoined behind the Ferraris. Leaving him out was his only real shot at the podium.</p>
+        <p>Antonelli closes rapidly on Russell thanks to his softs. Mercedes then orders the positions swapped. Russell complies, despite an initially annoyed reaction, then has to defend against Hamilton and Leclerc.</p>
+        <p>That team order is defensible: Antonelli had been ahead of Russell before his VSC stop; he had much fresher tyres; letting the two Mercedes fight it out would have let the Ferraris close back in; Mercedes had already established that two drivers on different strategies shouldn't get in each other's way.</p>
+        <p>The fair criticism is less about the principle than the execution: Russell loses roughly two seconds in the move and ends up badly exposed. A second, late VSC, triggered by debris after the Williams collision, interrupts Hamilton's charge at exactly the right moment. Russell holds onto the podium by 0.849 seconds. <a href="https://www.formula1.com/en/latest/article/you-want-to-fight-for-every-single-position-russell-offers-verdict-on-mercedes-team-orders-in-dutch-gp.3qBtPSF2Jgfyu63IKV8our?utm_source=chatgpt.com" data-desc="Russell discusses the Mercedes team orders after the race.">Explanation and debate around the Mercedes order</a></p>
+        <p>Norris wins by 11.536 seconds over Antonelli. <a href="https://www.formula1.com/en/results/2026/races/1292/netherlands/race-result?utm_source=chatgpt.com" data-desc="Final classification of the Dutch Grand Prix.">Full official classification</a></p>
+      </div>
+    </section>
+
+    <section class="block reveal" data-num="03" id="sec-r3-en">
+      <div class="sec-marker"><span class="n">03</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">03</span> The key strategic decisions</h2>
+
+        <h3 class="subtitle">McLaren — patience over immediate position</h3>
+        <p>The key decision is extending Norris after Antonelli's stop. Mercedes was forced into covering the undercut; McLaren understood the hard tyre worked better on the MCL40 and chose to set up an attack with a large age differential.</p>
+        <p>The choice not to stop under the final VSC looks excellent in hindsight. Antonelli had softs, but still had to pass Russell, then close more than ten seconds. Norris still had enough pace left to control the gap.</p>
+        <p>By contrast, Piastri's handling is far less convincing: the hard-tyre call at the restart, a slow stop, warm-up struggles, then a collapse in pace. Over comparable 24-lap hard-tyre stints, Norris was roughly seven tenths a lap faster. That's too much to be explained by the slow stop alone.</p>
+
+        <h3 class="subtitle">Mercedes — not brilliant, but rational</h3>
+        <p>Antonelli's early second stop handed the tyre advantage to Norris, but calling it a strategic mistake would be excessive. Norris was seven tenths back: not covering the undercut was equally risky.</p>
+        <p>The VSC was then well used to shield Antonelli from the Ferraris. The position swap secured P2-P3. Mercedes lost the win to a lack of pace and stint life on the second set of hards, far more than to any major error on the pit wall.</p>
+
+        <h3 class="subtitle">Ferrari — good idea, poor execution</h3>
+        <p>Ferrari had sensibly split its strategies: Leclerc was meant to pressure Russell; Hamilton was meant to extend and benefit from fresher tyres.</p>
+        <p>The problem arose when Hamilton, noticeably faster on his newer hards, caught up with Leclerc. Ferrari asks Leclerc to pit, but without clearly explaining that he also needs to let Hamilton through. Leclerc believes he can continue, extends by a lap, and Hamilton loses more than two seconds relative to Russell.</p>
+        <p>The cost is concrete: Hamilton finishes 0.849 seconds off the podium. Lap-time analysis shows he was gaining two to six tenths a lap on Leclerc at that point. <a href="https://www.formula1.com/en/results/2026/races/1292/netherlands/fastest-laps?utm_source=chatgpt.com" data-desc="Fastest laps classification for the race.">Lap-time analysis</a></p>
+        <p>Responsibility is shared, but mostly collective: Leclerc could have followed the instruction to pit immediately; Ferrari should have stated the objective explicitly and, if necessary, ordered the swap; the team then added a slow stop for Leclerc; the final call to also put Leclerc back on softs under the VSC is debatable — staying out would have placed him higher, but with the risk of being attacked by Antonelli and Hamilton.</p>
+        <p>Vasseur explained that Ferrari didn't want to publicly reveal its plan to extend Hamilton to the flag. That's tactically understandable, but the secrecy becomes counter-productive when it stops its own drivers from understanding the race. <a href="https://www.formula1.com/en/latest/article/what-the-teams-said-race-day-in-the-netherlands-2026.1GTy1x6hObFlkGkaXKqhNS?utm_source=chatgpt.com" data-desc="Team statements after the race, including Vasseur.">Vasseur's explanation</a></p>
+        <p>This is also the reading that comes up most often in Reddit discussions: some blame Leclerc, others point out he had access to neither Hamilton's lap times nor the full plan. The reasonable consensus is that Ferrari should have given a clear instruction, rather than leaving the drivers to interpret a different picture from their own cockpits. <a href="https://www.reddit.com/r/formula1/comments/1vw9nnh/2026_dutch_grand_prix_postrace_discussion/?utm_source=chatgpt.com" data-desc="r/formula1 community debate after the race.">Post-race Reddit discussion</a></p>
+      </div>
+    </section>
+
+    <section class="block reveal" data-num="04" id="sec-r4-en">
+      <div class="sec-marker"><span class="n">04</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">04</span> Driver by driver</h2>
+        <p>This assessment covers Sunday's Grand Prix, weighing the car, starting position and circumstances.</p>
+      </div>
+      <div class="tablewrap prose" style="max-width:100%;">
+        <table>
+          <thead><tr><th>Driver</th><th>Start → finish</th><th>Analysis</th></tr></thead>
+          <tbody id="driver-table-en"></tbody>
+        </table>
+      </div>
+      <p class="scrollhint prose">◂ swipe to see the rest of the table ▸</p>
+    </section>
+
+    <section class="block reveal" data-num="05" id="sec-r5-en">
+      <div class="sec-marker"><span class="n">05</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">05</span> Team by team</h2>
+      </div>
+      <div class="tablewrap prose" style="max-width:100%;">
+        <table>
+          <thead><tr><th style="width:140px;">Team</th><th>Strategic and operational assessment</th></tr></thead>
+          <tbody id="team-table-en"></tbody>
+        </table>
+      </div>
+      <p class="scrollhint prose">◂ swipe to see the rest of the table ▸</p>
+    </section>
+
+    <section class="block reveal" id="sec-r6-en">
+      <div class="prose">
+        <h2 class="sectitle">Conclusion</h2>
+        <div class="verdictgrid">
+          <div class="verdictcol win">
+            <h4>Winners</h4>
+            <ul>
+              <li><strong>Norris</strong>, for the quality of his driving and his opportunism.</li>
+              <li><strong>McLaren</strong>, for accepting to lose track position temporarily in order to build an attack.</li>
+              <li><strong>Mercedes</strong>, paradoxically, for turning a car that was ultimately not the fastest into a double podium.</li>
+              <li><strong>Hülkenberg and Alonso</strong>, the two standout drives of the midfield.</li>
+            </ul>
+          </div>
+          <div class="verdictcol lose">
+            <h4>Losers</h4>
+            <ul>
+              <li><strong>Verstappen</strong>, on a rare personal mistake.</li>
+              <li><strong>Piastri</strong>, caught between a slow stop and an unexplained pace deficit.</li>
+              <li><strong>Ferrari</strong>, which had the pace but couldn't coordinate its two strategies.</li>
+              <li><strong>Williams</strong>, whose decisions and late collision turned a difficult race into a very poor result.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout">Mercedes led the first half, McLaren understood the second, Norris executed the decisive overtake, and Ferrari showed that having two fast cars isn't enough when the pit wall's communication stays hesitant.</div>
+      </div>
+    </section>
+
+    <section class="block reveal" id="sec-r-next-en">
+      <div class="prose">
+        <h2 class="sectitle">Lessons going forward</h2>
+        <p>Three points from Zandvoort worth watching at the next round:</p>
+        <ol style="padding-left:20px; margin:0 0 16px;">
+          <li style="margin-bottom:10px;"><strong>Piastri</strong>'s management remains the real grey area at <strong>McLaren</strong>: seven tenths a lap lost to <strong>Norris</strong> on a comparable stint, with no sufficient explanation from tyres or strategy. If it happens again, this stops being circumstantial.</li>
+          <li style="margin-bottom:10px;"><strong>Mercedes</strong> earned its double podium by defending, not attacking — a lot of that comes down to the VSC and <strong>Norris</strong>'s tyre wear late in the stint. On a circuit that, on paper, favours the W17 more clearly, we'll find out whether the team can do this again by leading on the attack rather than the defence.</li>
+          <li><strong>Ferrari</strong> has the pace but not the coordination: Vasseur will need to sharpen his instructions if he wants to avoid another botched Hamilton-Leclerc situation, especially if the new engine changes the picture.</li>
+        </ol>
+        <button type="button" class="bridge-btn" id="bridge-to-preview-en">Read the next Grand Prix preview →</button>
+      </div>
+    </section>
+
+    <section class="block" id="sec-r7-en">
+      <details class="sources">
+        <summary>Sources used — Dutch Grand Prix (17 links)</summary>
+        <div class="srcgroup">
+          <h5>Results and official timeline</h5>
+          <ul>
+            <li><a href="https://www.formula1.com/en/results/2026/races/1292/netherlands/race-result?utm_source=chatgpt.com" data-desc="Classification, gaps, retirements, laps.">Full race result</a><span class="desc">Formula1.com — classification, gaps, retirements, laps.</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/norris-wins-dramatic-dutch-grand-prix-from-antonelli-and-russell-as-verstappen-crashes-out.Zn7iYevVGp5eHzFkTEAz7?utm_source=chatgpt.com" data-desc="Official report on Norris's win.">Official report: Norris's win</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/zandvoort-lowdown-all-the-key-moments-as-norris-wins-again-and-verstappen-suffers-dramatic-home-exit.7ixG14EpkWpHk28GCH7lKC?utm_source=chatgpt.com" data-desc="Detailed timeline of the weekend's key moments.">The key moments of the Dutch GP</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.formula1.com/en/results/2026/races/1292/netherlands/starting-grid?utm_source=chatgpt.com" data-desc="Starting positions compared with the final result.">Official starting grid</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/norris-denies-russell-pole-position-in-gripping-conclusion-to-qualifying-for-dutch-grand-prix.2DoHZDC14R5tY7ygGaHCz?utm_source=chatgpt.com" data-desc="Analysis of the one-lap pecking order.">Qualifying: Norris beats Russell and Antonelli</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/russell-surges-to-victory-in-zandvoort-sprint-ahead-of-leclerc-and-norris.3evWfVZ0yONnfGGp3t8qyK?utm_source=chatgpt.com" data-desc="Comparing Saturday's and Sunday's McLaren.">Sprint: Russell's win</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.formula1.com/en/results/2026/races/1292/netherlands/fastest-laps?utm_source=chatgpt.com" data-desc="What drivers had left in hand on fresh tyres late on.">Fastest laps classification</a><span class="desc">Formula1.com</span></li>
+          </ul>
+        </div>
+        <div class="srcgroup">
+          <h5>Tyres and strategy</h5>
+          <ul>
+            <li><a href="https://www.formula1.com/en/latest/article/strategy-guide-what-are-the-tactical-options-for-the-dutch-gp.5ULIIHI3zCCKimgPoyhkIE?utm_source=chatgpt.com" data-desc="Theoretical options, undercut, available allocations.">Pre-race strategy guide</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://press.pirelli.com/in-the-netherlands-with-the-sprint-format/?utm_source=chatgpt.com" data-desc="Vertical and lateral loads placed on the tyres.">Pirelli's weekend preview</a><span class="desc">Pirelli Press</span></li>
+            <li><a href="https://press.pirelli.com/sixty-pit-stops-in-norriss-winning-farewell-at-zandvoort/?utm_source=chatgpt.com" data-desc="Tyre sequences actually used in the race.">Sixty pit stops at Zandvoort</a><span class="desc">Pirelli Press</span></li>
+            <li><a href="https://press.pirelli.com/norris-to-start-from-the-front-at-zandvoort-all-three-compounds-in-play-for-the-race/?utm_source=chatgpt.com" data-desc="Confirmation all three compounds were usable.">Pirelli's post-qualifying analysis</a><span class="desc">Pirelli Press</span></li>
+          </ul>
+        </div>
+        <div class="srcgroup">
+          <h5>Technical development &amp; reactions</h5>
+          <ul>
+            <li><a href="https://www.formula1.com/en/latest/article/mclaren-and-ferrari-lead-development-charge-as-every-upgrade-for-dutch-grand-prix-revealed.7HfMGggTffSH6eS3lF6Wgu?utm_source=chatgpt.com" data-desc="Ferrari floor, McLaren rear wing, Alpine package and more.">Every upgrade brought to Zandvoort</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/what-the-teams-said-race-day-in-the-netherlands-2026.1GTy1x6hObFlkGkaXKqhNS?utm_source=chatgpt.com" data-desc="Separating what came from the car, the driver, or the strategy.">What the teams said after the race</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/how-alonso-used-a-unique-strategy-to-earn-p9-for-aston-martin-in-zandvoort.1PYIzmhBjiY5oR3psn9Sy1?utm_source=chatgpt.com" data-desc="How he returned to the points despite a weekend of low pace.">Alonso's unusual strategy</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/power-rankings-who-impressed-our-judges-at-the-dutch-grand-prix.1N5AMVHclBpJYoXXOdmUFK?utm_source=chatgpt.com" data-desc="A supplementary editorial view, not an objective ranking.">Power Rankings from the Dutch GP</a><span class="desc">Formula1.com — supplementary editorial take</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/you-want-to-fight-for-every-single-position-russell-offers-verdict-on-mercedes-team-orders-in-dutch-gp.3qBtPSF2Jgfyu63IKV8our?utm_source=chatgpt.com" data-desc="The Russell–Antonelli swap and its consequences.">Russell explains the Mercedes orders</a><span class="desc">Formula1.com</span></li>
+          </ul>
+        </div>
+        <div class="srcgroup">
+          <h5>General press &amp; community</h5>
+          <ul>
+            <li><a href="https://www.reuters.com/sports/formula1/norris-wins-dutch-gp-complete-mclaren-hat-trick-2026-08-23/?utm_source=chatgpt.com" data-desc="Independent verification of events and context.">Reuters race report</a><span class="desc">Reuters — independent verification</span></li>
+            <li><a href="https://www.reuters.com/sports/formula1/mercedes-no-longer-have-fastest-car-f1-says-antonelli-2026-08-24/?utm_source=chatgpt.com" data-desc="Antonelli's and Norris's comments on each car's relative strengths.">Antonelli: "Mercedes no longer has the fastest car"</a><span class="desc">Reuters</span></li>
+            <li><a href="https://www.reddit.com/r/formula1/comments/1vw9nnh/2026_dutch_grand_prix_postrace_discussion/?utm_source=chatgpt.com" data-desc="Community perception, never used as technical evidence.">Post-race discussion</a><span class="desc">r/formula1 — community perception, never technical evidence</span></li>
           </ul>
         </div>
       </details>
@@ -386,6 +643,169 @@ export const PAGE_BODY_HTML = `
           <h5>Méthodologie</h5>
           <ul>
             <li><span class="desc">Les publications Instagram, Facebook ou YouTube n'ont pas été utilisées comme preuves. Pour les informations sensibles (puissance moteur, évolutions non déclarées), priorité à Formula1.com, Pirelli et Reuters, puis Motorsport.com ou The Race en complément. Reddit sert uniquement à capter les débats des passionnés.</span></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+  </section>
+
+  <!-- ===================== VIEW 2 (EN) : NEXT GP ===================== -->
+  <section id="view-preview-en" class="view hidden" role="tabpanel" aria-labelledby="tab-preview" lang="en">
+
+    <div class="hero prose">
+      <p class="eyebrow">Italian Grand Prix · Monza · 2026 Preview</p>
+      <p class="verdict">Monza shouldn't mechanically repeat the <em>Zandvoort hierarchy</em>.</p>
+      <div class="resultstrip">
+        <div class="chip"><span class="pos">Likely pole</span> <span class="dot" style="background:#00A19B"></span><span class="drv">Russell</span> <span class="gap">Mercedes</span></div>
+        <div class="chip"><span class="pos">2</span> <span class="dot" style="background:#FF8000"></span><span class="drv">Norris</span> <span class="gap">McLaren</span></div>
+        <div class="chip"><span class="pos">3</span> <span class="dot" style="background:#E8002D"></span><span class="drv">Hamilton / Leclerc</span> <span class="gap">Ferrari</span></div>
+        <div class="chip"><span class="pos">4</span> <span class="dot" style="background:#1B3A93"></span><span class="drv">Verstappen</span> <span class="gap">Red Bull</span></div>
+        <div class="chip"><span class="pos">5</span> <span class="dot" style="background:#FF8000"></span><span class="drv">Piastri</span> <span class="gap">McLaren</span></div>
+      </div>
+      <p class="subverdict">The Dutch circuit mainly rewarded aerodynamic downforce and tyre management under lateral load. Monza calls for a different combination: very low drag, efficient electrical deployment, heavy braking, kerb-riding and traction out of the chicanes. My central scenario is a Russell–Norris–Ferrari fight, with Verstappen as an outsider.</p>
+    </div>
+
+    <section class="block reveal" data-num="01" id="sec-p1-en">
+      <div class="sec-marker"><span class="n">01</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">01</span> What Monza changes compared with Zandvoort</h2>
+      </div>
+      <div class="tablewrap prose" style="max-width:100%;">
+        <table>
+          <thead><tr><th>Domain</th><th>Zandvoort</th><th>Monza</th><th>Favoured</th></tr></thead>
+          <tbody>
+            <tr><td class="driver">Aerodynamics</td><td>Significant downforce, long corners</td><td>Minimal drag, very low-downforce wings</td><td>Mercedes, Red Bull-Ford</td></tr>
+            <tr><td class="driver">Fast corners</td><td>Highly decisive</td><td>Lesmo, Ascari, Parabolica</td><td>McLaren, Ferrari</td></tr>
+            <tr><td class="driver">Slow corners</td><td>A few hairpins</td><td>Three decisive chicanes</td><td>Mercedes</td></tr>
+            <tr><td class="driver">Braking</td><td>Important</td><td>Some of the heaviest deceleration of the season</td><td>Mercedes, Ferrari</td></tr>
+            <tr><td class="driver">Traction</td><td>Exits under lateral load</td><td>Low-speed pick-up over kerbs</td><td>Mercedes, Ferrari</td></tr>
+            <tr><td class="driver">Hybrid energy</td><td>Spread across the lap</td><td>Extended deployment, long straights</td><td>Mercedes, Red Bull-Ford</td></tr>
+            <tr><td class="driver">Strategy</td><td>Track position</td><td>Costly stop, overtaking more accessible</td><td>A one-stop favoured</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="scrollhint prose">◂ swipe to see the rest of the table ▸</p>
+      <div class="prose">
+        <p>Monza measures 5.793 km, with roughly 80% of the lap at full throttle and a main straight over a kilometre long. But reducing the circuit to a top-speed contest would be a mistake: between two similarly low-downforce cars, the one keeping the most "free" downforce will gain a lot through the Lesmos, Ascari and the Parabolica. <a href="https://www.formula1.com/en/information/italy-autodromo-nazionale-monza.FiJN1jnQlRLeHqOxIt13m?utm_source=chatgpt.com" data-desc="Length, distance and characteristics of the circuit.">Official circuit presentation</a></p>
+        <p>With the movable aero modes, cars switch to <em>Straight Mode</em> in the permitted zones and back to <em>Corner Mode</em> for the corners. The new <em>Overtake Mode</em> depends on the electrical reserve: a car can be fast at the start of the straight and suddenly lose power at the end of it if it has deployed too much. <a href="https://www.formula1.com/en/latest/article/the-beginners-guide-to-the-2026-regulations.6j0tS0hrHG2T01tpmK6XYz?utm_source=chatgpt.com" data-desc="Straight Mode, Corner Mode, Overtake Mode explained.">Official guide to the 2026 regulations</a></p>
+      </div>
+    </section>
+
+    <section class="block reveal" data-num="02" id="sec-p2-en">
+      <div class="sec-marker"><span class="n">02</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">02</span> Expected developments — confirmed vs. probable</h2>
+        <p>The crucial case: Ferrari's two new 067/6 "ADUO2" engines are reportedly ready, with an announced gain of around 15 horsepower and a reworked power curve. Ferrari still has to give the green light after endurance validation — treat this as a published estimate, not officially measured on-track data. <a href="https://www.motorsport.com/f1/news/f1-ferrari-aduo2-engines-ready-but-monza-debut-decision-due-at-weekend/10849610/?utm_source=chatgpt.com" data-desc="The 15hp gain and the expected homologation decision.">Motorsport.com</a></p>
+      </div>
+      <div class="tablewrap prose" style="max-width:100%;">
+        <table>
+          <thead><tr><th style="width:120px;">Team</th><th>Known developments</th><th>Reading for Monza</th></tr></thead>
+          <tbody>
+            <tr><td class="driver">Ferrari</td><td>New 067/6 "ADUO2" engine for both cars, pending endurance testing</td><td>The most significant change of the weekend</td></tr>
+            <tr><td class="driver">Mercedes</td><td>Fresh power unit for Antonelli (penalty); no major aero package before Malaysia</td><td>Russell keeps the best pure chance</td></tr>
+            <tr><td class="driver">McLaren</td><td>Keeping the Zandvoort package, very low-downforce set-up expected</td><td>Extreme Monza adaptation still to be confirmed</td></tr>
+            <tr><td class="driver">Red Bull</td><td>No major development announced</td><td>The engine will help more than the chassis</td></tr>
+            <tr><td class="driver">Alpine</td><td>Gasly's full package extended to Colapinto</td><td>Real progress, energy weaknesses to watch</td></tr>
+            <tr><td class="driver">Aston Martin</td><td>Aero upgrades and updated Honda engine already introduced</td><td>Alonso himself is cautious about Monza</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="scrollhint prose">◂ swipe to see the rest of the table ▸</p>
+    </section>
+
+    <section class="block reveal" data-num="03" id="sec-p3-en">
+      <div class="sec-marker"><span class="n">03</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">03</span> Analysis of the four leading teams</h2>
+
+        <h3 class="subtitle">Mercedes — the best theoretical fit</h3>
+        <p>Monza features three very low-speed braking zones, restarts where rear-end traction is fundamental, long phases of electrical deployment and a strong reward for braking stability. That matches the W17's strengths very well: Russell should be one of the main candidates for pole and the win. <a href="https://www.reuters.com/sports/formula1/mercedes-no-longer-have-fastest-car-f1-says-antonelli-2026-08-24/?utm_source=chatgpt.com" data-desc="Antonelli's and Norris's comments on each car's relative strengths.">Reuters</a></p>
+        <p>Toto Wolff chose Monza to replace Antonelli's power unit precisely because overtaking is easier there and a fresh engine delivers maximum benefit. His reasonable scenario: a routine climb to the Top 6, a podium possible with a Safety Car, a win unlikely without a neutralised race.</p>
+
+        <h3 class="subtitle">McLaren — the best momentum, a different test</h3>
+        <p>The MCL40 was excellent in the fast corners at Zandvoort, and Norris is on a two-race winning streak. But Monza's slow chicanes play more to Mercedes's strengths, and the efficiency of McLaren's package with an extremely low-downforce wing hasn't been proven yet.</p>
+
+        <h3 class="subtitle">Ferrari — the biggest potential for improvement</h3>
+        <p>Zandvoort's raw result (P4-P5) slightly understates the real pace: Hamilton and Leclerc kept Russell under pressure for long stretches. My conditional verdict: without the new engine, a podium contender; with the engine validated but conservative settings, a genuinely open three-team fight; with a strong and reliable engine, a possible favourite for the weekend.</p>
+
+        <h3 class="subtitle">Red Bull-Ford — top speed, chassis still to confirm</h3>
+        <p>The FIA has identified Red Bull-Ford as the current benchmark for thermal engine performance, with Mercedes 2 to 4% behind. But the RB22 still tends to understeer mid-corner, which can be costly in the first two chicanes. <a href="https://www.reuters.com/sports/formula1/f1-leaders-mercedes-granted-engine-upgrades-none-red-bull-2026-08-26/?utm_source=chatgpt.com" data-desc="Thermal engine rankings under the ADUO.">Reuters — ADUO engine rankings</a></p>
+      </div>
+    </section>
+
+    <section class="block reveal" data-num="04" id="sec-p4-en">
+      <div class="sec-marker"><span class="n">04</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">04</span> The midfield battle</h2>
+        <p><strong>Racing Bulls</strong> could be the biggest potential surprise thanks to the Red Bull-Ford engine. <strong>Audi</strong> remains inconsistent off the line but competitive with Hülkenberg. <strong>Alpine</strong> should move closer to the Top 10 thanks to the package extended to Colapinto. <strong>Aston Martin</strong> risks having its thermal deficit exposed on the long straights. <strong>Williams, Haas and Cadillac</strong> remain in general difficulty — reaching Q3 would already be an achievement for Cadillac.</p>
+      </div>
+    </section>
+
+    <section class="block reveal" data-num="05" id="sec-p5-en">
+      <div class="sec-marker"><span class="n">05</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">05</span> Likely race strategy</h2>
+        <p>Pirelli will bring its three softest compounds: C3 hard, C4 medium and C5 soft. Time lost in the pits is high at Monza, which favours a one-stop race. <a href="https://press.pirelli.com/tyre-compounds-selected-for-zandvoort-monza-and-madrid/?utm_source=chatgpt.com" data-desc="Confirmation of the C3, C4 and C5 for Monza.">Official Pirelli selection</a></p>
+        <div class="callout">
+          Base strategies: <strong>Medium → hard</strong> (reference, flexible) · <strong>Soft → hard</strong> (attacking at the start) · <strong>Hard → medium</strong> (for Antonelli and drivers starting further back) · <strong>Two stops</strong> (probably too costly, barring heavy degradation or a Safety Car).
+        </div>
+        <p>Moments that could decide the race: the start and the first chicane (slipstream already decisive before the first braking zone), the opening lap after each stop, energy traffic (a car boxed in may lack the electrical reserve to overtake), a possible Safety Car, and the downforce-level choice (a very low-downforce car is hard to pass but degrades its tyres more).</p>
+      </div>
+    </section>
+
+    <section class="block reveal" data-num="06" id="sec-p6-en">
+      <div class="sec-marker"><span class="n">06</span><span class="t"></span></div>
+      <div class="prose">
+        <h2 class="sectitle"><span class="num">06</span> Forecast hierarchy</h2>
+        <p><strong>Pole position:</strong> Russell, Norris, Hamilton/Leclerc, Verstappen, Piastri. Antonelli would normally belong in this group, but his penalty completely changes the objective of his qualifying session.</p>
+        <p><strong>Expected race pace:</strong> leading group — McLaren, Mercedes, Ferrari; closest outsider — Verstappen; points — Racing Bulls, Audi, Alpine; more in difficulty — Aston Martin, Williams, Haas, Cadillac.</p>
+        <div class="callout">
+          <strong>Conditional forecast</strong> — If Ferrari doesn't use its new engine: Russell and Norris remain my two favourites. If the engine delivers the announced gain without compromising reliability: Hamilton and Leclerc could become the weekend's benchmark. If Red Bull finds an RB22 that's stable over the kerbs: Verstappen can join the fight. If a Safety Car intervenes late: Antonelli becomes a podium threat again thanks to his fresh engine.
+        </div>
+      </div>
+    </section>
+
+    <section class="block reveal" id="sec-p7-en">
+      <div class="prose">
+        <h2 class="sectitle">Conclusion</h2>
+        <p>Mercedes offers the best theoretical fit. McLaren arrives with the best momentum. Ferrari holds the single most significant potential development. Red Bull has the best thermal engine but not yet the most complete chassis.</p>
+        <div class="callout">The most revealing session probably won't be first qualifying simulation, but Friday's long runs: end-of-straight speed, the point where each engine starts losing its electrical deployment, stability over the kerbs, and rear-tyre degradation. That's where Monza's real pecking order will show itself.</div>
+      </div>
+    </section>
+
+    <section class="block" id="sec-p8-en">
+      <details class="sources">
+        <summary>Sources used — Italian GP preview (13 links)</summary>
+        <div class="srcgroup">
+          <h5>Circuit &amp; regulations</h5>
+          <ul>
+            <li><a href="https://www.formula1.com/en/information/italy-autodromo-nazionale-monza.FiJN1jnQlRLeHqOxIt13m?utm_source=chatgpt.com" data-desc="Length, full-throttle distance, main straight.">Official presentation of Monza</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/tech-tuesday-what-monza-wing-levels-tell-us-about-the-performance-of-red.7iBpXHgy2yPnyxn00mTmou?utm_source=chatgpt.com" data-desc="Why Monza rewards aero efficiency, not just top speed.">What the wing levels reveal</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/the-beginners-guide-to-the-2026-regulations.6j0tS0hrHG2T01tpmK6XYz?utm_source=chatgpt.com" data-desc="Straight Mode, Corner Mode, Overtake Mode explained.">Official guide to the 2026 regulations</a><span class="desc">Formula1.com</span></li>
+          </ul>
+        </div>
+        <div class="srcgroup">
+          <h5>Tyres &amp; engines</h5>
+          <ul>
+            <li><a href="https://press.pirelli.com/tyre-compounds-selected-for-zandvoort-monza-and-madrid/?utm_source=chatgpt.com" data-desc="Confirmation of the C3, C4 and C5 for Monza.">Pirelli's choice for Zandvoort / Monza / Madrid</a><span class="desc">Pirelli Press</span></li>
+            <li><a href="https://www.reuters.com/sports/formula1/f1-leaders-mercedes-granted-engine-upgrades-none-red-bull-2026-08-26/?utm_source=chatgpt.com" data-desc="Thermal engine rankings under the ADUO.">Red Bull-Ford, the thermal benchmark</a><span class="desc">Reuters</span></li>
+            <li><a href="https://www.motorsport.com/f1/news/f1-ferrari-aduo2-engines-ready-but-monza-debut-decision-due-at-weekend/10849610/?utm_source=chatgpt.com" data-desc="The 15hp gain and the expected homologation decision.">Ferrari ADUO2 — decision expected</a><span class="desc">Motorsport.com</span></li>
+          </ul>
+        </div>
+        <div class="srcgroup">
+          <h5>Team dynamics</h5>
+          <ul>
+            <li><a href="https://www.reuters.com/sports/formula1/mercedes-no-longer-have-fastest-car-f1-says-antonelli-2026-08-24/?utm_source=chatgpt.com" data-desc="Mercedes no longer has the fastest car, according to Antonelli.">Mercedes no longer has the fastest car</a><span class="desc">Reuters</span></li>
+            <li><a href="https://www.formula1.com/en/latest/article/wolff-explains-decision-behind-monza-engine-penalty-for-antonelli.2kQ3tVnHJXRsloH0lmlh9I?utm_source=chatgpt.com" data-desc="Why Monza was chosen for the engine replacement.">Wolff explains Antonelli's engine penalty</a><span class="desc">Formula1.com</span></li>
+            <li><a href="https://www.skysports.com/f1/news/12433/13577386/toto-wolffs-claims-that-mercedes-cant-afford-to-match-rivals-2026-upgrades-assessed-by-bernie-collins-on-the-f1-show-podcast?utm_source=chatgpt.com" data-desc="Mercedes's next big development is expected in Malaysia.">Mercedes's next big package expected in Malaysia</a><span class="desc">Sky Sports</span></li>
+            <li><a href="https://www.the-race.com/formula-1/every-2026-f1-team-big-weakness/?utm_source=chatgpt.com" data-desc="Technical portrait of each team's weaknesses.">Every 2026 team's weakness</a><span class="desc">The Race</span></li>
+          </ul>
+        </div>
+        <div class="srcgroup">
+          <h5>Methodology</h5>
+          <ul>
+            <li><span class="desc">Instagram, Facebook and YouTube posts were not used as evidence. For sensitive information (engine power, undeclared developments), priority went to Formula1.com, Pirelli and Reuters, then Motorsport.com or The Race as a supplement. Reddit was used only to capture fan debate, never as technical proof.</span></li>
           </ul>
         </div>
       </details>
