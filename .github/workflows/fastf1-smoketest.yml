@@ -1,0 +1,37 @@
+name: FastF1 smoke test
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Season year"
+        default: "2024"
+        required: false
+      event:
+        description: "Event name (as FastF1 expects, e.g. Bahrain)"
+        default: "Bahrain"
+        required: false
+      session:
+        description: "Session code (R, Q, FP1, FP2, FP3, S)"
+        default: "R"
+        required: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Run FastF1 smoke test
+        run: |
+          python scripts/fetch_session.py \
+            "${{ inputs.year }}" \
+            "${{ inputs.event }}" \
+            "${{ inputs.session }}"
