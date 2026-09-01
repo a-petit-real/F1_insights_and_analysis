@@ -1,0 +1,46 @@
+name: Ingest FastF1 detailed data (production)
+
+# Applique db/schema_fastf1.sql et charge les données détaillées FastF1
+# (décodées à partir d'un export brut récupéré manuellement) dans la
+# vraie base de données (secret DATABASE_URL).
+
+on:
+  workflow_dispatch:
+    inputs:
+      raw_zip_path:
+        description: "Chemin du zip brut dans le dépôt"
+        default: "scripts/_tmp_fastf1_raw_2026.zip"
+      season:
+        description: "Saison"
+        default: "2026"
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+
+      - name: Apply schema (FastF1 detailed)
+        run: psql "$DATABASE_URL" -f db/schema_fastf1.sql
+
+      - name: Unzip raw FastF1 export
+        run: unzip -q "${{ inputs.raw_zip_path }}" -d fastf1_raw
+
+      - name: Decode and load detailed FastF1 data
+        run: python scripts/ingest_fastf1_detailed.py --raw-dir fastf1_raw --season "${{ inputs.season }}"
+
+      - name: Row counts (sanity check)
+        run: |
+          psql "$DATABASE_URL" -c "
+            SELECT 'lap_times' AS table, COUNT(*) FROM lap_times
+            UNION ALL SELECT 'tyre_stints', COUNT(*) FROM tyre_stints
+            UNION ALL SELECT 'weather_readings', COUNT(*) FROM weather_readings
+            UNION ALL SELECT 'race_control_messages', COUNT(*) FROM race_control_messages
+            UNION ALL SELECT 'track_status_events', COUNT(*) FROM track_status_events;
+          "
