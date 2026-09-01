@@ -306,7 +306,13 @@ def main():
     )
     print(f"{len(round_dirs)} course(s) trouvée(s) dans {args.raw_dir}.")
 
-    with psycopg.connect(args.database_url) as conn:
+    with psycopg.connect(args.database_url) as conn, conn.pipeline():
+        # Mode pipeline psycopg3 : envoie les requêtes sans attendre la
+        # réponse de chacune avant la suivante. Indispensable ici — des
+        # dizaines de milliers d'INSERT individuels vers une base distante
+        # (Neon) en aller-retour un par un seraient beaucoup trop lents
+        # (testé : ingestion de production toujours en cours après 20+
+        # minutes sans mode pipeline, annulée).
         for d in round_dirs:
             round_number = int(ROUND_DIR_RE.match(d).group(1))
             with conn.cursor() as cur:
