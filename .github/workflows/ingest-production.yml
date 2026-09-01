@@ -1,0 +1,58 @@
+name: Ingest F1 data (production)
+
+# Applique db/schema.sql et charge les données Jolpica dans la vraie base
+# de données (secret DATABASE_URL, configuré dans les secrets du dépôt).
+# Tourne automatiquement chaque jour (les upserts sont idempotents : un
+# jour sans nouvelle course ne change rien) et peut être lancé à la main.
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Saison à ingérer (vide = saison en cours)"
+        required: false
+      rounds:
+        description: "Rounds spécifiques, séparés par des espaces (vide = tous les rounds déjà courus)"
+        required: false
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+
+      - name: Determine season
+        id: season
+        run: |
+          SEASON="${{ inputs.season }}"
+          if [ -z "$SEASON" ]; then SEASON=$(date -u +%Y); fi
+          echo "season=$SEASON" >> "$GITHUB_OUTPUT"
+
+      - name: Apply schema (idempotent)
+        run: psql "$DATABASE_URL" -f db/schema.sql
+
+      - name: Run ingestion
+        run: |
+          python scripts/ingest_jolpica.py \
+            --season "${{ steps.season.outputs.season }}" \
+            ${{ inputs.rounds && format('--rounds {0}', inputs.rounds) || '' }}
+
+      - name: Row counts (sanity check)
+        run: |
+          psql "$DATABASE_URL" -c "
+            SELECT 'circuits' AS table, COUNT(*) FROM circuits
+            UNION ALL SELECT 'races', COUNT(*) FROM races
+            UNION ALL SELECT 'drivers', COUNT(*) FROM drivers
+            UNION ALL SELECT 'constructors', COUNT(*) FROM constructors
+            UNION ALL SELECT 'results', COUNT(*) FROM results
+            UNION ALL SELECT 'driver_standings', COUNT(*) FROM driver_standings
+            UNION ALL SELECT 'constructor_standings', COUNT(*) FROM constructor_standings;
+          "

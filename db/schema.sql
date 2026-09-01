@@ -19,7 +19,7 @@
 -- Référentiels
 -- ---------------------------------------------------------------------
 
-CREATE TABLE circuits (
+CREATE TABLE IF NOT EXISTS circuits (
     circuit_id    TEXT PRIMARY KEY,        -- ex. "bahrain"
     name          TEXT NOT NULL,
     locality      TEXT,
@@ -29,7 +29,7 @@ CREATE TABLE circuits (
     wiki_url      TEXT
 );
 
-CREATE TABLE drivers (
+CREATE TABLE IF NOT EXISTS drivers (
     driver_id         TEXT PRIMARY KEY,    -- ex. "max_verstappen"
     code              TEXT,                -- ex. "VER" (peut changer d'une saison à l'autre pour un pilote donné, donc pas unique dans le temps)
     permanent_number  INTEGER,
@@ -40,7 +40,7 @@ CREATE TABLE drivers (
     wiki_url          TEXT
 );
 
-CREATE TABLE constructors (
+CREATE TABLE IF NOT EXISTS constructors (
     constructor_id  TEXT PRIMARY KEY,      -- ex. "red_bull"
     name            TEXT NOT NULL,
     nationality     TEXT,
@@ -51,7 +51,7 @@ CREATE TABLE constructors (
 -- Calendrier
 -- ---------------------------------------------------------------------
 
-CREATE TABLE races (
+CREATE TABLE IF NOT EXISTS races (
     race_id           SERIAL PRIMARY KEY,
     season            INTEGER NOT NULL,
     round             INTEGER NOT NULL,
@@ -73,13 +73,13 @@ CREATE TABLE races (
     UNIQUE (season, round)
 );
 
-CREATE INDEX idx_races_season ON races(season);
+CREATE INDEX IF NOT EXISTS idx_races_season ON races(season);
 
 -- ---------------------------------------------------------------------
 -- Résultats de course
 -- ---------------------------------------------------------------------
 
-CREATE TABLE results (
+CREATE TABLE IF NOT EXISTS results (
     result_id             SERIAL PRIMARY KEY,
     race_id               INTEGER NOT NULL REFERENCES races(race_id) ON DELETE CASCADE,
     driver_id             TEXT NOT NULL REFERENCES drivers(driver_id),
@@ -100,9 +100,9 @@ CREATE TABLE results (
     UNIQUE (race_id, driver_id)
 );
 
-CREATE INDEX idx_results_race ON results(race_id);
-CREATE INDEX idx_results_driver ON results(driver_id);
-CREATE INDEX idx_results_constructor ON results(constructor_id);
+CREATE INDEX IF NOT EXISTS idx_results_race ON results(race_id);
+CREATE INDEX IF NOT EXISTS idx_results_driver ON results(driver_id);
+CREATE INDEX IF NOT EXISTS idx_results_constructor ON results(constructor_id);
 
 -- ---------------------------------------------------------------------
 -- Classements (snapshot après chaque round — c'est la forme que Jolpica
@@ -110,7 +110,7 @@ CREATE INDEX idx_results_constructor ON results(constructor_id);
 -- saison ET un round donnés, pas juste un état "courant")
 -- ---------------------------------------------------------------------
 
-CREATE TABLE driver_standings (
+CREATE TABLE IF NOT EXISTS driver_standings (
     id             SERIAL PRIMARY KEY,
     season         INTEGER NOT NULL,
     round          INTEGER NOT NULL,
@@ -122,9 +122,9 @@ CREATE TABLE driver_standings (
     UNIQUE (season, round, driver_id)
 );
 
-CREATE INDEX idx_driver_standings_season_round ON driver_standings(season, round);
+CREATE INDEX IF NOT EXISTS idx_driver_standings_season_round ON driver_standings(season, round);
 
-CREATE TABLE constructor_standings (
+CREATE TABLE IF NOT EXISTS constructor_standings (
     id               SERIAL PRIMARY KEY,
     season           INTEGER NOT NULL,
     round            INTEGER NOT NULL,
@@ -136,7 +136,7 @@ CREATE TABLE constructor_standings (
     UNIQUE (season, round, constructor_id)
 );
 
-CREATE INDEX idx_constructor_standings_season_round ON constructor_standings(season, round);
+CREATE INDEX IF NOT EXISTS idx_constructor_standings_season_round ON constructor_standings(season, round);
 
 -- ---------------------------------------------------------------------
 -- Note : un pilote peut courir pour plusieurs écuries dans une même
