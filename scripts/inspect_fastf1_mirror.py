@@ -31,6 +31,25 @@ for root, _, files in os.walk(pkg_dir):
         except Exception as e:
             print(f"  (could not read {path}: {e})")
 
+print("\n=== Context around 'mirror' usage in fastf1/_api.py (how is base_url_mirror activated?) ===")
+api_path = os.path.join(pkg_dir, "_api.py")
+with open(api_path, encoding="utf-8") as f:
+    lines = f.readlines()
+for i, line in enumerate(lines):
+    if "mirror" in line.lower():
+        lo, hi = max(0, i - 2), min(len(lines), i + 3)
+        print(f"--- around line {i + 1} ---")
+        for j in range(lo, hi):
+            marker = ">>" if j == i else "  "
+            print(f"{marker} {j + 1}: {lines[j].rstrip()}")
+
+print("\n=== Cache.enable_cache signature (does it accept a mirror-related flag?) ===")
+import inspect
+print(inspect.signature(fastf1.Cache.enable_cache))
+
+print("\n=== get_session signature ===")
+print(inspect.signature(fastf1.get_session))
+
 print("\n=== Most recent already-run race of the current season (via Jolpica) ===")
 year = datetime.date.today().year
 today = datetime.date.today()
