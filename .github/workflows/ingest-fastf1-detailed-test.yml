@@ -1,0 +1,92 @@
+name: FastF1 detailed ingestion test (schema + decode + load)
+
+# Valide le pipeline de données FastF1 détaillées (temps au tour, pneus,
+# météo, contexte de course) contre un Postgres éphémère, à partir du
+# zip brut récupéré manuellement (scripts/mobile_fastf1_fetch.py),
+# avant de charger la vraie base de production.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-ingestion:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: f1
+          POSTGRES_PASSWORD: f1
+          POSTGRES_DB: f1
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://f1:f1@localhost:5432/f1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+
+      - name: Apply schema (Jolpica + FastF1 detailed)
+        run: |
+          psql "$DATABASE_URL" -f db/schema.sql
+          psql "$DATABASE_URL" -f db/schema_fastf1.sql
+
+      - name: Seed races/drivers/results via Jolpica (needed as FK target)
+        run: python scripts/ingest_jolpica.py --season 2026
+
+      - name: Unzip raw FastF1 export
+        run: unzip -q scripts/_tmp_fastf1_raw_2026.zip -d fastf1_raw
+
+      - name: Decode and load detailed FastF1 data
+        run: python scripts/ingest_fastf1_detailed.py --raw-dir fastf1_raw --season 2026
+
+      - name: Verify row counts
+        run: |
+          psql "$DATABASE_URL" -c "
+            SELECT 'lap_times' AS table, COUNT(*) FROM lap_times
+            UNION ALL SELECT 'tyre_stints', COUNT(*) FROM tyre_stints
+            UNION ALL SELECT 'weather_readings', COUNT(*) FROM weather_readings
+            UNION ALL SELECT 'race_control_messages', COUNT(*) FROM race_control_messages
+            UNION ALL SELECT 'track_status_events', COUNT(*) FROM track_status_events;
+          "
+
+      - name: Verify a joined query (lap times with driver names)
+        run: |
+          psql "$DATABASE_URL" -c "
+            SELECT r.race_name, d.family_name, lt.lap_number, lt.lap_time
+            FROM lap_times lt
+            JOIN races r ON r.race_id = lt.race_id
+            JOIN results res ON res.race_id = lt.race_id AND res.car_number = lt.car_number
+            JOIN drivers d ON d.driver_id = res.driver_id
+            WHERE r.round = 12 AND d.family_name = 'Verstappen'
+            ORDER BY lt.lap_number
+            LIMIT 10;
+          "
+          psql "$DATABASE_URL" -c "
+            SELECT r.race_name, d.family_name, ts.stint_number, ts.compound, ts.total_laps
+            FROM tyre_stints ts
+            JOIN races r ON r.race_id = ts.race_id
+            JOIN results res ON res.race_id = ts.race_id AND res.car_number = ts.car_number
+            JOIN drivers d ON d.driver_id = res.driver_id
+            WHERE r.round = 12 AND d.family_name = 'Verstappen' AND ts.compound IS NOT NULL
+            ORDER BY ts.stint_number
+            LIMIT 10;
+          "
+
+      - name: Re-run ingestion (idempotency check)
+        run: python scripts/ingest_fastf1_detailed.py --raw-dir fastf1_raw --season 2026
+
+      - name: Verify no duplicate rows after re-run
+        run: |
+          psql "$DATABASE_URL" -c "
+            SELECT 'lap_times' AS table, COUNT(*) FROM lap_times
+            UNION ALL SELECT 'weather_readings', COUNT(*) FROM weather_readings;
+          "
