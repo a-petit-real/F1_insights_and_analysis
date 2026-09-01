@@ -1,0 +1,72 @@
+name: Ingestion pipeline test (schema + Jolpica -> Postgres)
+
+# Valide tout le pipeline Phase 2 (db/schema.sql + scripts/ingest_jolpica.py)
+# contre un Postgres éphémère fourni par le job, avant de demander à
+# quiconque de provisionner une vraie base de données.
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Saison à ingérer"
+        default: "2024"
+      round:
+        description: "Round à ingérer"
+        default: "1"
+
+jobs:
+  test-ingestion:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: f1
+          POSTGRES_PASSWORD: f1
+          POSTGRES_DB: f1
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://f1:f1@localhost:5432/f1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+      - name: Apply schema
+        run: psql "$DATABASE_URL" -f db/schema.sql
+      - name: Run ingestion
+        run: python scripts/ingest_jolpica.py --season "${{ inputs.season }}" --rounds "${{ inputs.round }}"
+      - name: Verify row counts + sample data
+        run: |
+          psql "$DATABASE_URL" -c "
+            SELECT 'circuits' AS table, COUNT(*) FROM circuits
+            UNION ALL SELECT 'races', COUNT(*) FROM races
+            UNION ALL SELECT 'drivers', COUNT(*) FROM drivers
+            UNION ALL SELECT 'constructors', COUNT(*) FROM constructors
+            UNION ALL SELECT 'results', COUNT(*) FROM results
+            UNION ALL SELECT 'driver_standings', COUNT(*) FROM driver_standings
+            UNION ALL SELECT 'constructor_standings', COUNT(*) FROM constructor_standings;
+          "
+          psql "$DATABASE_URL" -c "
+            SELECT r.race_name, d.family_name, res.finish_position, res.points
+            FROM results res
+            JOIN races r ON r.race_id = res.race_id
+            JOIN drivers d ON d.driver_id = res.driver_id
+            ORDER BY res.finish_position
+            LIMIT 5;
+          "
+      - name: Re-run ingestion (idempotency check)
+        run: python scripts/ingest_jolpica.py --season "${{ inputs.season }}" --rounds "${{ inputs.round }}"
+      - name: Verify no duplicate rows after re-run
+        run: |
+          psql "$DATABASE_URL" -c "
+            SELECT 'results' AS table, COUNT(*) FROM results
+            UNION ALL SELECT 'driver_standings', COUNT(*) FROM driver_standings;
+          "
