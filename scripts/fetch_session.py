@@ -23,17 +23,22 @@ warnings.filterwarnings("ignore")
 
 
 def raw_probe():
-    """Bypass FastF1 entirely: hit its main data host directly so the real
+    """Bypass FastF1 entirely: hit the raw data hosts directly so the real
     HTTP status/exception is visible, instead of FastF1's own warning logs
     which swallow the underlying error."""
-    url = "https://livetiming.formula1.com/static/2024/2024-03-02_Bahrain_Grand_Prix/2024-03-02_Race/Index.json"
-    print(f"\n=== RAW PROBE: {url} ===")
-    try:
-        r = requests.get(url, timeout=15)
-        print("HTTP status:", r.status_code)
-        print("First 300 chars:", r.text[:300])
-    except Exception as e:
-        print("RAW PROBE FAILED:", type(e).__name__, str(e)[:500])
+    urls = [
+        "https://livetiming.formula1.com/static/2024/2024-03-02_Bahrain_Grand_Prix/2024-03-02_Race/Index.json",
+        "https://api.jolpi.ca/ergast/f1/2024/1/results.json",
+        "https://livetiming-mirror.fastf1.dev/static/2024/2024-03-02_Bahrain_Grand_Prix/2024-03-02_Race/Index.json",
+    ]
+    for url in urls:
+        print(f"\n=== RAW PROBE: {url} ===")
+        try:
+            r = requests.get(url, timeout=15)
+            print("HTTP status:", r.status_code)
+            print("First 300 chars:", r.text[:300])
+        except Exception as e:
+            print("RAW PROBE FAILED:", type(e).__name__, str(e)[:500])
 
 
 def main():
