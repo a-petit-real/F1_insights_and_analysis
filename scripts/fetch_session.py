@@ -11,6 +11,7 @@ Usage: python scripts/fetch_session.py [year] [event] [session]
 Defaults to a known, fully-archived race (2024 Bahrain GP) rather than the
 current 2026 season, since this is purely a connectivity/shape smoke test.
 """
+import os
 import sys
 import warnings
 
@@ -24,7 +25,9 @@ def main():
     event = sys.argv[2] if len(sys.argv) > 2 else "Bahrain"
     session_code = sys.argv[3] if len(sys.argv) > 3 else "R"
 
-    fastf1.Cache.enable_cache(".fastf1_cache")
+    cache_dir = ".fastf1_cache"
+    os.makedirs(cache_dir, exist_ok=True)
+    fastf1.Cache.enable_cache(cache_dir)
 
     print(f"Loading {year} {event} — session '{session_code}'...")
     session = fastf1.get_session(year, event, session_code)
