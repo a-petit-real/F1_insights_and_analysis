@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS driver_standings (
     season         INTEGER NOT NULL,
     round          INTEGER NOT NULL,
     driver_id      TEXT NOT NULL REFERENCES drivers(driver_id),
-    position       INTEGER NOT NULL,
+    position       INTEGER,             -- NULL si non classé (Jolpica omet "position" pour un pilote à 0 point, positionText="-")
     position_text  TEXT,
     points         NUMERIC(6, 2) NOT NULL,
     wins           INTEGER NOT NULL DEFAULT 0,
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS constructor_standings (
     season           INTEGER NOT NULL,
     round            INTEGER NOT NULL,
     constructor_id   TEXT NOT NULL REFERENCES constructors(constructor_id),
-    position         INTEGER NOT NULL,
+    position         INTEGER,           -- NULL si non classé (même raison que driver_standings.position)
     position_text    TEXT,
     points           NUMERIC(6, 2) NOT NULL,
     wins             INTEGER NOT NULL DEFAULT 0,
@@ -137,6 +137,12 @@ CREATE TABLE IF NOT EXISTS constructor_standings (
 );
 
 CREATE INDEX IF NOT EXISTS idx_constructor_standings_season_round ON constructor_standings(season, round);
+
+-- Filet de sécurité pour une base déjà créée avant que "position" ne soit
+-- rendu nullable ci-dessus (CREATE TABLE IF NOT EXISTS n'aurait pas modifié
+-- une table existante). Sans effet si la colonne est déjà nullable.
+ALTER TABLE driver_standings ALTER COLUMN position DROP NOT NULL;
+ALTER TABLE constructor_standings ALTER COLUMN position DROP NOT NULL;
 
 -- ---------------------------------------------------------------------
 -- Note : un pilote peut courir pour plusieurs écuries dans une même

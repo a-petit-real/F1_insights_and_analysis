@@ -160,11 +160,14 @@ def transform_result(result_json):
 
 
 def transform_driver_standing(entry, season, round_):
+    # Jolpica omet carrément la clé "position" pour un pilote non classé
+    # (0 point, positionText="-") plutôt que d'y mettre une valeur creuse.
+    position = entry.get("position")
     return {
         "season": season,
         "round": round_,
         "driver_id": entry["Driver"]["driverId"],
-        "position": int(entry["position"]),
+        "position": int(position) if position is not None else None,
         "position_text": entry.get("positionText"),
         "points": float(entry["points"]),
         "wins": int(entry.get("wins", 0)),
@@ -172,11 +175,12 @@ def transform_driver_standing(entry, season, round_):
 
 
 def transform_constructor_standing(entry, season, round_):
+    position = entry.get("position")  # même cas que transform_driver_standing
     return {
         "season": season,
         "round": round_,
         "constructor_id": entry["Constructor"]["constructorId"],
-        "position": int(entry["position"]),
+        "position": int(position) if position is not None else None,
         "position_text": entry.get("positionText"),
         "points": float(entry["points"]),
         "wins": int(entry.get("wins", 0)),
