@@ -29,6 +29,6 @@ jobs:
       - run: >
           python scripts/fetch_url.py
           --url "${{ inputs.url }}"
-          ${{ inputs.raw == 'true' && '--raw' || '' }}
+          ${{ inputs.raw && '--raw' || '' }}
           ${{ inputs.selector != '' && format('--selector "{0}"', inputs.selector) || '' }}
           --max-chars "${{ inputs.max_chars }}"
