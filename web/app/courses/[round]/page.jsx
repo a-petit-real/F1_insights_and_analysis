@@ -7,6 +7,7 @@ import {
   getTyreStints,
   getWeatherSeries,
   getRaceControlMessages,
+  getOvertakes,
 } from "../../../lib/raceData";
 import RaceTabs from "./RaceTabs";
 
@@ -18,12 +19,13 @@ export default async function RacePage({ params }) {
   const race = await getRace(season, Number(round));
   if (!race) notFound();
 
-  const [results, lapTimes, tyreStints, weather, rcm] = await Promise.all([
+  const [results, lapTimes, tyreStints, weather, rcm, overtakes] = await Promise.all([
     getResults(race.race_id),
     getLapTimesByDriver(race.race_id),
     getTyreStints(race.race_id),
     getWeatherSeries(race.race_id),
     getRaceControlMessages(race.race_id),
+    getOvertakes(race.race_id),
   ]);
 
   return (
@@ -44,6 +46,7 @@ export default async function RacePage({ params }) {
         tyreStints={tyreStints}
         weather={weather}
         rcm={rcm}
+        overtakes={overtakes}
       />
     </main>
   );

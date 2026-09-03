@@ -95,3 +95,20 @@ export async function getRaceControlMessages(raceId) {
     [raceId]
   );
 }
+
+export async function getOvertakes(raceId) {
+  // Jointure sur results deux fois (voiture dépassante / dépassée) pour
+  // afficher des noms de pilotes plutôt que des numéros de voiture bruts.
+  return query(
+    `SELECT o.overtake_time, o.position,
+            d1.family_name AS overtaking_driver, d2.family_name AS overtaken_driver
+     FROM overtakes o
+     JOIN results r1 ON r1.race_id = o.race_id AND r1.car_number = o.overtaking_car_number
+     JOIN drivers d1 ON d1.driver_id = r1.driver_id
+     JOIN results r2 ON r2.race_id = o.race_id AND r2.car_number = o.overtaken_car_number
+     JOIN drivers d2 ON d2.driver_id = r2.driver_id
+     WHERE o.race_id = $1
+     ORDER BY o.overtake_time`,
+    [raceId]
+  );
+}

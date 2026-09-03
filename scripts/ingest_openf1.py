@@ -31,6 +31,9 @@ Couverture, et son origine OpenF1 :
     (drapeau, safety car, VSC) — approximation raisonnable, mais une
     source dérivée et non primaire ; documenté ici pour rester honnête
     sur son origine plutôt que de la faire passer pour équivalente.
+  - overtakes            <- overtakes (dépassements structurés : voiture
+    dépassante/dépassée, position résultante, horodatage) — nouveauté par
+    rapport au pipeline FastF1, qui n'avait pas d'équivalent.
 
 Usage :
     python scripts/ingest_openf1.py --season 2026
@@ -62,10 +65,20 @@ def api_get(path, **params):
     # d'une ingestion saison complète (cf. historique git) : 8 tentatives
     # avec un backoff qui monte jusqu'à 60s, et on respecte l'en-tête
     # Retry-After quand le serveur le fournit plutôt que de deviner.
+    #
+    # Un 404 est différent : constaté en pratique sur une course pas encore
+    # disputée (session_key valide mais sans aucune donnée pour l'instant,
+    # ex. Monza avant le week-end de course) — OpenF1 renvoie 404 plutôt
+    # qu'un tableau vide. Retenter n'y changera rien tant que la course n'a
+    # pas eu lieu : on traite ce cas comme "pas encore de données" (liste
+    # vide) plutôt que comme une erreur, pour ne pas perdre plusieurs
+    # minutes en retries voués à l'échec avant de planter quand même.
     max_attempts = 8
     for attempt in range(max_attempts):
         try:
             resp = requests.get(f"{BASE}/{path}", params=params, headers=HEADERS, timeout=30)
+            if resp.status_code == 404:
+                return []
             if resp.status_code == 429 and attempt < max_attempts - 1:
                 wait = float(resp.headers.get("Retry-After", min(2 ** attempt, 60)))
                 print(f"  [retry] {path} (429 rate limit) — nouvelle tentative dans {wait:.0f}s", file=sys.stderr)
@@ -297,6 +310,29 @@ def load_track_status(cur, race_id, race_control, session_start):
     return n
 
 
+def load_overtakes(cur, race_id, overtakes):
+    cur.execute("DELETE FROM overtakes WHERE race_id = %s", (race_id,))
+    n = 0
+    for row in overtakes:
+        date = iso(row.get("date"))
+        overtaking, overtaken = row.get("overtaking_driver_number"), row.get("overtaken_driver_number")
+        if date is None or overtaking is None or overtaken is None:
+            continue
+        cur.execute(
+            """
+            INSERT INTO overtakes (race_id, overtake_time, overtaking_car_number, overtaken_car_number, position)
+            VALUES (%(race_id)s, %(overtake_time)s, %(overtaking_car_number)s, %(overtaken_car_number)s, %(position)s)
+            """,
+            {
+                "race_id": race_id, "overtake_time": date,
+                "overtaking_car_number": overtaking, "overtaken_car_number": overtaken,
+                "position": row.get("position"),
+            },
+        )
+        n += 1
+    return n
+
+
 # ---------------------------------------------------------------------
 # ORCHESTRATION
 # ---------------------------------------------------------------------
@@ -358,6 +394,8 @@ def main():
             race_control = api_get("race_control", session_key=session_key)
             time.sleep(0.3)
             pit = api_get("pit", session_key=session_key)
+            time.sleep(0.3)
+            overtakes = api_get("overtakes", session_key=session_key)
 
             pit_laps_by_driver = {}
             for row in pit:
@@ -379,6 +417,8 @@ def main():
                 print(f"  race_control_messages : {n} lignes")
                 n = load_track_status(cur, race_id, race_control, session_start)
                 print(f"  track_status_events : {n} lignes (dérivé de race_control, cf. docstring)")
+                n = load_overtakes(cur, race_id, overtakes)
+                print(f"  overtakes : {n} lignes")
             conn.commit()
 
             time.sleep(0.5)  # correct vis-à-vis du rate limit OpenF1

@@ -99,3 +99,19 @@ CREATE TABLE IF NOT EXISTS track_status_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_track_status_events_race ON track_status_events(race_id);
+
+-- Dépassements structurés (endpoint `overtakes` d'OpenF1) — pas d'équivalent
+-- dans le pipeline FastF1 précédent. Permet de sourcer les dépassements cités
+-- dans un article directement depuis la donnée plutôt que de les déduire des
+-- écarts de temps au tour ou de les citer de seconde main. `position` est la
+-- position sur piste immédiatement après le dépassement.
+CREATE TABLE IF NOT EXISTS overtakes (
+    id                     SERIAL PRIMARY KEY,
+    race_id                INTEGER NOT NULL REFERENCES races(race_id) ON DELETE CASCADE,
+    overtake_time          TIMESTAMP NOT NULL,
+    overtaking_car_number  INTEGER NOT NULL,
+    overtaken_car_number   INTEGER NOT NULL,
+    position               INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_overtakes_race ON overtakes(race_id);

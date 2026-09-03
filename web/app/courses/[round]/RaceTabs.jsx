@@ -33,7 +33,7 @@ function formatLap(seconds) {
   return `${m}:${s.padStart(6, "0")}`;
 }
 
-export default function RaceTabs({ round, results, lapTimes, tyreStints, weather, rcm }) {
+export default function RaceTabs({ round, results, lapTimes, tyreStints, weather, rcm, overtakes }) {
   const [tab, setTab] = useState("analyse");
 
   return (
@@ -49,7 +49,14 @@ export default function RaceTabs({ round, results, lapTimes, tyreStints, weather
 
       {tab === "analyse" && <AnalyseTab round={round} />}
       {tab === "raw" && (
-        <RawDataTab results={results} lapTimes={lapTimes} tyreStints={tyreStints} weather={weather} rcm={rcm} />
+        <RawDataTab
+          results={results}
+          lapTimes={lapTimes}
+          tyreStints={tyreStints}
+          weather={weather}
+          rcm={rcm}
+          overtakes={overtakes}
+        />
       )}
     </div>
   );
@@ -97,7 +104,7 @@ function AnalyseTab({ round }) {
   );
 }
 
-function RawDataTab({ results, lapTimes, tyreStints, weather, rcm }) {
+function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) {
   const driverNames = Object.keys(lapTimes).sort();
   const defaultSelected = useMemo(() => {
     const top5 = results.slice(0, 5).map((r) => r.family_name);
@@ -274,6 +281,32 @@ function RawDataTab({ results, lapTimes, tyreStints, weather, rcm }) {
           </table>
         </div>
       </Section>
+
+      {overtakes && overtakes.length > 0 && (
+        <Section title={`Dépassements (${overtakes.length})`}>
+          <div style={{ maxHeight: 320, overflowY: "auto", border: "1px solid #eee", borderRadius: 6 }}>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  {["Heure", "Dépasse", "Dépassé", "Position résultante"].map((h) => (
+                    <th key={h} style={thStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {overtakes.map((o, i) => (
+                  <tr key={i}>
+                    <td style={tdStyle}>{new Date(o.overtake_time).toLocaleTimeString("fr-FR")}</td>
+                    <td style={tdStyle}>{o.overtaking_driver}</td>
+                    <td style={tdStyle}>{o.overtaken_driver}</td>
+                    <td style={tdStyle}>{o.position ?? ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      )}
     </div>
   );
 }
