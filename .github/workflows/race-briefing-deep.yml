@@ -1,0 +1,27 @@
+name: Race briefing — météo série temporelle + secteurs (read-only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2026"
+      round:
+        default: "1"
+      drivers:
+        description: "Noms de famille à filtrer pour les secteurs, séparés par des espaces (vide = tous)"
+        required: false
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+      - run: >
+          python scripts/race_briefing_deep.py --season "${{ inputs.season }}" --round "${{ inputs.round }}"
+          ${{ inputs.drivers != '' && format('--drivers {0}', inputs.drivers) || '' }}
