@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ROUND1_ANALYSE_FR_HTML } from "../1/analyse-fr";
 import {
   ResponsiveContainer,
   LineChart,
@@ -75,6 +76,11 @@ function TabButton({ active, onClick, children }) {
 }
 
 function AnalyseTab({ round }) {
+  if (round === 1) {
+    return (
+      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND1_ANALYSE_FR_HTML }} />
+    );
+  }
   if (round === 12) {
     return (
       <p style={{ color: "#666", lineHeight: 1.6 }}>
