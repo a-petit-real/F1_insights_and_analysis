@@ -8,7 +8,7 @@ Reprend et généralise l'approche de sourcing déjà pratiquée dans les analys
 |---|---|---|
 | formula1.com | Résultats, grilles, classements, communiqués, comptes-rendus officiels | Source de vérité pour les faits de course |
 | Jolpica-F1 (fork Ergast) | Historique de résultats et classements, format API | Alimentation base de données |
-| FastF1 | Télémétrie, temps au tour, stints pneus, timing détaillé | Alimentation base de données, calculs dérivés |
+| OpenF1 | Temps au tour (avec secteurs), stints pneus, météo, messages de course, timing détaillé | Alimentation base de données, calculs dérivés |
 | Pirelli press | Choix de gommes, analyses de dégradation officielles | Analyse stratégie pneus |
 | FIA (communiqués, ADUO) | Réglementation, pénalités, évaluations techniques officielles (ex. classement moteurs) | Contexte réglementaire et technique |
 

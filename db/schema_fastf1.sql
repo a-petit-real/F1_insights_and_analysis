@@ -1,19 +1,19 @@
--- Schéma PostgreSQL — données détaillées FastF1 (temps au tour, pneus,
--- météo, contexte de course), en complément de schema.sql (résultats et
--- classements Jolpica).
+-- Schéma PostgreSQL — données détaillées de course (temps au tour avec
+-- secteurs, pneus, météo, messages de course), en complément de
+-- schema.sql (résultats et classements Jolpica).
 --
--- Contrairement à Jolpica, ces données ne s'obtiennent pas par simple
--- appel API automatisable depuis le cloud (voir The Garage, carte c7) :
--- elles sont récupérées manuellement depuis un appareil personnel
--- (scripts/mobile_fastf1_fetch.py), puis décodées avec le moteur interne
--- de la librairie FastF1 (scripts/ingest_fastf1_detailed.py) avant
--- d'être chargées ici.
+-- Alimenté depuis l'API OpenF1 (scripts/ingest_openf1.py), accessible
+-- sans restriction depuis un runner GitHub Actions — contrairement à
+-- FastF1/livetiming.formula1.com, qui bloque les IP de datacenter (voir
+-- The Garage, carte c7) et nécessitait une étape manuelle depuis un
+-- appareil personnel. Ce pipeline FastF1 a été abandonné au profit
+-- d'OpenF1, entièrement automatisable.
 --
--- On identifie le pilote par son numéro de course (car_number) tel que
--- fourni par les flux FastF1, plutôt que de résoudre driver_id à
--- l'ingestion : la correspondance se fait par jointure sur
--- results(race_id, car_number) au moment des requêtes. Ça évite de
--- dupliquer une logique de résolution fragile dans le script de
+-- On identifie le pilote par son numéro de course (car_number, lié au
+-- pilote et non à la voiture — driver_number côté OpenF1) plutôt que de
+-- résoudre driver_id à l'ingestion : la correspondance se fait par
+-- jointure sur results(race_id, car_number) au moment des requêtes. Ça
+-- évite de dupliquer une logique de résolution fragile dans le script de
 -- chargement, et reste correct même si un numéro change de titulaire
 -- d'une course à l'autre (le lien passe toujours par la course en
 -- question).

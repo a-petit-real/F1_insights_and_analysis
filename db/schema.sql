@@ -9,11 +9,10 @@
 -- correspondance 1:1 lisible avec l'API d'origine.
 --
 -- Portée volontairement limitée à ce que Jolpica fournit (résultats de
--- course, classements pilotes/écuries, calendrier). Les données FastF1
--- (temps au tour, stratégie pneus, météo) sont bloquées en Phase 2 pour
--- l'ingestion automatisée depuis le cloud (voir scripts/fetch_session.py
--- et le point ouvert dans The Garage) ; leurs tables seront ajoutées
--- séparément une fois la source de collecte tranchée.
+-- course, classements pilotes/écuries, calendrier). Les données
+-- détaillées (temps au tour, stratégie pneus, météo, messages de
+-- course) ont leurs propres tables dans schema_fastf1.sql, alimentées
+-- depuis l'API OpenF1 (voir scripts/ingest_openf1.py).
 
 -- ---------------------------------------------------------------------
 -- Référentiels

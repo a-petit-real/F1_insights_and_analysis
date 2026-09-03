@@ -18,7 +18,7 @@ Principe directeur : ne pas paralléliser la Phase 2 (données structurées) et 
 
 ## Phase 2 — Données structurées (4-6 semaines)
 
-- Intégration FastF1 (télémétrie, temps au tour, stints pneus) et Jolpica-F1 (résultats, classements)
+- Intégration OpenF1 (temps au tour avec secteurs, stints pneus, météo, messages de course) et Jolpica-F1 (résultats, classements)
 - Modélisation PostgreSQL (courses, pilotes, écuries, résultats, arrêts, stratégies)
 - Pipeline d'ingestion planifié après chaque session (essais, qualifications, sprint, course)
 - Pages dynamiques : classements, comparateurs, graphiques d'écarts tour par tour

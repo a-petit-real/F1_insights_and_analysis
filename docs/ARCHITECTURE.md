@@ -7,7 +7,7 @@ Vue en couches. Chaque couche est pensée pour rester simple tant que le volume 
 | Source | Donnée récupérée | Méthode |
 |---|---|---|
 | [Jolpica-F1](https://github.com/jolpica/jolpica-f1) (fork Ergast) | Résultats, grilles, classements historiques et courants | API REST |
-| [FastF1](https://github.com/theOehrly/Fast-F1) (Python) | Télémétrie, temps au tour, stints pneus, données de timing officielles | Librairie Python, cache local |
+| [OpenF1](https://openf1.org) | Temps au tour (avec secteurs), stints pneus, météo, messages de course, données de timing officielles | API REST, accessible depuis GitHub Actions sans restriction |
 | formula1.com | Comptes-rendus officiels, communiqués, résultats détaillés (arrêts aux stands, meilleurs tours) | Scraping structuré respectueux (robots.txt, rate limit) |
 | Pirelli press | Analyses pneus, choix de gommes, données de dégradation | Scraping/RSS |
 | Presse spécialisée (Motorsport.com, The Race, Reuters) | Contexte, déclarations pilotes/équipes, analyses techniques | RSS/scraping léger, citée comme source secondaire |
@@ -30,7 +30,7 @@ Principes :
 
 **Choix : Python + FastAPI.**
 
-Justification : l'écosystème de données F1 (FastF1, pandas, numpy, et plus tard scikit-learn/XGBoost pour la prédiction) est Python-natif. Faire le backend en Python évite une couche de traduction entre le service d'ingestion/calcul et l'API, et permet de réutiliser directement le même langage pour la Phase 5 (simulation/prédiction).
+Justification : l'écosystème de calcul de données (pandas, numpy, et plus tard scikit-learn/XGBoost pour la prédiction) est Python-natif. Faire le backend en Python évite une couche de traduction entre le service d'ingestion/calcul et l'API, et permet de réutiliser directement le même langage pour la Phase 5 (simulation/prédiction).
 
 Découpage en services (modules dans un même backend au départ, séparables plus tard si besoin) :
 - **Ingestion** : jobs de collecte et normalisation des sources externes
