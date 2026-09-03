@@ -58,15 +58,25 @@ TRACK_STATUS_FLAGS = {
 
 
 def api_get(path, **params):
-    for attempt in range(4):
+    # OpenF1 applique un rate limit (429) qu'on a heurté en pratique lors
+    # d'une ingestion saison complète (cf. historique git) : 8 tentatives
+    # avec un backoff qui monte jusqu'à 60s, et on respecte l'en-tête
+    # Retry-After quand le serveur le fournit plutôt que de deviner.
+    max_attempts = 8
+    for attempt in range(max_attempts):
         try:
             resp = requests.get(f"{BASE}/{path}", params=params, headers=HEADERS, timeout=30)
+            if resp.status_code == 429 and attempt < max_attempts - 1:
+                wait = float(resp.headers.get("Retry-After", min(2 ** attempt, 60)))
+                print(f"  [retry] {path} (429 rate limit) — nouvelle tentative dans {wait:.0f}s", file=sys.stderr)
+                time.sleep(wait)
+                continue
             resp.raise_for_status()
             return resp.json()
         except requests.RequestException as exc:
-            if attempt == 3:
+            if attempt == max_attempts - 1:
                 raise
-            wait = 2 ** attempt
+            wait = min(2 ** attempt, 60)
             print(f"  [retry] {path} ({exc}) — nouvelle tentative dans {wait}s", file=sys.stderr)
             time.sleep(wait)
 
@@ -336,10 +346,17 @@ def main():
             print(f"\n=== Round {round_number} — {session.get('circuit_short_name')} "
                   f"(session_key={session_key}) ===")
 
+            # Petite pause entre chaque appel (pas seulement entre courses) :
+            # 5 requêtes à la suite par course a suffi à déclencher le rate
+            # limit (429) d'OpenF1 en pratique après quelques courses.
             laps = api_get("laps", session_key=session_key)
+            time.sleep(0.3)
             stints = api_get("stints", session_key=session_key)
+            time.sleep(0.3)
             weather = api_get("weather", session_key=session_key)
+            time.sleep(0.3)
             race_control = api_get("race_control", session_key=session_key)
+            time.sleep(0.3)
             pit = api_get("pit", session_key=session_key)
 
             pit_laps_by_driver = {}
