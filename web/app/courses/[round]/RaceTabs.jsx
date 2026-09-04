@@ -5,6 +5,7 @@ import { ROUND1_ANALYSE_FR_HTML } from "../1/analyse-fr";
 import { ROUND2_ANALYSE_FR_HTML } from "../2/analyse-fr";
 import { ROUND3_ANALYSE_FR_HTML } from "../3/analyse-fr";
 import { ROUND4_ANALYSE_FR_HTML } from "../4/analyse-fr";
+import { ROUND5_ANALYSE_FR_HTML } from "../5/analyse-fr";
 import { ROUND6_ANALYSE_FR_HTML } from "../6/analyse-fr";
 import { ROUND7_ANALYSE_FR_HTML } from "../7/analyse-fr";
 import { ROUND8_ANALYSE_FR_HTML } from "../8/analyse-fr";
@@ -110,6 +111,11 @@ function AnalyseTab({ round }) {
   if (round === 4) {
     return (
       <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND4_ANALYSE_FR_HTML }} />
+    );
+  }
+  if (round === 5) {
+    return (
+      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND5_ANALYSE_FR_HTML }} />
     );
   }
   if (round === 6) {
