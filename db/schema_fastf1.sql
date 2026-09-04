@@ -115,3 +115,83 @@ CREATE TABLE IF NOT EXISTS overtakes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_overtakes_race ON overtakes(race_id);
+
+-- Séances d'essais libres (EL1/EL2/EL3) — schéma séparé des tables de course
+-- ci-dessus plutôt qu'une extension de celles-ci : une course a exactement
+-- une session de course mais jusqu'à trois séances d'essais, donc la clé
+-- (race_id, car_number, lap_number) des tables course ne suffit plus. On
+-- indexe directement par session_key OpenF1 (identifiant de séance), avec
+-- race_id en FK pour les jointures pratiques.
+--
+-- practice_drivers résout car_number -> pilote/écurie PAR SÉANCE plutôt que
+-- de faire confiance à la grille de course (results) : les EL1 sont parfois
+-- confiées à un pilote de réserve pour la séance rookie obligatoire du
+-- règlement (ex. Iwasa à la place de Verstappen), qui peut ne pas être dans
+-- la table drivers (pilote hors saison complète). Sourcer cette
+-- correspondance depuis l'endpoint `drivers` d'OpenF1, filtré par
+-- session_key, évite de mal attribuer un tour à un pilote.
+CREATE TABLE IF NOT EXISTS practice_sessions (
+    session_key    INTEGER PRIMARY KEY,          -- session_key OpenF1
+    race_id        INTEGER NOT NULL REFERENCES races(race_id) ON DELETE CASCADE,
+    session_name   TEXT NOT NULL,                 -- 'Practice 1' / 'Practice 2' / 'Practice 3'
+    date_start     TIMESTAMPTZ,
+    date_end       TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_practice_sessions_race ON practice_sessions(race_id);
+
+CREATE TABLE IF NOT EXISTS practice_drivers (
+    session_key    INTEGER NOT NULL REFERENCES practice_sessions(session_key) ON DELETE CASCADE,
+    car_number     INTEGER NOT NULL,
+    full_name      TEXT,
+    name_acronym   TEXT,
+    team_name      TEXT,
+    PRIMARY KEY (session_key, car_number)
+);
+
+CREATE TABLE IF NOT EXISTS practice_laps (
+    id                SERIAL PRIMARY KEY,
+    session_key       INTEGER NOT NULL REFERENCES practice_sessions(session_key) ON DELETE CASCADE,
+    car_number        INTEGER NOT NULL,
+    lap_number        INTEGER NOT NULL,
+    lap_start_time    TIMESTAMPTZ,
+    lap_time          NUMERIC(7, 3),      -- secondes (NULL si tour incomplet/entrée stands)
+    sector1_time      NUMERIC(7, 3),
+    sector2_time      NUMERIC(7, 3),
+    sector3_time      NUMERIC(7, 3),
+    speed_i1          NUMERIC(6, 2),
+    speed_i2          NUMERIC(6, 2),
+    speed_st          NUMERIC(6, 2),
+    is_pit_out_lap    BOOLEAN,
+    UNIQUE (session_key, car_number, lap_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_practice_laps_session ON practice_laps(session_key);
+CREATE INDEX IF NOT EXISTS idx_practice_laps_session_car ON practice_laps(session_key, car_number);
+
+CREATE TABLE IF NOT EXISTS practice_stints (
+    id                  SERIAL PRIMARY KEY,
+    session_key         INTEGER NOT NULL REFERENCES practice_sessions(session_key) ON DELETE CASCADE,
+    car_number          INTEGER NOT NULL,
+    stint_number        INTEGER NOT NULL,
+    compound            TEXT,
+    lap_start           INTEGER,
+    lap_end             INTEGER,
+    tyre_age_at_start   NUMERIC
+);
+
+CREATE INDEX IF NOT EXISTS idx_practice_stints_session_car ON practice_stints(session_key, car_number);
+
+CREATE TABLE IF NOT EXISTS practice_weather (
+    id                  SERIAL PRIMARY KEY,
+    session_key         INTEGER NOT NULL REFERENCES practice_sessions(session_key) ON DELETE CASCADE,
+    session_time        INTERVAL NOT NULL,
+    air_temp            NUMERIC(5, 2),
+    track_temp          NUMERIC(5, 2),
+    humidity            NUMERIC(5, 2),
+    rainfall            BOOLEAN,
+    wind_speed          NUMERIC(5, 2),
+    UNIQUE (session_key, session_time)
+);
+
+CREATE INDEX IF NOT EXISTS idx_practice_weather_session ON practice_weather(session_key);

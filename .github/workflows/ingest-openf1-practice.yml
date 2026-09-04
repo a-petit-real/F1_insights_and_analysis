@@ -1,0 +1,38 @@
+name: Ingestion OpenF1 — essais libres (EL1/EL2/EL3)
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2026"
+      round:
+        description: "Round à ingérer"
+        required: true
+      session:
+        description: "Nom de séance OpenF1"
+        required: false
+        default: "Practice 1"
+        type: choice
+        options:
+          - "Practice 1"
+          - "Practice 2"
+          - "Practice 3"
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+      - name: Apply schema (idempotent)
+        run: psql "$DATABASE_URL" -f db/schema_fastf1.sql
+      - run: >
+          python scripts/ingest_openf1_practice.py
+          --season "${{ inputs.season }}"
+          --round "${{ inputs.round }}"
+          --session "${{ inputs.session }}"
