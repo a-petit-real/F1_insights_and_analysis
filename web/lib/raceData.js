@@ -96,6 +96,86 @@ export async function getRaceControlMessages(raceId) {
   );
 }
 
+// --- Essais libres (EL1/EL2/EL3) --------------------------------------
+// Schéma séparé (practice_*, indexé par session_key) des tables course
+// ci-dessus : cf. commentaire en tête de ces tables dans
+// db/schema_fastf1.sql. On résout le pilote depuis practice_drivers
+// (spécifique à la séance) plutôt que results/drivers, qui reflète la
+// grille de course et se tromperait sur un pilote de réserve (ex. séance
+// rookie obligatoire).
+
+export async function getPracticeSessions(raceId) {
+  return query(
+    `SELECT session_key, session_name, date_start, date_end
+     FROM practice_sessions WHERE race_id = $1 ORDER BY date_start`,
+    [raceId]
+  );
+}
+
+export async function getPracticeClassification(sessionKey) {
+  return query(
+    `SELECT pl.car_number, COALESCE(pd.full_name, 'Pilote #' || pl.car_number) AS full_name,
+            pd.name_acronym, pd.team_name, MIN(pl.lap_time) AS best_lap,
+            COUNT(*) FILTER (WHERE pl.lap_time IS NOT NULL) AS timed_laps,
+            COUNT(*) AS total_laps
+     FROM practice_laps pl
+     LEFT JOIN practice_drivers pd ON pd.session_key = pl.session_key AND pd.car_number = pl.car_number
+     WHERE pl.session_key = $1
+     GROUP BY pl.car_number, pd.full_name, pd.name_acronym, pd.team_name
+     ORDER BY best_lap ASC NULLS LAST`,
+    [sessionKey]
+  );
+}
+
+export async function getPracticeLapTimesByDriver(sessionKey) {
+  const rows = await query(
+    `SELECT COALESCE(pd.name_acronym, pd.full_name, 'P#' || pl.car_number) AS label,
+            pl.lap_number, pl.lap_time, pl.is_pit_out_lap
+     FROM practice_laps pl
+     LEFT JOIN practice_drivers pd ON pd.session_key = pl.session_key AND pd.car_number = pl.car_number
+     WHERE pl.session_key = $1 AND pl.lap_time IS NOT NULL
+     ORDER BY label, pl.lap_number`,
+    [sessionKey]
+  );
+  const byDriver = {};
+  for (const row of rows) {
+    if (!byDriver[row.label]) byDriver[row.label] = [];
+    byDriver[row.label].push({
+      lap: row.lap_number,
+      seconds: row.lap_time !== null ? Number(row.lap_time) : null,
+      pitOut: row.is_pit_out_lap,
+    });
+  }
+  return byDriver;
+}
+
+export async function getPracticeStints(sessionKey) {
+  return query(
+    `SELECT COALESCE(pd.name_acronym, pd.full_name, 'P#' || ps.car_number) AS label,
+            ps.stint_number, ps.compound, ps.lap_start, ps.lap_end, ps.tyre_age_at_start
+     FROM practice_stints ps
+     LEFT JOIN practice_drivers pd ON pd.session_key = ps.session_key AND pd.car_number = ps.car_number
+     WHERE ps.session_key = $1
+     ORDER BY label, ps.stint_number`,
+    [sessionKey]
+  );
+}
+
+export async function getPracticeWeather(sessionKey) {
+  const rows = await query(
+    `SELECT EXTRACT(EPOCH FROM session_time) AS t, air_temp, track_temp, humidity, rainfall, wind_speed
+     FROM practice_weather WHERE session_key = $1 ORDER BY session_time`,
+    [sessionKey]
+  );
+  return rows.map((r) => ({
+    minute: Math.round(Number(r.t) / 60),
+    airTemp: r.air_temp !== null ? Number(r.air_temp) : null,
+    trackTemp: r.track_temp !== null ? Number(r.track_temp) : null,
+    humidity: r.humidity !== null ? Number(r.humidity) : null,
+    rainfall: r.rainfall,
+  }));
+}
+
 export async function getOvertakes(raceId) {
   // Jointure sur results deux fois (voiture dépassante / dépassée) pour
   // afficher des noms de pilotes plutôt que des numéros de voiture bruts.

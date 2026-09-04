@@ -12,6 +12,7 @@ import { ROUND8_ANALYSE_FR_HTML } from "../8/analyse-fr";
 import { ROUND9_ANALYSE_FR_HTML } from "../9/analyse-fr";
 import { ROUND10_ANALYSE_FR_HTML } from "../10/analyse-fr";
 import { ROUND11_ANALYSE_FR_HTML } from "../11/analyse-fr";
+import { ROUND13_EL1_FR_HTML } from "../13/el1-fr";
 import {
   ResponsiveContainer,
   LineChart,
@@ -43,18 +44,30 @@ function formatLap(seconds) {
   return `${m}:${s.padStart(6, "0")}`;
 }
 
-export default function RaceTabs({ round, results, lapTimes, tyreStints, weather, rcm, overtakes }) {
+// "Practice 1" (libellé OpenF1) -> "EL1" (libellé maison) — dans cet ordre
+// d'affichage des sous-onglets, quelles que soient les séances déjà
+// ingérées pour ce round.
+const PRACTICE_LABELS = { "Practice 1": "EL1", "Practice 2": "EL2", "Practice 3": "EL3" };
+const PRACTICE_ORDER = ["Practice 1", "Practice 2", "Practice 3"];
+
+export default function RaceTabs({ round, results, lapTimes, tyreStints, weather, rcm, overtakes, practiceData }) {
   const [tab, setTab] = useState("analyse");
+  const practiceSessions = PRACTICE_ORDER.filter((name) => practiceData && practiceData[name]);
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, borderBottom: "1px solid #ddd", marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 8, borderBottom: "1px solid #ddd", marginBottom: 20, flexWrap: "wrap" }}>
         <TabButton active={tab === "analyse"} onClick={() => setTab("analyse")}>
           Analyse
         </TabButton>
         <TabButton active={tab === "raw"} onClick={() => setTab("raw")}>
           Raw data
         </TabButton>
+        {practiceSessions.map((name) => (
+          <TabButton key={name} active={tab === name} onClick={() => setTab(name)}>
+            {PRACTICE_LABELS[name]}
+          </TabButton>
+        ))}
       </div>
 
       {tab === "analyse" && <AnalyseTab round={round} />}
@@ -67,6 +80,9 @@ export default function RaceTabs({ round, results, lapTimes, tyreStints, weather
           rcm={rcm}
           overtakes={overtakes}
         />
+      )}
+      {practiceSessions.includes(tab) && (
+        <PracticeTab round={round} sessionName={tab} data={practiceData[tab]} />
       )}
     </div>
   );
@@ -164,6 +180,172 @@ function AnalyseTab({ round }) {
   );
 }
 
+function PracticeAnalysis({ round, sessionName }) {
+  if (round === 13 && sessionName === "Practice 1") {
+    return <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND13_EL1_FR_HTML }} />;
+  }
+  return (
+    <p style={{ color: "#888", lineHeight: 1.6, fontStyle: "italic", marginBottom: 24 }}>
+      Analyse pas encore rédigée pour cette séance — données brutes disponibles ci-dessous.
+    </p>
+  );
+}
+
+function PracticeTab({ round, sessionName, data }) {
+  const { classification, laps, stints, weather } = data;
+  const driverLabels = Object.keys(laps).sort();
+  const defaultSelected = useMemo(() => {
+    const top5 = classification.slice(0, 5).map((r) => r.name_acronym || r.full_name);
+    return new Set(top5.length ? top5 : driverLabels.slice(0, 5));
+  }, [classification, driverLabels]);
+  const [selected, setSelected] = useState(defaultSelected);
+
+  function toggleDriver(name) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
+
+  const chartData = useMemo(() => {
+    const maxLap = Math.max(0, ...Object.values(laps).flatMap((l) => l.map((entry) => entry.lap)));
+    const rows = [];
+    for (let lap = 1; lap <= maxLap; lap++) {
+      const row = { lap };
+      for (const name of selected) {
+        const entry = (laps[name] || []).find((l) => l.lap === lap);
+        if (entry && entry.seconds && !entry.pitOut) row[name] = entry.seconds;
+      }
+      rows.push(row);
+    }
+    return rows;
+  }, [laps, selected]);
+
+  const stintsByDriver = useMemo(() => {
+    const map = {};
+    for (const s of stints) {
+      if (!map[s.label]) map[s.label] = [];
+      map[s.label].push(s);
+    }
+    return map;
+  }, [stints]);
+  const maxStintLap = Math.max(1, ...stints.map((s) => (s.lap_end ?? 0) - (s.lap_start ?? 0) + 1));
+
+  return (
+    <div style={{ display: "grid", gap: 36 }}>
+      <PracticeAnalysis round={round} sessionName={sessionName} />
+
+      <Section title="Classement par meilleur tour">
+        <div style={{ overflowX: "auto" }}>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                {["Pos", "#", "Pilote", "Écurie", "Meilleur tour", "Tours chronométrés"].map((h) => (
+                  <th key={h} style={thStyle}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {classification.map((r, i) => (
+                <tr key={r.car_number}>
+                  <td style={tdStyle}>{i + 1}</td>
+                  <td style={tdStyle}>{r.car_number}</td>
+                  <td style={tdStyle}>{r.full_name}</td>
+                  <td style={tdStyle}>{r.team_name || ""}</td>
+                  <td style={tdStyle}>{r.best_lap != null ? formatLap(Number(r.best_lap)) : ""}</td>
+                  <td style={tdStyle}>{r.timed_laps}/{r.total_laps}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Section>
+
+      <Section title="Temps au tour">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          {driverLabels.map((name) => (
+            <label key={name} style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+              <input type="checkbox" checked={selected.has(name)} onChange={() => toggleDriver(name)} />
+              {name}
+            </label>
+          ))}
+        </div>
+        <ResponsiveContainer width="100%" height={360}>
+          <LineChart data={chartData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis dataKey="lap" label={{ value: "Tour", position: "insideBottom", offset: -4 }} />
+            <YAxis domain={["dataMin - 1", "dataMax + 1"]} tickFormatter={formatLap} width={82} />
+            <Tooltip formatter={(v) => formatLap(v)} labelFormatter={(l) => `Tour ${l}`} />
+            <Legend />
+            {[...selected].map((name, i) => (
+              <Line
+                key={name}
+                type="monotone"
+                dataKey={name}
+                stroke={DRIVER_LINE_COLORS[i % DRIVER_LINE_COLORS.length]}
+                dot={false}
+                connectNulls
+                strokeWidth={1.5}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </Section>
+
+      <Section title="Relais pneus">
+        <div style={{ display: "grid", gap: 6 }}>
+          {Object.entries(stintsByDriver).map(([name, driverStints]) => (
+            <div key={name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 90, fontSize: 13, flexShrink: 0 }}>{name}</span>
+              <div style={{ display: "flex", flex: 1, height: 20, borderRadius: 4, overflow: "hidden", border: "1px solid #ccc" }}>
+                {driverStints.map((s, i) => {
+                  const laps = (s.lap_end ?? 0) - (s.lap_start ?? 0) + 1;
+                  const width = Math.max(4, (laps / maxStintLap) * 100);
+                  return (
+                    <div
+                      key={i}
+                      title={`${s.compound} — tours ${s.lap_start}-${s.lap_end} (âge au départ : ${s.tyre_age_at_start ?? "?"})`}
+                      style={{
+                        width: `${width}%`,
+                        background: COMPOUND_COLORS[s.compound] || "#999",
+                        borderRight: "1px solid rgba(0,0,0,0.15)",
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 14, marginTop: 12, fontSize: 12, color: "#666" }}>
+          {Object.entries(COMPOUND_COLORS).map(([k, c]) => (
+            <span key={k} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 10, height: 10, background: c, display: "inline-block", borderRadius: 2 }} />
+              {k}
+            </span>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Météo (température piste/air)">
+        <ResponsiveContainer width="100%" height={260}>
+          <LineChart data={weather} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis dataKey="minute" label={{ value: "Minute de session", position: "insideBottom", offset: -4 }} />
+            <YAxis unit="°C" width={50} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="trackTemp" name="Température piste" stroke="#E8002D" dot={false} />
+            <Line type="monotone" dataKey="airTemp" name="Température air" stroke="#1F6FEB" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </Section>
+    </div>
+  );
+}
+
 function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) {
   const driverNames = Object.keys(lapTimes).sort();
   const defaultSelected = useMemo(() => {
@@ -252,7 +434,7 @@ function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) 
             <YAxis
               domain={["dataMin - 1", "dataMax + 1"]}
               tickFormatter={formatLap}
-              width={70}
+              width={82}
             />
             <Tooltip formatter={(v) => formatLap(v)} labelFormatter={(l) => `Tour ${l}`} />
             <Legend />

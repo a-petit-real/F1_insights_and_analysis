@@ -8,6 +8,11 @@ import {
   getWeatherSeries,
   getRaceControlMessages,
   getOvertakes,
+  getPracticeSessions,
+  getPracticeClassification,
+  getPracticeLapTimesByDriver,
+  getPracticeStints,
+  getPracticeWeather,
 } from "../../../lib/raceData";
 import RaceTabs from "./RaceTabs";
 
@@ -19,14 +24,30 @@ export default async function RacePage({ params }) {
   const race = await getRace(season, Number(round));
   if (!race) notFound();
 
-  const [results, lapTimes, tyreStints, weather, rcm, overtakes] = await Promise.all([
+  const [results, lapTimes, tyreStints, weather, rcm, overtakes, practiceSessions] = await Promise.all([
     getResults(race.race_id),
     getLapTimesByDriver(race.race_id),
     getTyreStints(race.race_id),
     getWeatherSeries(race.race_id),
     getRaceControlMessages(race.race_id),
     getOvertakes(race.race_id),
+    getPracticeSessions(race.race_id),
   ]);
+
+  // Une entrée par séance ingérée (0 à 3 : EL1/EL2/EL3) — vide pour tous
+  // les rounds hormis ceux dont le week-end est en cours.
+  const practiceData = {};
+  await Promise.all(
+    practiceSessions.map(async (session) => {
+      const [classification, laps, stints, sessionWeather] = await Promise.all([
+        getPracticeClassification(session.session_key),
+        getPracticeLapTimesByDriver(session.session_key),
+        getPracticeStints(session.session_key),
+        getPracticeWeather(session.session_key),
+      ]);
+      practiceData[session.session_name] = { session, classification, laps, stints, weather: sessionWeather };
+    })
+  );
 
   return (
     <main style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 20px", fontFamily: "system-ui, sans-serif" }}>
@@ -47,6 +68,7 @@ export default async function RacePage({ params }) {
         weather={weather}
         rcm={rcm}
         overtakes={overtakes}
+        practiceData={practiceData}
       />
     </main>
   );
