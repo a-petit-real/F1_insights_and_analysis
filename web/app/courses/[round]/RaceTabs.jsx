@@ -6,8 +6,11 @@ import { ROUND2_ANALYSE_FR_HTML } from "../2/analyse-fr";
 import { ROUND3_ANALYSE_FR_HTML } from "../3/analyse-fr";
 import { ROUND4_ANALYSE_FR_HTML } from "../4/analyse-fr";
 import { ROUND6_ANALYSE_FR_HTML } from "../6/analyse-fr";
+import { ROUND7_ANALYSE_FR_HTML } from "../7/analyse-fr";
+import { ROUND8_ANALYSE_FR_HTML } from "../8/analyse-fr";
 import { ROUND9_ANALYSE_FR_HTML } from "../9/analyse-fr";
 import { ROUND10_ANALYSE_FR_HTML } from "../10/analyse-fr";
+import { ROUND11_ANALYSE_FR_HTML } from "../11/analyse-fr";
 import {
   ResponsiveContainer,
   LineChart,
@@ -114,6 +117,16 @@ function AnalyseTab({ round }) {
       <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND6_ANALYSE_FR_HTML }} />
     );
   }
+  if (round === 7) {
+    return (
+      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND7_ANALYSE_FR_HTML }} />
+    );
+  }
+  if (round === 8) {
+    return (
+      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND8_ANALYSE_FR_HTML }} />
+    );
+  }
   if (round === 9) {
     return (
       <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND9_ANALYSE_FR_HTML }} />
@@ -122,6 +135,11 @@ function AnalyseTab({ round }) {
   if (round === 10) {
     return (
       <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND10_ANALYSE_FR_HTML }} />
+    );
+  }
+  if (round === 11) {
+    return (
+      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND11_ANALYSE_FR_HTML }} />
     );
   }
   if (round === 12) {
