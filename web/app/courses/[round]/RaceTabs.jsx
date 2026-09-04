@@ -3,6 +3,10 @@
 import { useMemo, useState } from "react";
 import { ROUND1_ANALYSE_FR_HTML } from "../1/analyse-fr";
 import { ROUND2_ANALYSE_FR_HTML } from "../2/analyse-fr";
+import { ROUND3_ANALYSE_FR_HTML } from "../3/analyse-fr";
+import { ROUND4_ANALYSE_FR_HTML } from "../4/analyse-fr";
+import { ROUND6_ANALYSE_FR_HTML } from "../6/analyse-fr";
+import { ROUND10_ANALYSE_FR_HTML } from "../10/analyse-fr";
 import {
   ResponsiveContainer,
   LineChart,
@@ -92,6 +96,26 @@ function AnalyseTab({ round }) {
   if (round === 2) {
     return (
       <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND2_ANALYSE_FR_HTML }} />
+    );
+  }
+  if (round === 3) {
+    return (
+      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND3_ANALYSE_FR_HTML }} />
+    );
+  }
+  if (round === 4) {
+    return (
+      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND4_ANALYSE_FR_HTML }} />
+    );
+  }
+  if (round === 6) {
+    return (
+      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND6_ANALYSE_FR_HTML }} />
+    );
+  }
+  if (round === 10) {
+    return (
+      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND10_ANALYSE_FR_HTML }} />
     );
   }
   if (round === 12) {
