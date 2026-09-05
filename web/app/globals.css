@@ -327,3 +327,19 @@
   .cal-tooltip{position:absolute; pointer-events:none; background:var(--surface); border:1px solid var(--border-strong); border-radius:8px; padding:8px 12px; font-size:0.8rem; box-shadow:0 8px 22px rgba(0,0,0,.18); transform:translate(-50%,-115%); white-space:nowrap; opacity:0; transition:opacity .12s ease; z-index:5;}
   .cal-tooltip.show{opacity:1;}
   .cal-tooltip .rnd{font-family:"IBM Plex Mono", monospace; color:var(--text-muted); font-size:0.68rem; display:block; margin-bottom:2px;}
+
+  .cal-zoomctl{display:inline-flex; align-items:center; gap:6px; padding:3px 4px; background:var(--surface-raised); border:1px solid var(--border); border-radius:8px;}
+  .cal-zoomctl button{font-family:"IBM Plex Mono", monospace; font-size:0.78rem; width:26px; height:26px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; line-height:1;}
+  .cal-zoomctl button:hover{border-color:var(--accent); color:var(--accent);}
+  .cal-zoomctl span.mono{font-size:0.72rem; color:var(--text-muted); width:42px; text-align:center;}
+  .cal-zoomctl-preset{width:auto !important; padding:0 10px; white-space:nowrap;}
+  .cal-maphint{text-align:center; font-size:0.68rem; color:var(--text-muted); letter-spacing:0.02em; margin:8px 0 0;}
+  .cal-pin-label{font-family:"IBM Plex Mono", monospace; font-size:11px; fill:var(--text); paint-order:stroke; pointer-events:none;}
+  .cal-pin-label-halo{font-family:"IBM Plex Mono", monospace; font-size:11px; fill:none; stroke:var(--bg); stroke-width:3px; pointer-events:none;}
+
+  /* ---------- Tableau de bord (accueil) ---------- */
+  .dash-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:720px){ .dash-grid{grid-template-columns:1fr;} }
+  .dash-card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:22px 24px;}
+  .dash-card-title{font-family:"Big Shoulders Display", sans-serif; font-size:1.4rem; font-weight:700; margin:0 0 6px; text-wrap:balance;}
+  .dash-card-meta{color:var(--text-muted); font-size:0.86rem; margin:0;}

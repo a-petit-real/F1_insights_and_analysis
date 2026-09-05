@@ -12,7 +12,9 @@ import { ROUND8_ANALYSE_FR_HTML } from "../8/analyse-fr";
 import { ROUND9_ANALYSE_FR_HTML } from "../9/analyse-fr";
 import { ROUND10_ANALYSE_FR_HTML } from "../10/analyse-fr";
 import { ROUND11_ANALYSE_FR_HTML } from "../11/analyse-fr";
+import { ROUND12_ANALYSE_FR_HTML } from "../12/analyse-fr";
 import { ROUND13_EL1_FR_HTML } from "../13/el1-fr";
+import { ROUND13_PREANALYSE_FR_HTML } from "../13/preanalyse-fr";
 import { useRoundSpoilerState } from "../../../lib/spoilerGuard";
 import {
   ResponsiveContainer,
@@ -51,9 +53,22 @@ function formatLap(seconds) {
 const PRACTICE_LABELS = { "Practice 1": "EL1", "Practice 2": "EL2", "Practice 3": "EL3" };
 const PRACTICE_ORDER = ["Practice 1", "Practice 2", "Practice 3"];
 
+// Pré-analyses disponibles par round — écrites avant le week-end, donc
+// jamais gatées par l'anti-spoiler (rien à spoiler dans un pronostic).
+const PREANALYSE_HTML = { 13: ROUND13_PREANALYSE_FR_HTML };
+
 export default function RaceTabs({ round, results, lapTimes, tyreStints, weather, rcm, overtakes, practiceData }) {
-  const [tab, setTab] = useState("analyse");
   const practiceSessions = PRACTICE_ORDER.filter((name) => practiceData && practiceData[name]);
+  const hasPreAnalyse = Boolean(PREANALYSE_HTML[round]);
+  const hasResults = results && results.length > 0;
+  // Onglet par défaut : la dernière chose qui s'est réellement passée pour
+  // ce round — l'analyse si la course a eu lieu, sinon la dernière séance
+  // d'essais ingérée, sinon la pré-analyse.
+  const [tab, setTab] = useState(() => {
+    if (hasResults) return "analyse";
+    if (practiceSessions.length) return practiceSessions[practiceSessions.length - 1];
+    return hasPreAnalyse ? "preanalyse" : "analyse";
+  });
   // Une seule source de vérité pour tout le round, partagée entre les
   // icônes 🔒 des onglets et les panneaux qui bloquent le contenu — cf.
   // le commentaire de useRoundSpoilerState sur le bug de désynchronisation
@@ -62,20 +77,28 @@ export default function RaceTabs({ round, results, lapTimes, tyreStints, weather
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, borderBottom: "1px solid #ddd", marginBottom: 20, flexWrap: "wrap" }}>
+      <div className="tabs" style={{ marginBottom: 24, flexWrap: "wrap" }}>
+        {hasPreAnalyse && (
+          <TabButton active={tab === "preanalyse"} onClick={() => setTab("preanalyse")}>
+            Pré-analyse
+          </TabButton>
+        )}
+        {practiceSessions.map((name) => (
+          <GatedTabButton key={name} spoiler={spoiler} session={PRACTICE_LABELS[name]} active={tab === name} onClick={() => setTab(name)}>
+            {PRACTICE_LABELS[name]}
+          </GatedTabButton>
+        ))}
         <GatedTabButton spoiler={spoiler} session="Race" active={tab === "analyse"} onClick={() => setTab("analyse")}>
           Analyse
         </GatedTabButton>
         <GatedTabButton spoiler={spoiler} session="Race" active={tab === "raw"} onClick={() => setTab("raw")}>
           Raw data
         </GatedTabButton>
-        {practiceSessions.map((name) => (
-          <GatedTabButton key={name} spoiler={spoiler} session={PRACTICE_LABELS[name]} active={tab === name} onClick={() => setTab(name)}>
-            {PRACTICE_LABELS[name]}
-          </GatedTabButton>
-        ))}
       </div>
 
+      {tab === "preanalyse" && hasPreAnalyse && (
+        <div className="prose" dangerouslySetInnerHTML={{ __html: PREANALYSE_HTML[round] }} />
+      )}
       {tab === "analyse" && (
         <SpoilerGate spoiler={spoiler} session="Race" label="l'analyse de cette course">
           <AnalyseTab round={round} />
@@ -123,19 +146,13 @@ function SpoilerGate({ spoiler, session, label, children }) {
   if (spoiler.isWatched(session)) return children;
   return (
     <div style={{
-      border: "1px dashed #ccc", borderRadius: 8, padding: "48px 24px",
-      textAlign: "center", color: "#666", background: "#fafafa",
+      border: "1px dashed var(--border-strong)", borderRadius: 8, padding: "48px 24px",
+      textAlign: "center", color: "var(--text-muted)", background: "var(--surface-raised)",
     }}>
       <p style={{ fontSize: 15, marginBottom: 16 }}>
         🙈 Anti-spoiler activé pour <strong>{label}</strong>.
       </p>
-      <button
-        onClick={() => spoiler.markWatched(session)}
-        style={{
-          padding: "10px 20px", borderRadius: 6, border: "1px solid #8B2FA0",
-          background: "#8B2FA0", color: "#fff", cursor: "pointer", fontSize: 14,
-        }}
-      >
+      <button className="bridge-btn" onClick={() => spoiler.markWatched(session)}>
         J'ai regardé — afficher
       </button>
     </div>
@@ -144,19 +161,7 @@ function SpoilerGate({ spoiler, session, label, children }) {
 
 function TabButton({ active, onClick, children }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "10px 18px",
-        border: "none",
-        borderBottom: active ? "2px solid #8B2FA0" : "2px solid transparent",
-        background: "none",
-        fontWeight: active ? 600 : 400,
-        color: active ? "#8B2FA0" : "#444",
-        cursor: "pointer",
-        fontSize: 15,
-      }}
-    >
+    <button className="tabbtn" aria-selected={active} onClick={onClick}>
       {children}
     </button>
   );
@@ -220,11 +225,7 @@ function AnalyseTab({ round }) {
   }
   if (round === 12) {
     return (
-      <p style={{ color: "#666", lineHeight: 1.6 }}>
-        L'analyse de cette course (GP des Pays-Bas) est déjà rédigée et publiée sur{" "}
-        <a href="/">la page d'accueil de The Pit Wall</a>. Elle sera déplacée ici une fois
-        l'architecture multi-courses stabilisée.
-      </p>
+      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND12_ANALYSE_FR_HTML }} />
     );
   }
   return (
@@ -617,5 +618,5 @@ function Section({ title, children }) {
 }
 
 const tableStyle = { width: "100%", borderCollapse: "collapse", fontSize: 13 };
-const thStyle = { textAlign: "left", padding: "6px 10px", borderBottom: "2px solid #ddd", background: "#fafafa" };
-const tdStyle = { padding: "6px 10px", borderBottom: "1px solid #eee" };
+const thStyle = { textAlign: "left", padding: "6px 10px", borderBottom: "2px solid var(--border-strong)", background: "var(--surface-raised)", color: "var(--text-muted)" };
+const tdStyle = { padding: "6px 10px", borderBottom: "1px solid var(--border)" };

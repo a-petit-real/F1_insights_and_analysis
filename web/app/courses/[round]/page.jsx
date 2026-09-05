@@ -50,14 +50,14 @@ export default async function RacePage({ params }) {
   );
 
   return (
-    <main style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 20px", fontFamily: "system-ui, sans-serif" }}>
-      <p style={{ color: "#666", marginBottom: 4 }}>
+    <main style={{ paddingTop: 32 }}>
+      <p style={{ color: "var(--text-muted)", marginBottom: 4 }}>
         <Link href="/courses">← Toutes les courses</Link>
       </p>
       <h1 style={{ fontSize: 28, marginBottom: 4 }}>
         Round {race.round} — {race.race_name}
       </h1>
-      <p style={{ color: "#888", marginBottom: 24 }}>
+      <p style={{ color: "var(--text-muted)", marginBottom: 24 }}>
         {race.circuit_name}, {race.country} · {new Date(race.race_date).toLocaleDateString("fr-FR")}
       </p>
       <RaceTabs

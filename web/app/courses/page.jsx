@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getSeasonSchedule } from "../../lib/raceData";
 import { CIRCUIT_GEO, FALLBACK_GEO, raceStatus } from "../../lib/circuitGeo";
 import SeasonCalendar from "./SeasonCalendar";
@@ -20,10 +19,7 @@ export default async function CoursesIndex() {
 
   return (
     <main style={{ paddingTop: 32 }}>
-      <h1 style={{ fontSize: 28, marginBottom: 4 }}>Saison {season}</h1>
-      <p style={{ color: "var(--text-muted)", marginBottom: 24 }}>
-        <Link href="/">← Retour à The Pit Wall</Link> · <Link href="/classement">Classement</Link>
-      </p>
+      <h1 style={{ fontSize: 28, marginBottom: 24 }}>Saison {season}</h1>
       <SeasonCalendar races={races} />
     </main>
   );

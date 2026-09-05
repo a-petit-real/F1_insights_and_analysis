@@ -1,17 +1,43 @@
-'use client';
+import {
+  getSeasonSchedule,
+  getResults,
+  getDriverStandingsAllRounds,
+  getConstructorStandingsAllRounds,
+} from "../lib/raceData";
+import { CIRCUIT_GEO, FALLBACK_GEO, raceStatus } from "../lib/circuitGeo";
+import HomeDashboard from "./HomeDashboard";
 
-import { useEffect } from 'react';
-import { PAGE_BODY_HTML } from './content';
-import { initPitWall } from './pitwall-behavior';
+export const dynamic = "force-dynamic";
 
-export default function HomePage() {
-  useEffect(() => {
-    const cleanup = initPitWall();
-    return cleanup;
-  }, []);
+export default async function HomePage() {
+  const season = 2026;
+  const today = new Date();
 
-  // Contenu porté tel quel depuis la maquette validée ; l'effet ci-dessus
-  // rebranche l'interactivité (onglets, sommaire, aperçus de lien...) une
-  // fois le HTML monté.
-  return <div dangerouslySetInnerHTML={{ __html: PAGE_BODY_HTML }} />;
+  const schedule = await getSeasonSchedule(season);
+  const races = schedule.map((r) => ({
+    ...r,
+    status: raceStatus(r.race_date, today),
+    geo: CIRCUIT_GEO[r.circuit_name] || FALLBACK_GEO,
+  }));
+
+  const lastCompletedRace = [...races].reverse().find((r) => r.status === "done");
+  const nextRace = races.find((r) => r.status !== "done");
+
+  const [lastResults, driversByRound, constructorsByRound] = await Promise.all([
+    lastCompletedRace ? getResults(lastCompletedRace.race_id) : Promise.resolve([]),
+    getDriverStandingsAllRounds(season),
+    getConstructorStandingsAllRounds(season),
+  ]);
+
+  const lastCompleted = lastCompletedRace ? { ...lastCompletedRace, results: lastResults } : null;
+
+  return (
+    <HomeDashboard
+      lastCompleted={lastCompleted}
+      nextRace={nextRace}
+      races={races}
+      driversByRound={driversByRound}
+      constructorsByRound={constructorsByRound}
+    />
+  );
 }
