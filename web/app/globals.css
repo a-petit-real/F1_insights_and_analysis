@@ -287,3 +287,43 @@
     .reveal{opacity:0; transform:translateY(10px); transition:opacity .5s ease, transform .5s ease;}
     .reveal.in{opacity:1; transform:none;}
   }
+
+  /* ---------- Calendrier de saison (liste / carte) ---------- */
+  .cal-status{display:flex; flex-wrap:wrap; gap:16px; align-items:center; font-family:"IBM Plex Mono", monospace; font-size:0.78rem; color:var(--text-muted); margin-bottom:16px;}
+  .cal-status b{color:var(--text);}
+  .cal-dot{width:9px; height:9px; border-radius:50%; display:inline-block; flex:none; vertical-align:middle; margin-right:2px;}
+  .cal-dot.done{background:var(--accent); border:none;}
+  .cal-dot.live{background:var(--bad); border:none; box-shadow:0 0 0 3px color-mix(in srgb, var(--bad) 22%, transparent);}
+  .cal-dot.upcoming{background:transparent; border:2px solid var(--text-muted);}
+
+  .cal-toggle{display:inline-flex; gap:4px; padding:3px; background:var(--surface-raised); border:1px solid var(--border); border-radius:8px; margin-bottom:18px;}
+  .cal-toggle button{font-family:"IBM Plex Mono", monospace; font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase; padding:7px 14px; border-radius:6px; border:none; background:transparent; color:var(--text-muted); cursor:pointer;}
+  .cal-toggle button[aria-selected="true"]{background:var(--accent); color:var(--accent-ink);}
+
+  .cal-row{display:grid; grid-template-columns:52px 1fr auto auto; align-items:center; gap:12px; padding:11px 14px; border-radius:8px; text-decoration:none; color:var(--text);}
+  .cal-row:hover{background:var(--surface-raised);}
+  .cal-row .rnd{font-family:"IBM Plex Mono", monospace; color:var(--text-muted); font-size:0.78rem;}
+  .cal-row .gp .circ{display:block; color:var(--text-muted); font-size:0.78rem; font-weight:400;}
+  .cal-row .when{font-family:"IBM Plex Mono", monospace; font-size:0.76rem; color:var(--text-muted); white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .cal-badge{font-family:"IBM Plex Mono", monospace; font-size:0.66rem; padding:3px 8px; border-radius:999px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;}
+  .cal-badge.done{background:color-mix(in srgb, var(--accent) 14%, transparent); color:var(--accent);}
+  .cal-badge.live{background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--bad);}
+  .cal-badge.upcoming{background:var(--surface-raised); color:var(--text-muted); border:1px solid var(--border);}
+
+  .cal-map{position:relative; width:100%; aspect-ratio:2/1;}
+  .cal-map svg{width:100%; height:100%; display:block;}
+  .cal-pin{cursor:pointer;}
+  .cal-pin circle.ring{fill:none; stroke:var(--bad); stroke-width:2; opacity:0;}
+  @media (prefers-reduced-motion: no-preference){
+    .cal-pin.is-live circle.ring{animation:cal-pulse 2.2s ease-out infinite;}
+    .cal-route-todo{animation:cal-dash 16s linear infinite;}
+  }
+  @keyframes cal-pulse{0%{r:7; opacity:.9;} 100%{r:18; opacity:0;}}
+  @keyframes cal-dash{to{stroke-dashoffset:-160;}}
+  .cal-route-done{fill:none; stroke:var(--accent); stroke-width:1.8;}
+  .cal-route-todo{fill:none; stroke:var(--text-muted); stroke-width:1.2; stroke-dasharray:3 5; opacity:.5;}
+  .cal-pin:focus-visible circle.core{stroke:var(--text) !important; stroke-width:2 !important;}
+
+  .cal-tooltip{position:absolute; pointer-events:none; background:var(--surface); border:1px solid var(--border-strong); border-radius:8px; padding:8px 12px; font-size:0.8rem; box-shadow:0 8px 22px rgba(0,0,0,.18); transform:translate(-50%,-115%); white-space:nowrap; opacity:0; transition:opacity .12s ease; z-index:5;}
+  .cal-tooltip.show{opacity:1;}
+  .cal-tooltip .rnd{font-family:"IBM Plex Mono", monospace; color:var(--text-muted); font-size:0.68rem; display:block; margin-bottom:2px;}
