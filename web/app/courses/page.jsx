@@ -12,7 +12,7 @@ export default async function CoursesIndex() {
     <main style={{ maxWidth: 880, margin: "0 auto", padding: "32px 20px", fontFamily: "system-ui, sans-serif" }}>
       <h1 style={{ fontSize: 28, marginBottom: 4 }}>Saison {season}</h1>
       <p style={{ color: "#666", marginBottom: 24 }}>
-        <Link href="/">← Retour à The Pit Wall</Link>
+        <Link href="/">← Retour à The Pit Wall</Link> · <Link href="/classement">Classement</Link>
       </p>
       <div style={{ display: "grid", gap: 10 }}>
         {races.map((r) => {

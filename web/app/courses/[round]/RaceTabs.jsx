@@ -13,6 +13,7 @@ import { ROUND9_ANALYSE_FR_HTML } from "../9/analyse-fr";
 import { ROUND10_ANALYSE_FR_HTML } from "../10/analyse-fr";
 import { ROUND11_ANALYSE_FR_HTML } from "../11/analyse-fr";
 import { ROUND13_EL1_FR_HTML } from "../13/el1-fr";
+import { useRoundSpoilerState } from "../../../lib/spoilerGuard";
 import {
   ResponsiveContainer,
   LineChart,
@@ -53,37 +54,90 @@ const PRACTICE_ORDER = ["Practice 1", "Practice 2", "Practice 3"];
 export default function RaceTabs({ round, results, lapTimes, tyreStints, weather, rcm, overtakes, practiceData }) {
   const [tab, setTab] = useState("analyse");
   const practiceSessions = PRACTICE_ORDER.filter((name) => practiceData && practiceData[name]);
+  // Une seule source de vérité pour tout le round, partagée entre les
+  // icônes 🔒 des onglets et les panneaux qui bloquent le contenu — cf.
+  // le commentaire de useRoundSpoilerState sur le bug de désynchronisation
+  // que ça évite.
+  const spoiler = useRoundSpoilerState(round);
 
   return (
     <div>
       <div style={{ display: "flex", gap: 8, borderBottom: "1px solid #ddd", marginBottom: 20, flexWrap: "wrap" }}>
-        <TabButton active={tab === "analyse"} onClick={() => setTab("analyse")}>
+        <GatedTabButton spoiler={spoiler} session="Race" active={tab === "analyse"} onClick={() => setTab("analyse")}>
           Analyse
-        </TabButton>
-        <TabButton active={tab === "raw"} onClick={() => setTab("raw")}>
+        </GatedTabButton>
+        <GatedTabButton spoiler={spoiler} session="Race" active={tab === "raw"} onClick={() => setTab("raw")}>
           Raw data
-        </TabButton>
+        </GatedTabButton>
         {practiceSessions.map((name) => (
-          <TabButton key={name} active={tab === name} onClick={() => setTab(name)}>
+          <GatedTabButton key={name} spoiler={spoiler} session={PRACTICE_LABELS[name]} active={tab === name} onClick={() => setTab(name)}>
             {PRACTICE_LABELS[name]}
-          </TabButton>
+          </GatedTabButton>
         ))}
       </div>
 
-      {tab === "analyse" && <AnalyseTab round={round} />}
+      {tab === "analyse" && (
+        <SpoilerGate spoiler={spoiler} session="Race" label="l'analyse de cette course">
+          <AnalyseTab round={round} />
+        </SpoilerGate>
+      )}
       {tab === "raw" && (
-        <RawDataTab
-          results={results}
-          lapTimes={lapTimes}
-          tyreStints={tyreStints}
-          weather={weather}
-          rcm={rcm}
-          overtakes={overtakes}
-        />
+        <SpoilerGate spoiler={spoiler} session="Race" label="les données de course">
+          <RawDataTab
+            results={results}
+            lapTimes={lapTimes}
+            tyreStints={tyreStints}
+            weather={weather}
+            rcm={rcm}
+            overtakes={overtakes}
+          />
+        </SpoilerGate>
       )}
       {practiceSessions.includes(tab) && (
-        <PracticeTab round={round} sessionName={tab} data={practiceData[tab]} />
+        <SpoilerGate spoiler={spoiler} session={PRACTICE_LABELS[tab]} label={PRACTICE_LABELS[tab]}>
+          <PracticeTab round={round} sessionName={tab} data={practiceData[tab]} />
+        </SpoilerGate>
       )}
+    </div>
+  );
+}
+
+// Enveloppe une bascule tab standard d'un petit indicateur 🔒 si la séance
+// n'est pas encore marquée vue — purement indicatif, le clic garde son
+// comportement normal ; c'est SpoilerGate qui bloque réellement le contenu.
+function GatedTabButton({ spoiler, session, active, onClick, children }) {
+  const locked = spoiler.hydrated && !spoiler.isWatched(session);
+  return (
+    <TabButton active={active} onClick={onClick}>
+      {children}
+      {locked ? " 🔒" : ""}
+    </TabButton>
+  );
+}
+
+// Bloque l'affichage d'un panneau tant que sa séance n'est pas marquée vue.
+// Un clic sur l'onglet ne suffit donc pas à révéler le contenu : il faut
+// confirmer explicitement via ce bouton.
+function SpoilerGate({ spoiler, session, label, children }) {
+  if (!spoiler.hydrated) return null; // évite un flash de contenu avant l'hydratation
+  if (spoiler.isWatched(session)) return children;
+  return (
+    <div style={{
+      border: "1px dashed #ccc", borderRadius: 8, padding: "48px 24px",
+      textAlign: "center", color: "#666", background: "#fafafa",
+    }}>
+      <p style={{ fontSize: 15, marginBottom: 16 }}>
+        🙈 Anti-spoiler activé pour <strong>{label}</strong>.
+      </p>
+      <button
+        onClick={() => spoiler.markWatched(session)}
+        style={{
+          padding: "10px 20px", borderRadius: 6, border: "1px solid #8B2FA0",
+          background: "#8B2FA0", color: "#fff", cursor: "pointer", fontSize: 14,
+        }}
+      >
+        J'ai regardé — afficher
+      </button>
     </div>
   );
 }

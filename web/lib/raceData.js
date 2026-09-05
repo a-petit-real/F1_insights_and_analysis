@@ -176,6 +176,54 @@ export async function getPracticeWeather(sessionKey) {
   }));
 }
 
+// --- Classements généraux (feature anti-spoiler) -----------------------
+// driver_standings/constructor_standings sont un instantané PAR ROUND
+// (alimenté par ingest_jolpica.py) — jamais interrogé côté web jusqu'ici.
+// On récupère tous les rounds d'un coup (13 rounds x ~23 pilotes reste
+// minuscule) pour que le composant client puisse choisir la bonne coupe
+// selon le round "frontière" anti-spoiler sans aller-retour serveur.
+
+export async function getDriverStandingsAllRounds(season) {
+  const rows = await query(
+    `SELECT ds.round, ds.position, ds.points, ds.wins, d.given_name, d.family_name, c.name AS team_name
+     FROM driver_standings ds
+     JOIN drivers d ON d.driver_id = ds.driver_id
+     LEFT JOIN LATERAL (
+       SELECT co.name FROM results res
+       JOIN constructors co ON co.constructor_id = res.constructor_id
+       JOIN races r ON r.race_id = res.race_id
+       WHERE r.season = ds.season AND r.round = ds.round AND res.driver_id = ds.driver_id
+       LIMIT 1
+     ) c ON true
+     WHERE ds.season = $1
+     ORDER BY ds.round, ds.position NULLS LAST`,
+    [season]
+  );
+  const byRound = {};
+  for (const row of rows) {
+    if (!byRound[row.round]) byRound[row.round] = [];
+    byRound[row.round].push(row);
+  }
+  return byRound;
+}
+
+export async function getConstructorStandingsAllRounds(season) {
+  const rows = await query(
+    `SELECT cs.round, cs.position, cs.points, cs.wins, c.name AS team_name
+     FROM constructor_standings cs
+     JOIN constructors c ON c.constructor_id = cs.constructor_id
+     WHERE cs.season = $1
+     ORDER BY cs.round, cs.position NULLS LAST`,
+    [season]
+  );
+  const byRound = {};
+  for (const row of rows) {
+    if (!byRound[row.round]) byRound[row.round] = [];
+    byRound[row.round].push(row);
+  }
+  return byRound;
+}
+
 export async function getOvertakes(raceId) {
   // Jointure sur results deux fois (voiture dépassante / dépassée) pour
   // afficher des noms de pilotes plutôt que des numéros de voiture bruts.
