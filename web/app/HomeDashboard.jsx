@@ -51,7 +51,7 @@ function LastResultCard({ race }) {
     <div className="dash-card">
       <p className="eyebrow" style={{ marginBottom: 8 }}>Dernier résultat</p>
       <h3 className="dash-card-title">
-        {race.geo.flag} {race.race_name}
+        <span className="geo-code">{race.geo.code}</span> {race.race_name}
       </h3>
       <p className="dash-card-meta">
         {race.circuit_name}, {race.country} · {new Date(race.race_date).toLocaleDateString("fr-FR")}
@@ -94,7 +94,7 @@ function NextRaceCard({ race }) {
     <div className="dash-card">
       <p className="eyebrow" style={{ marginBottom: 8 }}>Prochain Grand Prix</p>
       <h3 className="dash-card-title">
-        {race.geo.flag} {race.race_name}
+        <span className="geo-code">{race.geo.code}</span> {race.race_name}
       </h3>
       <p className="dash-card-meta">
         {race.circuit_name}, {race.country} · {new Date(race.race_date).toLocaleDateString("fr-FR")}

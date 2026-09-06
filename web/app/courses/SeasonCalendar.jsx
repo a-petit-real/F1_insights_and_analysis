@@ -70,7 +70,6 @@ export default function SeasonCalendar({ races }) {
   // manquait pour lire l'Europe : agrandir la géographie sans agrandir
   // les pins jusqu'à l'illisible.
   const toScreen = useCallback((x, y) => ({ sx: cam.panX + x * cam.zoom, sy: cam.panY + y * cam.zoom }), [cam]);
-  const toWorld = useCallback((sx, sy) => ({ x: (sx - cam.panX) / cam.zoom, y: (sy - cam.panY) / cam.zoom }), [cam]);
 
   function vbPointFromEvent(e) {
     const svg = svgRef.current;
@@ -192,7 +191,7 @@ export default function SeasonCalendar({ races }) {
         <span><b>{races.length}</b> courses</span>
         <span><span className="cal-dot done" /> <b>{doneCount}</b> disputée{doneCount > 1 ? "s" : ""}</span>
         {liveRace && (
-          <span><span className="cal-dot live" /> <b>{liveRace.geo.flag} {liveRace.race_name}</b> ce week-end</span>
+          <span><span className="cal-dot live" /> <b><span className="geo-code">{liveRace.geo.code}</span> {liveRace.race_name}</b> ce week-end</span>
         )}
         <span><span className="cal-dot upcoming" /> <b>{upcomingCount}</b> à venir</span>
       </div>
@@ -229,7 +228,7 @@ export default function SeasonCalendar({ races }) {
             <Link key={r.round} href={`/courses/${r.round}`} className="cal-row">
               <span className="rnd">R{r.round}</span>
               <span className="gp">
-                {r.geo.flag} {r.race_name}
+                <span className="geo-code">{r.geo.code}</span> {r.race_name}
                 <span className="circ">{r.circuit_name}, {r.country}</span>
               </span>
               <span className={`cal-badge ${r.status}`}>
@@ -312,8 +311,8 @@ export default function SeasonCalendar({ races }) {
                     />
                     {showLabels && (
                       <>
-                        <text x={sx + 10} y={sy + 4} className="cal-pin-label-halo">{r.geo.flag} R{r.round}</text>
-                        <text x={sx + 10} y={sy + 4} className="cal-pin-label">{r.geo.flag} R{r.round}</text>
+                        <text x={sx + 10} y={sy + 4} className="cal-pin-label-halo">{r.geo.code} R{r.round}</text>
+                        <text x={sx + 10} y={sy + 4} className="cal-pin-label">{r.geo.code} R{r.round}</text>
                       </>
                     )}
                   </g>
@@ -331,7 +330,7 @@ export default function SeasonCalendar({ races }) {
               })()}
             >
               <span className="rnd">Round {tooltip.round} · {STATUS_LABEL[tooltip.status]}</span>
-              {tooltip.geo.flag} {tooltip.race_name} — {new Date(tooltip.race_date).toLocaleDateString("fr-FR")}
+              <span className="geo-code">{tooltip.geo.code}</span> {tooltip.race_name} — {new Date(tooltip.race_date).toLocaleDateString("fr-FR")}
             </div>
           )}
         </div>

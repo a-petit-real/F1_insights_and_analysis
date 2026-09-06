@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLangPref } from "../../lib/langPref";
 
 // En-tête partagé par toutes les pages (accueil, courses, classement) —
 // remplace le bandeau qui n'existait jusqu'ici qu'à l'intérieur du HTML
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
 
 export default function SiteHeader() {
   const pathname = usePathname();
+  const { lang, hydrated, toggle } = useLangPref();
   return (
     <header className="masthead">
       <div className="masthead-inner">
@@ -45,6 +47,24 @@ export default function SiteHeader() {
             );
           })}
         </nav>
+        <button
+          type="button"
+          className="langtoggle"
+          onClick={toggle}
+          aria-label={lang === "en" ? "Switch to French" : "Passer en anglais"}
+          title={hydrated ? (lang === "en" ? "Switch to French" : "Passer en anglais") : undefined}
+        >
+          <svg className="wheel-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3.5" y="7" width="17" height="12.5" rx="5" />
+            <path d="M8.5 7 Q12 3 15.5 7" />
+            <circle cx="12" cy="13.5" r="1.7" />
+            <path d="M12 13.5 L6.5 17" />
+            <path d="M12 13.5 L17.5 17" />
+            <circle cx="7" cy="11.5" r="0.9" fill="currentColor" stroke="none" />
+            <circle cx="17" cy="11.5" r="0.9" fill="currentColor" stroke="none" />
+          </svg>
+          <span className="langlabel">{hydrated ? lang.toUpperCase() : "FR"}</span>
+        </button>
       </div>
     </header>
   );

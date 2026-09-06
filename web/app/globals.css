@@ -337,6 +337,9 @@
   .cal-pin-label{font-family:"IBM Plex Mono", monospace; font-size:11px; fill:var(--text); paint-order:stroke; pointer-events:none;}
   .cal-pin-label-halo{font-family:"IBM Plex Mono", monospace; font-size:11px; fill:none; stroke:var(--bg); stroke-width:3px; pointer-events:none;}
 
+  /* ---------- Code pays (remplace les drapeaux emoji, cf. circuitGeo.js) ---------- */
+  .geo-code{font-family:"IBM Plex Mono", monospace; font-size:0.72em; font-weight:600; letter-spacing:0.03em; color:var(--text-muted); background:var(--surface-raised); border:1px solid var(--border); border-radius:4px; padding:1px 5px; white-space:nowrap;}
+
   /* ---------- Tableau de bord (accueil) ---------- */
   .dash-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
   @media (max-width:720px){ .dash-grid{grid-template-columns:1fr;} }

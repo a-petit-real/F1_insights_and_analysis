@@ -13,9 +13,12 @@ import { ROUND9_ANALYSE_FR_HTML } from "../9/analyse-fr";
 import { ROUND10_ANALYSE_FR_HTML } from "../10/analyse-fr";
 import { ROUND11_ANALYSE_FR_HTML } from "../11/analyse-fr";
 import { ROUND12_ANALYSE_FR_HTML } from "../12/analyse-fr";
+import { ROUND12_ANALYSE_EN_HTML } from "../12/analyse-en";
 import { ROUND13_EL1_FR_HTML } from "../13/el1-fr";
 import { ROUND13_PREANALYSE_FR_HTML } from "../13/preanalyse-fr";
+import { ROUND13_PREANALYSE_EN_HTML } from "../13/preanalyse-en";
 import { useRoundSpoilerState } from "../../../lib/spoilerGuard";
+import { useLangPref } from "../../../lib/langPref";
 import {
   ResponsiveContainer,
   LineChart,
@@ -55,12 +58,19 @@ const PRACTICE_ORDER = ["Practice 1", "Practice 2", "Practice 3"];
 
 // Pré-analyses disponibles par round — écrites avant le week-end, donc
 // jamais gatées par l'anti-spoiler (rien à spoiler dans un pronostic).
-const PREANALYSE_HTML = { 13: ROUND13_PREANALYSE_FR_HTML };
+const PREANALYSE_FR_HTML = { 13: ROUND13_PREANALYSE_FR_HTML };
+const PREANALYSE_EN_HTML = { 13: ROUND13_PREANALYSE_EN_HTML };
+
+// Traductions disponibles par round pour l'onglet Analyse — seuls les
+// rounds listés ici ont une version anglaise ; les autres restent en
+// français avec une note plutôt que de faire semblant d'avoir traduit.
+const ANALYSE_EN_HTML = { 12: ROUND12_ANALYSE_EN_HTML };
 
 export default function RaceTabs({ round, results, lapTimes, tyreStints, weather, rcm, overtakes, practiceData }) {
   const practiceSessions = PRACTICE_ORDER.filter((name) => practiceData && practiceData[name]);
-  const hasPreAnalyse = Boolean(PREANALYSE_HTML[round]);
+  const hasPreAnalyse = Boolean(PREANALYSE_FR_HTML[round]);
   const hasResults = results && results.length > 0;
+  const { lang, hydrated: langHydrated } = useLangPref();
   // Onglet par défaut : la dernière chose qui s'est réellement passée pour
   // ce round — l'analyse si la course a eu lieu, sinon la dernière séance
   // d'essais ingérée, sinon la pré-analyse.
@@ -97,11 +107,16 @@ export default function RaceTabs({ round, results, lapTimes, tyreStints, weather
       </div>
 
       {tab === "preanalyse" && hasPreAnalyse && (
-        <div className="prose" dangerouslySetInnerHTML={{ __html: PREANALYSE_HTML[round] }} />
+        <div className="prose">
+          {langHydrated && lang === "en" && !PREANALYSE_EN_HTML[round] && (
+            <p className="note" style={{ marginBottom: 16 }}>This preview isn't translated to English yet — showing the French version.</p>
+          )}
+          <div dangerouslySetInnerHTML={{ __html: lang === "en" && PREANALYSE_EN_HTML[round] ? PREANALYSE_EN_HTML[round] : PREANALYSE_FR_HTML[round] }} />
+        </div>
       )}
       {tab === "analyse" && (
         <SpoilerGate spoiler={spoiler} session="Race" label="l'analyse de cette course">
-          <AnalyseTab round={round} />
+          <AnalyseTab round={round} lang={lang} langHydrated={langHydrated} />
         </SpoilerGate>
       )}
       {tab === "raw" && (
@@ -167,71 +182,41 @@ function TabButton({ active, onClick, children }) {
   );
 }
 
-function AnalyseTab({ round }) {
-  if (round === 1) {
+// FR obligatoire pour tout round rédigé ; EN seulement pour ceux qui ont
+// une vraie traduction (cf. commentaire sur ANALYSE_EN_HTML plus haut).
+const ANALYSE_FR_HTML = {
+  1: ROUND1_ANALYSE_FR_HTML,
+  2: ROUND2_ANALYSE_FR_HTML,
+  3: ROUND3_ANALYSE_FR_HTML,
+  4: ROUND4_ANALYSE_FR_HTML,
+  5: ROUND5_ANALYSE_FR_HTML,
+  6: ROUND6_ANALYSE_FR_HTML,
+  7: ROUND7_ANALYSE_FR_HTML,
+  8: ROUND8_ANALYSE_FR_HTML,
+  9: ROUND9_ANALYSE_FR_HTML,
+  10: ROUND10_ANALYSE_FR_HTML,
+  11: ROUND11_ANALYSE_FR_HTML,
+  12: ROUND12_ANALYSE_FR_HTML,
+};
+
+function AnalyseTab({ round, lang, langHydrated }) {
+  const frHtml = ANALYSE_FR_HTML[round];
+  if (!frHtml) {
     return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND1_ANALYSE_FR_HTML }} />
+      <p style={{ color: "#888", lineHeight: 1.6, fontStyle: "italic" }}>
+        Analyse pas encore rédigée pour cette course.
+      </p>
     );
   }
-  if (round === 2) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND2_ANALYSE_FR_HTML }} />
-    );
-  }
-  if (round === 3) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND3_ANALYSE_FR_HTML }} />
-    );
-  }
-  if (round === 4) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND4_ANALYSE_FR_HTML }} />
-    );
-  }
-  if (round === 5) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND5_ANALYSE_FR_HTML }} />
-    );
-  }
-  if (round === 6) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND6_ANALYSE_FR_HTML }} />
-    );
-  }
-  if (round === 7) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND7_ANALYSE_FR_HTML }} />
-    );
-  }
-  if (round === 8) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND8_ANALYSE_FR_HTML }} />
-    );
-  }
-  if (round === 9) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND9_ANALYSE_FR_HTML }} />
-    );
-  }
-  if (round === 10) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND10_ANALYSE_FR_HTML }} />
-    );
-  }
-  if (round === 11) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND11_ANALYSE_FR_HTML }} />
-    );
-  }
-  if (round === 12) {
-    return (
-      <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND12_ANALYSE_FR_HTML }} />
-    );
-  }
+  const enHtml = ANALYSE_EN_HTML[round];
+  const showEn = lang === "en" && Boolean(enHtml);
   return (
-    <p style={{ color: "#888", lineHeight: 1.6, fontStyle: "italic" }}>
-      Analyse pas encore rédigée pour cette course.
-    </p>
+    <div className="prose">
+      {langHydrated && lang === "en" && !showEn && (
+        <p className="note" style={{ marginBottom: 16 }}>This article isn't translated to English yet — showing the French version.</p>
+      )}
+      <div dangerouslySetInnerHTML={{ __html: showEn ? enHtml : frHtml }} />
+    </div>
   );
 }
 
