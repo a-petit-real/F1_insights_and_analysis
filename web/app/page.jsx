@@ -20,15 +20,27 @@ export default async function HomePage() {
     geo: CIRCUIT_GEO[r.circuit_name] || FALLBACK_GEO,
   }));
 
-  const lastCompletedRace = [...races].reverse().find((r) => r.status === "done");
-  const nextRace = races.find((r) => r.status !== "done");
-
-  const [lastResults, driversByRound, constructorsByRound] = await Promise.all([
-    lastCompletedRace ? getResults(lastCompletedRace.race_id) : Promise.resolve([]),
+  const [driversByRound, constructorsByRound] = await Promise.all([
     getDriverStandingsAllRounds(season),
     getConstructorStandingsAllRounds(season),
   ]);
 
+  // "Dernier résultat" / "Prochain GP" : déterminé par la présence réelle de
+  // données (round présent dans driver_standings, alimenté par la même
+  // ingestion jolpica que les résultats) plutôt que par la date du calendrier
+  // comparée à aujourd'hui. raceStatus() classe un Grand Prix disputé LE JOUR
+  // MÊME comme "live", jamais "done" — ce qui, une fois les résultats
+  // réellement ingérés dans l'après-midi, laissait la page d'accueil afficher
+  // l'avant-dernière course comme "dernier résultat" et la course déjà
+  // disputée comme "prochain GP" jusqu'au lendemain. La présence réelle de
+  // données est la seule source de vérité qui ne prend jamais ce genre de
+  // retard.
+  const completedRounds = Object.keys(driversByRound).map(Number);
+  const lastCompletedRound = completedRounds.length ? Math.max(...completedRounds) : null;
+  const lastCompletedRace = lastCompletedRound ? races.find((r) => r.round === lastCompletedRound) : null;
+  const nextRace = races.find((r) => (lastCompletedRound ? r.round > lastCompletedRound : true));
+
+  const lastResults = lastCompletedRace ? await getResults(lastCompletedRace.race_id) : [];
   const lastCompleted = lastCompletedRace ? { ...lastCompletedRace, results: lastResults } : null;
 
   return (

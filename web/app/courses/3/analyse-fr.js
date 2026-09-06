@@ -98,7 +98,7 @@ export const ROUND3_ANALYSE_FR_HTML = `
     <p>L'évaluation porte sur la course de dimanche, en tenant compte de la position de départ, de la voiture et des circonstances (source : base de données The Pit Wall, résultats/arrêts/pneus/temps au tour, complétée par la recherche web pour les causes d'incident et les citations).</p>
   </div>
   <div class="tablewrap prose" style="max-width:100%;">
-    <table>
+    <table class="verdict-table">
       <thead><tr><th>Pilote</th><th>Départ → arrivée</th><th>Analyse</th></tr></thead>
       <tbody>
         <tr><td><span class="dot" style="background:#00A19B"></span> Antonelli</td><td>P1 → P1</td><td>Pole en qualifications mais départ raté (P6 au premier virage). Remontée jusqu'à la tête sur la piste avant son propre arrêt, synchronisé presque à la perfection avec la Safety Car du crash de Bearman. Meilleur tour de la course au tour 49 (1:32,432), triple-vérifié. Deuxième victoire consécutive, prend la tête du championnat.</td></tr>

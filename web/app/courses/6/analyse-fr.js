@@ -106,7 +106,7 @@ export const ROUND6_ANALYSE_FR_HTML = `
     <p>L'évaluation porte sur la course de dimanche, en tenant compte de la position de départ, de la voiture et des circonstances (source : base de données The Pit Wall, résultats/arrêts/pneus/temps au tour, complétée par la recherche web pour les causes d'abandon, les pénalités et le droit de révision post-course). Le classement ci-dessous est déjà celui, définitif, issu du droit de révision d'Alpine.</p>
   </div>
   <div class="tablewrap prose" style="max-width:100%;">
-    <table>
+    <table class="verdict-table">
       <thead><tr><th>Pilote</th><th>Départ → arrivée</th><th>Analyse</th></tr></thead>
       <tbody>
         <tr><td><span class="dot" style="background:#00A19B"></span> Antonelli</td><td>P1 → P1</td><td>Grand chelem : pole, victoire, meilleur tour (1:13,481, tour 76, triple vérifié), chaque tour en tête. Plus jeune vainqueur de l'histoire du Grand Prix de Monaco, cinquième victoire en six courses.</td></tr>

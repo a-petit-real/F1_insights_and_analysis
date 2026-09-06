@@ -109,7 +109,7 @@ export const ROUND5_ANALYSE_FR_HTML = `
     <p>L'évaluation porte sur la course de dimanche, en tenant compte de la position de départ, de la voiture et des circonstances (source : base de données The Pit Wall, résultats/arrêts/pneus/temps au tour, complétée par la recherche web pour les causes d'abandon et de forfait).</p>
   </div>
   <div class="tablewrap prose" style="max-width:100%;">
-    <table>
+    <table class="verdict-table">
       <thead><tr><th>Pilote</th><th>Départ → arrivée</th><th>Analyse</th></tr></thead>
       <tbody>
         <tr><td><span class="dot" style="background:#00A19B"></span> Antonelli</td><td>P2 → P1</td><td>Quatrième victoire consécutive. Un seul arrêt (tour 31, sous VSC1), contrôle la course après l'abandon de Russell. Signe le meilleur tour de la course sur le tout dernier passage (1:14,210), confirmé par trois sources indépendantes.</td></tr>

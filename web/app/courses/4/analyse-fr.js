@@ -96,7 +96,7 @@ export const ROUND4_ANALYSE_FR_HTML = `
     <p>L'évaluation porte sur la course de dimanche, en tenant compte de la position de départ, de la voiture et des circonstances (source : base de données The Pit Wall, résultats/grille/arrêts/pneus/temps au tour, complétée par la recherche web pour les causes d'incident et les décisions des commissaires).</p>
   </div>
   <div class="tablewrap prose" style="max-width:100%;">
-    <table>
+    <table class="verdict-table">
       <thead><tr><th>Pilote</th><th>Départ → arrivée</th><th>Analyse</th></tr></thead>
       <tbody>
         <tr><td><span class="dot" style="background:#00A19B"></span> Antonelli</td><td>P1 → P1</td><td>Troisième pole consécutive transformée en troisième victoire consécutive. Undercut décisif au tour 26 (arrêt de 2,2s) devant Norris, jamais menacé ensuite.</td></tr>

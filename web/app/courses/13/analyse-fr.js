@@ -101,7 +101,7 @@ export const ROUND13_ANALYSE_FR_HTML = `
         <p>L'évaluation porte sur le Grand Prix du dimanche, en tenant compte de la position de départ réelle (après pénalités) et des circonstances de course.</p>
       </div>
       <div class="tablewrap prose" style="max-width:100%;">
-        <table>
+        <table class="verdict-table">
           <thead><tr><th>Pilote</th><th>Départ → arrivée</th><th>Analyse</th></tr></thead>
           <tbody>
             <tr><td class="driver"><span class="dot" style="background:#00A19B"></span>Kimi Antonelli</td><td class="pos">19 → 1<span class="delta good">+18</span></td><td>La remontée de la saison. Prend la tête en 18 tours, résiste à Russell dans un duel loyal et tendu, garde son sang-froid après un passage dans le gravier à cinq tours de l'arrivée et fait la décision au meilleur moment. Rien à redire sur cette performance.</td></tr>

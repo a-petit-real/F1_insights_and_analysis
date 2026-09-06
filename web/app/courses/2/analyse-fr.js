@@ -85,7 +85,7 @@ export const ROUND2_ANALYSE_FR_HTML = `
     <p>L'évaluation porte sur la course de dimanche, en tenant compte de la position de départ, de la voiture et des circonstances (source : base de données The Pit Wall, résultats/arrêts/pneus/temps au tour, complétée par la recherche web pour les causes d'abandon et de forfait).</p>
   </div>
   <div class="tablewrap prose" style="max-width:100%;">
-    <table>
+    <table class="verdict-table">
       <thead><tr><th>Pilote</th><th>Départ → arrivée</th><th>Analyse</th></tr></thead>
       <tbody>
         <tr><td><span class="dot" style="background:#00A19B"></span> Antonelli</td><td>P1 → P1</td><td>Plus jeune pole position de l'histoire de la F1, première victoire en catégorie reine. Meilleur tour de la course au tour 52 (1:35,275), confirmé par trois sources indépendantes. Relance parfaitement maîtrisée après la Safety Car du tour 10.</td></tr>

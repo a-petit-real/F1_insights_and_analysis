@@ -102,7 +102,7 @@ export const ROUND7_ANALYSE_FR_HTML = `
     <p>L'évaluation porte sur la course de dimanche, en tenant compte de la position de départ, de la voiture et des circonstances. Classement final tel qu'ajusté après les pénalités post-course (source : base de données The Pit Wall, résultats/arrêts/pneus/temps au tour, complétée par la recherche web pour les causes d'abandon, les pénalités et les citations).</p>
   </div>
   <div class="tablewrap prose" style="max-width:100%;">
-    <table>
+    <table class="verdict-table">
       <thead><tr><th>Pilote</th><th>Départ → arrivée</th><th>Analyse</th></tr></thead>
       <tbody>
         <tr><td><span class="dot" style="background:#E8002D"></span> Hamilton</td><td>P2 → P1</td><td>Première victoire chez Ferrari, plus vieux vainqueur en F1 depuis Jack Brabham (1970) à 41 ans. Trois arrêts avec un premier passage largement anticipé pour lancer l'undercut ; troisième arrêt calé sur le VSC du tour 41. Meilleur tour de la course au tour 44 en 1:20,122, triple-vérifié (base, relevé tour par tour, page officielle F1.com).</td></tr>

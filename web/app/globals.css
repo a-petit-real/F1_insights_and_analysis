@@ -224,6 +224,48 @@
     color:var(--text-muted); letter-spacing:0.04em; padding:4px 0 0;
   }
   @media (max-width:640px){ .scrollhint{display:block;} }
+
+  /* Tableaux "bilan pilote par pilote" (Pilote / Départ→arrivée / Analyse,
+     3 colonnes dont une de prose longue) : sur desktop, table-layout:fixed
+     avec des proportions dédiées — sans ça, l'algorithme auto du navigateur
+     donne aux deux premières colonnes (non coupables, white-space:nowrap)
+     toute la place qu'elles réclament et écrase la colonne Analyse, qui
+     wrappe sur de très nombreuses lignes dans une colonne minuscule. Sur
+     mobile, plutôt que de forcer un défilement horizontal en plus de ce
+     wrapping (illisible pour de la prose), la table se transforme en une
+     liste de fiches empilées : plus de <thead>, chaque <tr> devient un bloc
+     et les libellés de colonne sont réinjectés en ::before (pas besoin de
+     data-label dans le HTML, l'ordre des colonnes est fixe et connu ici).
+     Le scrollhint ("glisser pour voir la suite") n'a plus de sens dans ce
+     mode et est masqué avec elle. */
+  table.verdict-table td.driver{white-space:normal;}
+  /* Largeurs par colonne réservées au mode tableau (desktop) — scopées à ce
+     media query plutôt que laissées en règle générale : une règle générale
+     avec :nth-child bat en spécificité le "width:auto" du bloc mobile
+     ci-dessous (même s'il vient après dans la feuille), et rouvrait le même
+     bug de wrapping façon fiche minuscule, cette fois sur la colonne
+     Pilote/Antonelli — piège trouvé en validant au screenshot mobile. */
+  @media (min-width:641px){
+    table.verdict-table{table-layout:fixed; min-width:680px;}
+    table.verdict-table th:nth-child(1), table.verdict-table td:nth-child(1){width:26%;}
+    table.verdict-table th:nth-child(2), table.verdict-table td:nth-child(2){width:15%;}
+    table.verdict-table th:nth-child(3), table.verdict-table td:nth-child(3){width:59%;}
+  }
+  @media (max-width:640px){
+    table.verdict-table, table.verdict-table thead, table.verdict-table tbody,
+    table.verdict-table th, table.verdict-table td, table.verdict-table tr{
+      display:block; width:auto;
+    }
+    table.verdict-table{min-width:0;}
+    table.verdict-table thead{display:none;}
+    table.verdict-table tr{padding:14px 14px; border-bottom:1px solid var(--border);}
+    table.verdict-table tr:last-child{border-bottom:none;}
+    table.verdict-table td{padding:3px 0; border-bottom:none; white-space:normal;}
+    table.verdict-table td.pos{margin-bottom:2px;}
+    table.verdict-table td:last-child{padding-top:8px; color:var(--text-muted);}
+    .tablewrap:has(table.verdict-table){overflow-x:visible;}
+    .tablewrap:has(table.verdict-table) + .scrollhint{display:none;}
+  }
   .delta{
     display:inline-block; margin-left:8px; font-family:"IBM Plex Mono", monospace; font-size:0.74rem;
     padding:1px 6px; border-radius:4px; font-variant-numeric:tabular-nums;

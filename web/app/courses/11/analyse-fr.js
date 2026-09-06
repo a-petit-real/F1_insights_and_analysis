@@ -107,7 +107,7 @@ export const ROUND11_ANALYSE_FR_HTML = `
     <p>L'évaluation porte sur la course de dimanche, en tenant compte de la position de départ, de la voiture et des circonstances (source : base de données The Pit Wall, résultats/arrêts/pneus/temps au tour, complétée par la recherche web pour les causes d'abandon, les pénalités et les citations).</p>
   </div>
   <div class="tablewrap prose" style="max-width:100%;">
-    <table>
+    <table class="verdict-table">
       <thead><tr><th>Pilote</th><th>Départ → arrivée</th><th>Analyse</th></tr></thead>
       <tbody>
         <tr><td><span class="dot" style="background:#FF8000"></span> Norris</td><td>P1 → P1</td><td>Pole pour 0,012s devant Hamilton, dépassé par son propre coéquipier dès le tour 1 mais jamais réellement inquiété une fois la tête reprise après un troisième arrêt (tour 39) que la liste agrégée de la base omet — anomalie documentée dans le texte. Première victoire de la saison pour lui et pour McLaren.</td></tr>

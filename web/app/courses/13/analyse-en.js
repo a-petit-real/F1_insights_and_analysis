@@ -82,7 +82,7 @@ export const ROUND13_ANALYSE_EN_HTML = `
         <p>The assessment covers Sunday's Grand Prix, accounting for the actual starting position (after penalties) and the circumstances of the race.</p>
       </div>
       <div class="tablewrap prose" style="max-width:100%;">
-        <table>
+        <table class="verdict-table">
           <thead><tr><th>Driver</th><th>Start → finish</th><th>Analysis</th></tr></thead>
           <tbody>
             <tr><td class="driver"><span class="dot" style="background:#00A19B"></span>Kimi Antonelli</td><td class="pos">19 → 1<span class="delta good">+18</span></td><td>The drive of the season. Takes the lead in 18 laps, holds off Russell in a fair, tense duel, keeps his composure after a gravel excursion five laps from the flag, and makes the decisive move at the right moment. Nothing to fault in this performance.</td></tr>
