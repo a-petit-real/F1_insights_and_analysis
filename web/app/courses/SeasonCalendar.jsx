@@ -184,6 +184,12 @@ export default function SeasonCalendar({ races }) {
   }, [view, points]);
 
   const showLabels = cam.zoom >= LABEL_ZOOM_THRESHOLD;
+  // Le tracé raconte la tournée à l'échelle du monde ; une fois zoomé sur
+  // un groupe de courses proches (l'Europe, densément regroupée), les
+  // segments qui zigzaguent entre pays visités à des dates différentes de
+  // la saison n'apportent plus rien et ne font que brouiller la lecture
+  // des points — il s'estompe donc progressivement avec le zoom.
+  const routeOpacity = Math.max(0, 1 - (cam.zoom - MIN_ZOOM) / 4);
 
   return (
     <div>
@@ -263,7 +269,7 @@ export default function SeasonCalendar({ races }) {
                   <line key={`h${i}`} x1={0} y1={i * 100} x2={1000} y2={i * 100} stroke="var(--border)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
                 ))}
               </g>
-              <g opacity="0.5">
+              <g style={{ opacity: 0.5 * routeOpacity }}>
                 {LANDMASSES.map((b, i) => (
                   <ellipse key={i} cx={b.cx} cy={b.cy} rx={b.rx} ry={b.ry} fill="var(--surface-raised)" />
                 ))}
@@ -278,10 +284,12 @@ export default function SeasonCalendar({ races }) {
             <polyline
               ref={doneRef}
               className="cal-route-done"
+              style={{ opacity: routeOpacity }}
               points={donePts.map((p) => { const s = toScreen(p.x, p.y); return `${s.sx},${s.sy}`; }).join(" ")}
             />
             <polyline
               className="cal-route-todo"
+              style={{ opacity: routeOpacity * 0.5 }}
               points={todoPts.map((p) => { const s = toScreen(p.x, p.y); return `${s.sx},${s.sy}`; }).join(" ")}
             />
 

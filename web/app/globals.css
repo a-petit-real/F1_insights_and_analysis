@@ -311,7 +311,7 @@
   .cal-badge.upcoming{background:var(--surface-raised); color:var(--text-muted); border:1px solid var(--border);}
 
   .cal-map{position:relative; width:100%; aspect-ratio:2/1;}
-  .cal-map svg{width:100%; height:100%; display:block;}
+  .cal-map svg{width:100%; height:100%; display:block; -webkit-user-select:none; user-select:none;}
   .cal-pin{cursor:pointer;}
   .cal-pin circle.ring{fill:none; stroke:var(--bad); stroke-width:2; opacity:0;}
   @media (prefers-reduced-motion: no-preference){
