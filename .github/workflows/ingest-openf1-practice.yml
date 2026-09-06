@@ -1,4 +1,4 @@
-name: Ingestion OpenF1 — essais libres (EL1/EL2/EL3)
+name: Ingestion OpenF1 — séance par session (essais libres, qualifs, sprint)
 
 on:
   workflow_dispatch:
@@ -17,6 +17,10 @@ on:
           - "Practice 1"
           - "Practice 2"
           - "Practice 3"
+          - "Qualifying"
+          - "Sprint Qualifying"
+          - "Sprint"
+          - "Race"
 
 jobs:
   ingest:
