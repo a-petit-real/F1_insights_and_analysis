@@ -15,8 +15,19 @@ import { ROUND11_ANALYSE_FR_HTML } from "../11/analyse-fr";
 import { ROUND12_ANALYSE_FR_HTML } from "../12/analyse-fr";
 import { ROUND12_ANALYSE_EN_HTML } from "../12/analyse-en";
 import { ROUND13_EL1_FR_HTML } from "../13/el1-fr";
+import { ROUND13_EL1_EN_HTML } from "../13/el1-en";
+import { ROUND13_EL2_FR_HTML } from "../13/el2-fr";
+import { ROUND13_EL2_EN_HTML } from "../13/el2-en";
+import { ROUND13_EL3_FR_HTML } from "../13/el3-fr";
+import { ROUND13_EL3_EN_HTML } from "../13/el3-en";
+import { ROUND13_QUALI_FR_HTML } from "../13/quali-fr";
+import { ROUND13_QUALI_EN_HTML } from "../13/quali-en";
+import { ROUND13_ANALYSE_FR_HTML } from "../13/analyse-fr";
+import { ROUND13_ANALYSE_EN_HTML } from "../13/analyse-en";
 import { ROUND13_PREANALYSE_FR_HTML } from "../13/preanalyse-fr";
 import { ROUND13_PREANALYSE_EN_HTML } from "../13/preanalyse-en";
+import { ROUND14_PREANALYSE_FR_HTML } from "../14/preanalyse-fr";
+import { ROUND14_PREANALYSE_EN_HTML } from "../14/preanalyse-en";
 import { useRoundSpoilerState } from "../../../lib/spoilerGuard";
 import { useLangPref } from "../../../lib/langPref";
 import {
@@ -52,19 +63,34 @@ function formatLap(seconds) {
 
 // "Practice 1" (libellé OpenF1) -> "EL1" (libellé maison) — dans cet ordre
 // d'affichage des sous-onglets, quelles que soient les séances déjà
-// ingérées pour ce round.
-const PRACTICE_LABELS = { "Practice 1": "EL1", "Practice 2": "EL2", "Practice 3": "EL3" };
-const PRACTICE_ORDER = ["Practice 1", "Practice 2", "Practice 3"];
+// ingérées pour ce round. "Qualifying" est ingérée dans les mêmes tables
+// practice_* (cf. commentaire d'ingest_openf1_practice.py) et réutilise donc
+// le même composant PracticeTab — seul le libellé "Quali" et son ordre
+// d'affichage (après l'EL3, avant l'Analyse) sont spécifiques.
+const PRACTICE_LABELS = { "Practice 1": "EL1", "Practice 2": "EL2", "Practice 3": "EL3", "Qualifying": "Quali" };
+const PRACTICE_ORDER = ["Practice 1", "Practice 2", "Practice 3", "Qualifying"];
 
 // Pré-analyses disponibles par round — écrites avant le week-end, donc
 // jamais gatées par l'anti-spoiler (rien à spoiler dans un pronostic).
-const PREANALYSE_FR_HTML = { 13: ROUND13_PREANALYSE_FR_HTML };
-const PREANALYSE_EN_HTML = { 13: ROUND13_PREANALYSE_EN_HTML };
+const PREANALYSE_FR_HTML = { 13: ROUND13_PREANALYSE_FR_HTML, 14: ROUND14_PREANALYSE_FR_HTML };
+const PREANALYSE_EN_HTML = { 13: ROUND13_PREANALYSE_EN_HTML, 14: ROUND14_PREANALYSE_EN_HTML };
 
 // Traductions disponibles par round pour l'onglet Analyse — seuls les
 // rounds listés ici ont une version anglaise ; les autres restent en
 // français avec une note plutôt que de faire semblant d'avoir traduit.
-const ANALYSE_EN_HTML = { 12: ROUND12_ANALYSE_EN_HTML };
+const ANALYSE_EN_HTML = { 12: ROUND12_ANALYSE_EN_HTML, 13: ROUND13_ANALYSE_EN_HTML };
+
+// Traductions anglaises des séances d'essais/qualifications écrites par
+// round+séance — mêmes règles que ANALYSE_EN_HTML : pas de traduction
+// listée ici, pas de mélange silencieux, une note explicite à la place.
+const PRACTICE_EN_HTML = {
+  13: {
+    "Practice 1": ROUND13_EL1_EN_HTML,
+    "Practice 2": ROUND13_EL2_EN_HTML,
+    "Practice 3": ROUND13_EL3_EN_HTML,
+    "Qualifying": ROUND13_QUALI_EN_HTML,
+  },
+};
 
 export default function RaceTabs({ round, results, lapTimes, tyreStints, weather, rcm, overtakes, practiceData }) {
   const practiceSessions = PRACTICE_ORDER.filter((name) => practiceData && practiceData[name]);
@@ -133,7 +159,7 @@ export default function RaceTabs({ round, results, lapTimes, tyreStints, weather
       )}
       {practiceSessions.includes(tab) && (
         <SpoilerGate spoiler={spoiler} session={PRACTICE_LABELS[tab]} label={PRACTICE_LABELS[tab]}>
-          <PracticeTab round={round} sessionName={tab} data={practiceData[tab]} />
+          <PracticeTab round={round} sessionName={tab} data={practiceData[tab]} lang={lang} langHydrated={langHydrated} />
         </SpoilerGate>
       )}
     </div>
@@ -197,6 +223,7 @@ const ANALYSE_FR_HTML = {
   10: ROUND10_ANALYSE_FR_HTML,
   11: ROUND11_ANALYSE_FR_HTML,
   12: ROUND12_ANALYSE_FR_HTML,
+  13: ROUND13_ANALYSE_FR_HTML,
 };
 
 function AnalyseTab({ round, lang, langHydrated }) {
@@ -220,18 +247,39 @@ function AnalyseTab({ round, lang, langHydrated }) {
   );
 }
 
-function PracticeAnalysis({ round, sessionName }) {
-  if (round === 13 && sessionName === "Practice 1") {
-    return <div className="prose" dangerouslySetInnerHTML={{ __html: ROUND13_EL1_FR_HTML }} />;
+// FR obligatoire pour toute séance rédigée ; EN seulement pour celles
+// listées dans PRACTICE_EN_HTML (même règle que ANALYSE_EN_HTML).
+const PRACTICE_FR_HTML = {
+  13: {
+    "Practice 1": ROUND13_EL1_FR_HTML,
+    "Practice 2": ROUND13_EL2_FR_HTML,
+    "Practice 3": ROUND13_EL3_FR_HTML,
+    "Qualifying": ROUND13_QUALI_FR_HTML,
+  },
+};
+
+function PracticeAnalysis({ round, sessionName, lang, langHydrated }) {
+  const frHtml = PRACTICE_FR_HTML[round]?.[sessionName];
+  if (!frHtml) {
+    return (
+      <p style={{ color: "#888", lineHeight: 1.6, fontStyle: "italic", marginBottom: 24 }}>
+        Analyse pas encore rédigée pour cette séance — données brutes disponibles ci-dessous.
+      </p>
+    );
   }
+  const enHtml = PRACTICE_EN_HTML[round]?.[sessionName];
+  const showEn = lang === "en" && Boolean(enHtml);
   return (
-    <p style={{ color: "#888", lineHeight: 1.6, fontStyle: "italic", marginBottom: 24 }}>
-      Analyse pas encore rédigée pour cette séance — données brutes disponibles ci-dessous.
-    </p>
+    <div className="prose">
+      {langHydrated && lang === "en" && !showEn && (
+        <p className="note" style={{ marginBottom: 16 }}>This article isn't translated to English yet — showing the French version.</p>
+      )}
+      <div dangerouslySetInnerHTML={{ __html: showEn ? enHtml : frHtml }} />
+    </div>
   );
 }
 
-function PracticeTab({ round, sessionName, data }) {
+function PracticeTab({ round, sessionName, data, lang, langHydrated }) {
   const { classification, laps, stints, weather } = data;
   const driverLabels = Object.keys(laps).sort();
   const defaultSelected = useMemo(() => {
@@ -272,10 +320,16 @@ function PracticeTab({ round, sessionName, data }) {
     return map;
   }, [stints]);
   const maxStintLap = Math.max(1, ...stints.map((s) => (s.lap_end ?? 0) - (s.lap_start ?? 0) + 1));
+  const hasAnyData = classification.length > 0 || driverLabels.length > 0 || stints.length > 0 || weather.length > 0;
 
   return (
     <div style={{ display: "grid", gap: 36 }}>
-      <PracticeAnalysis round={round} sessionName={sessionName} />
+      <PracticeAnalysis round={round} sessionName={sessionName} lang={lang} langHydrated={langHydrated} />
+      {!hasAnyData && (
+        <NoRaceDataYet message="Données de séance pas encore disponibles — cette page se mettra à jour automatiquement une fois l'ingestion effectuée." />
+      )}
+      {hasAnyData && (
+      <>
 
       <Section title="Classement par meilleur tour">
         <div style={{ overflowX: "auto" }}>
@@ -382,6 +436,26 @@ function PracticeTab({ round, sessionName, data }) {
           </LineChart>
         </ResponsiveContainer>
       </Section>
+      </>
+      )}
+    </div>
+  );
+}
+
+// Aucune des 6 sources (résultats, temps au tour, pneus, météo, RCM,
+// dépassements) n'est disponible : le round n'a simplement pas encore été
+// disputé, ou son ingestion n'a pas encore eu lieu. Plutôt que de laisser
+// s'afficher des tableaux et graphiques recharts vides (silencieusement
+// cassés, pas franchement "pas de données"), un message explicite — la
+// demande initiale du site sur ce point : montrer clairement quand une
+// source n'est pas encore disponible plutôt que de le laisser deviner.
+function NoRaceDataYet({ message }) {
+  return (
+    <div style={{
+      border: "1px dashed var(--border-strong)", borderRadius: 8, padding: "48px 24px",
+      textAlign: "center", color: "var(--text-muted)", background: "var(--surface-raised)",
+    }}>
+      <p style={{ fontSize: 15 }}>📭 {message || "Données de course pas encore disponibles — cette page se mettra à jour automatiquement une fois la course disputée et les données ingérées."}</p>
     </div>
   );
 }
@@ -428,6 +502,10 @@ function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) 
     return map;
   }, [tyreStints]);
   const maxAge = Math.max(1, ...tyreStints.map((s) => Number(s.age_laps) || 0));
+
+  const hasAnyData = results.length > 0 || driverNames.length > 0 || tyreStints.length > 0
+    || weather.length > 0 || rcm.length > 0 || (overtakes && overtakes.length > 0);
+  if (!hasAnyData) return <NoRaceDataYet />;
 
   return (
     <div style={{ display: "grid", gap: 36 }}>
