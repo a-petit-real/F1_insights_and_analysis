@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { ROUND1_ANALYSE_FR_HTML } from "../1/analyse-fr";
 import { ROUND2_ANALYSE_FR_HTML } from "../2/analyse-fr";
 import { ROUND3_ANALYSE_FR_HTML } from "../3/analyse-fr";
@@ -204,7 +204,6 @@ function TabButton({ active, onClick, children }) {
 }
 
 function PreAnalyseTab({ round, lang, langHydrated }) {
-  const containerRef = useRef(null);
   const enHtml = PREANALYSE_EN_HTML[round];
   const showEn = lang === "en" && Boolean(enHtml);
   return (
@@ -212,86 +211,17 @@ function PreAnalyseTab({ round, lang, langHydrated }) {
       {langHydrated && lang === "en" && !showEn && (
         <p className="note" style={{ marginBottom: 16 }}>This preview isn't translated to English yet — showing the French version.</p>
       )}
-      <SectionTracker containerRef={containerRef} />
-      <div ref={containerRef} dangerouslySetInnerHTML={{ __html: showEn ? enHtml : PREANALYSE_FR_HTML[round] }} />
+      <div dangerouslySetInnerHTML={{ __html: showEn ? enHtml : PREANALYSE_FR_HTML[round] }} />
     </div>
   );
 }
 
-// Bandeau collant sous l'en-tête, indiquant le chapitre (numéro + titre)
-// actuellement lu — remplace l'ancien repère "01" en colonne latérale
-// sticky, supprimé parce qu'il décalait tout le contenu numéroté vers la
-// droite par rapport au hero/tableaux (cf. le commentaire de section.block
-// dans globals.css). Le contenu des sections vient de dangerouslySetInnerHTML
-// (articles écrits en HTML brut, cf. ANALYSE_FR_HTML etc.) : on ne peut pas
-// savoir où on en est par les props React normales, il faut lire le DOM une
-// fois monté — d'où la lecture au scroll plutôt qu'un état dérivé du rendu.
-//
-// Écouteur de scroll plutôt qu'IntersectionObserver : on veut "la dernière
-// section dont le haut a déjà franchi la ligne de déclenchement", ce
-// qu'IntersectionObserver exprime mal (ses entrées ne donnent que les
-// franchissements, pas directement "laquelle est active maintenant") pour
-// une poignée de sections (≤10) par article — un scroll listener direct
-// reste simple et largement assez léger ici. Throttlé sur requestAnimationFrame
-// pour éviter de recalculer les rects à chaque événement de scroll brut.
-function SectionTracker({ containerRef }) {
-  const [current, setCurrent] = useState(null);
-
-  useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return undefined;
-    const sections = Array.from(root.querySelectorAll("section.block[data-num]"));
-    if (!sections.length) return undefined;
-
-    const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 112;
-    let ticking = false;
-
-    function pickActive() {
-      ticking = false;
-      const triggerLine = headerH + 12;
-      let active = null;
-      for (const sec of sections) {
-        if (sec.getBoundingClientRect().top <= triggerLine) active = sec;
-        else break; // sections sont dans l'ordre du document : inutile de continuer
-      }
-      if (!active) {
-        setCurrent(null);
-        return;
-      }
-      const num = active.getAttribute("data-num");
-      const h2 = active.querySelector("h2.sectitle");
-      let title = "";
-      if (h2) {
-        const clone = h2.cloneNode(true);
-        clone.querySelector(".num")?.remove();
-        title = clone.textContent.trim();
-      }
-      setCurrent((prev) => (prev && prev.num === num && prev.title === title ? prev : { num, title }));
-    }
-
-    function onScroll() {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(pickActive);
-    }
-
-    pickActive();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [containerRef]);
-
-  if (!current) return null;
-  return (
-    <div className="chapter-tracker">
-      <span className="chapter-tracker-num">{current.num}</span>
-      <span className="chapter-tracker-title">{current.title}</span>
-    </div>
-  );
-}
+// Le repère "dans quel chapitre suis-je" (numéro de section collant dans la
+// marge) est entièrement géré en CSS — cf. .sec-marker dans globals.css —
+// depuis l'abandon d'un premier essai en bandeau JS sous l'en-tête, qui
+// gênait la lecture et donnait l'impression de basculer de section trop
+// tôt. Rien à faire ici : le HTML des articles (dangerouslySetInnerHTML)
+// pose déjà .sec-marker en premier enfant de chaque <section data-num>.
 
 // FR obligatoire pour tout round rédigé ; EN seulement pour ceux qui ont
 // une vraie traduction (cf. commentaire sur ANALYSE_EN_HTML plus haut).
@@ -313,7 +243,6 @@ const ANALYSE_FR_HTML = {
 
 function AnalyseTab({ round, lang, langHydrated }) {
   const frHtml = ANALYSE_FR_HTML[round];
-  const containerRef = useRef(null);
   if (!frHtml) {
     return (
       <p style={{ color: "#888", lineHeight: 1.6, fontStyle: "italic" }}>
@@ -328,8 +257,7 @@ function AnalyseTab({ round, lang, langHydrated }) {
       {langHydrated && lang === "en" && !showEn && (
         <p className="note" style={{ marginBottom: 16 }}>This article isn't translated to English yet — showing the French version.</p>
       )}
-      <SectionTracker containerRef={containerRef} />
-      <div ref={containerRef} dangerouslySetInnerHTML={{ __html: showEn ? enHtml : frHtml }} />
+      <div dangerouslySetInnerHTML={{ __html: showEn ? enHtml : frHtml }} />
     </div>
   );
 }
@@ -347,7 +275,6 @@ const PRACTICE_FR_HTML = {
 
 function PracticeAnalysis({ round, sessionName, lang, langHydrated }) {
   const frHtml = PRACTICE_FR_HTML[round]?.[sessionName];
-  const containerRef = useRef(null);
   if (!frHtml) {
     return (
       <p style={{ color: "#888", lineHeight: 1.6, fontStyle: "italic", marginBottom: 24 }}>
@@ -362,8 +289,7 @@ function PracticeAnalysis({ round, sessionName, lang, langHydrated }) {
       {langHydrated && lang === "en" && !showEn && (
         <p className="note" style={{ marginBottom: 16 }}>This article isn't translated to English yet — showing the French version.</p>
       )}
-      <SectionTracker containerRef={containerRef} />
-      <div ref={containerRef} dangerouslySetInnerHTML={{ __html: showEn ? enHtml : frHtml }} />
+      <div dangerouslySetInnerHTML={{ __html: showEn ? enHtml : frHtml }} />
     </div>
   );
 }
