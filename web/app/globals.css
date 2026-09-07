@@ -239,17 +239,42 @@
      Le scrollhint ("glisser pour voir la suite") n'a plus de sens dans ce
      mode et est masqué avec elle. */
   table.verdict-table td.driver{white-space:normal;}
+  /* La colonne Départ→arrivée doit pouvoir passer à la ligne : combinée à
+     un badge .delta ("+18", ou plus long comme "stands"), son contenu
+     dépasse régulièrement la largeur qui lui est allouée (voir plus bas) —
+     en white-space:nowrap (règle générale td.pos plus haut), ce dépassement
+     déborde visuellement PAR-DESSUS la colonne Analyse voisine plutôt que
+     de retourner à la ligne, trouvé en validant au screenshot réel. */
+  table.verdict-table td.pos{white-space:normal;}
   /* Largeurs par colonne réservées au mode tableau (desktop) — scopées à ce
      media query plutôt que laissées en règle générale : une règle générale
      avec :nth-child bat en spécificité le "width:auto" du bloc mobile
      ci-dessous (même s'il vient après dans la feuille), et rouvrait le même
      bug de wrapping façon fiche minuscule, cette fois sur la colonne
-     Pilote/Antonelli — piège trouvé en validant au screenshot mobile. */
+     Pilote/Antonelli — piège trouvé en validant au screenshot mobile.
+
+     Pas de min-width ici (contrairement à un premier essai) : le vrai
+     conteneur de cette table n'est PAS le viewport mais .prose, plafonné à
+     66ch — et, à partir de 980px de large, réduit encore par la colonne du
+     repère de section sticky (70px + gouttière) : ~577px de large sous
+     980px, ~482px au-dessus. Un enfant ne peut jamais dépasser la largeur
+     réellement rendue de son parent, quel que soit son propre max-width (le
+     `style="max-width:100%"` posé sur .tablewrap dans le HTML des articles
+     ne fait qu'annuler SA PROPRE classe .prose, il n'agrandit rien : 100%
+     du parent, qui reste capé). Un min-width supérieur à cette largeur
+     réelle forçait donc un débordement/défilement horizontal même sur
+     grand écran, exactement le bug remonté en capture malgré la validation
+     précédente (faite hors-ligne avec un conteneur de test à 900px, plus
+     large que le vrai plafond du site — jamais atteint en pratique).
+     table{width:100%} (règle générale plus haut) suffit : la table remplit
+     les ~480-580px vraiment disponibles. Proportions 24/20/56 plutôt que
+     26/15/59 : la colonne Départ→arrivée avait besoin d'un peu plus de
+     place pour les badges .delta les plus longs. */
   @media (min-width:641px){
-    table.verdict-table{table-layout:fixed; min-width:680px;}
-    table.verdict-table th:nth-child(1), table.verdict-table td:nth-child(1){width:26%;}
-    table.verdict-table th:nth-child(2), table.verdict-table td:nth-child(2){width:15%;}
-    table.verdict-table th:nth-child(3), table.verdict-table td:nth-child(3){width:59%;}
+    table.verdict-table{table-layout:fixed;}
+    table.verdict-table th:nth-child(1), table.verdict-table td:nth-child(1){width:24%;}
+    table.verdict-table th:nth-child(2), table.verdict-table td:nth-child(2){width:20%;}
+    table.verdict-table th:nth-child(3), table.verdict-table td:nth-child(3){width:56%;}
   }
   @media (max-width:640px){
     table.verdict-table, table.verdict-table thead, table.verdict-table tbody,
