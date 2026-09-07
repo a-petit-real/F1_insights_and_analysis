@@ -347,24 +347,24 @@ function PracticeTab({ round, sessionName, data, lang, langHydrated }) {
       <>
 
       <Section title="Classement par meilleur tour">
-        <div style={{ overflowX: "auto" }}>
-          <table style={tableStyle}>
+        <div className="tablewrap">
+          <table>
             <thead>
               <tr>
                 {["Pos", "#", "Pilote", "Écurie", "Meilleur tour", "Tours chronométrés"].map((h) => (
-                  <th key={h} style={thStyle}>{h}</th>
+                  <th key={h}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {classification.map((r, i) => (
                 <tr key={r.car_number}>
-                  <td style={tdStyle}>{i + 1}</td>
-                  <td style={tdStyle}>{r.car_number}</td>
-                  <td style={tdStyle}>{r.full_name}</td>
-                  <td style={tdStyle}>{r.team_name || ""}</td>
-                  <td style={tdStyle}>{r.best_lap != null ? formatLap(Number(r.best_lap)) : ""}</td>
-                  <td style={tdStyle}>{r.timed_laps}/{r.total_laps}</td>
+                  <td>{i + 1}</td>
+                  <td>{r.car_number}</td>
+                  <td>{r.full_name}</td>
+                  <td>{r.team_name || ""}</td>
+                  <td>{r.best_lap != null ? formatLap(Number(r.best_lap)) : ""}</td>
+                  <td>{r.timed_laps}/{r.total_laps}</td>
                 </tr>
               ))}
             </tbody>
@@ -508,6 +508,34 @@ function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) 
     return rows;
   }, [lapTimes, selected]);
 
+  // Position sur piste tour par tour : pas un flux OpenF1 dédié (jamais
+  // ingéré, cf. docs/DATA_SOURCES.md) mais dérivée de session_time (temps
+  // cumulé dans la session à chaque tour, déjà ingéré pour le graphique de
+  // temps au tour ci-dessus) — trier TOUS les pilotes ayant couru ce tour
+  // par ce temps cumulé donne directement leur position à ce moment-là.
+  // Le classement est calculé sur l'ensemble des pilotes (pas seulement
+  // ceux cochés) avant de filtrer sur `selected`, pour rester exact même
+  // quand un pilote non affiché reste dans le peloton.
+  const positionData = useMemo(() => {
+    const maxLap = Math.max(0, ...Object.values(lapTimes).flatMap((laps) => laps.map((l) => l.lap)));
+    const rows = [];
+    for (let lap = 1; lap <= maxLap; lap++) {
+      const atLap = [];
+      for (const [name, laps] of Object.entries(lapTimes)) {
+        const entry = laps.find((l) => l.lap === lap);
+        if (entry && entry.sessionSeconds != null) atLap.push({ name, t: entry.sessionSeconds });
+      }
+      atLap.sort((a, b) => a.t - b.t);
+      const row = { lap };
+      atLap.forEach((d, i) => {
+        if (selected.has(d.name)) row[d.name] = i + 1;
+      });
+      rows.push(row);
+    }
+    return rows;
+  }, [lapTimes, selected]);
+  const driverCount = driverNames.length;
+
   const stintsByDriver = useMemo(() => {
     const map = {};
     for (const s of tyreStints) {
@@ -525,25 +553,25 @@ function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) 
   return (
     <div style={{ display: "grid", gap: 36 }}>
       <Section title="Résultats">
-        <div style={{ overflowX: "auto" }}>
-          <table style={tableStyle}>
+        <div className="tablewrap">
+          <table>
             <thead>
               <tr>
                 {["Pos", "Pilote", "Écurie", "Grille", "Points", "Statut", "Écart"].map((h) => (
-                  <th key={h} style={thStyle}>{h}</th>
+                  <th key={h}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {results.map((r) => (
                 <tr key={r.driver_id}>
-                  <td style={tdStyle}>{r.finish_position ?? "NC"}</td>
-                  <td style={tdStyle}>{r.given_name} {r.family_name}</td>
-                  <td style={tdStyle}>{r.team_name}</td>
-                  <td style={tdStyle}>{r.grid}</td>
-                  <td style={tdStyle}>{r.points}</td>
-                  <td style={tdStyle}>{r.status}</td>
-                  <td style={tdStyle}>{r.time_text || ""}</td>
+                  <td>{r.finish_position ?? "NC"}</td>
+                  <td>{r.given_name} {r.family_name}</td>
+                  <td>{r.team_name}</td>
+                  <td>{r.grid}</td>
+                  <td>{r.points}</td>
+                  <td>{r.status}</td>
+                  <td>{r.time_text || ""}</td>
                 </tr>
               ))}
             </tbody>
@@ -570,6 +598,38 @@ function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) 
               width={82}
             />
             <Tooltip formatter={(v) => formatLap(v)} labelFormatter={(l) => `Tour ${l}`} />
+            <Legend />
+            {[...selected].map((name, i) => (
+              <Line
+                key={name}
+                type="monotone"
+                dataKey={name}
+                stroke={DRIVER_LINE_COLORS[i % DRIVER_LINE_COLORS.length]}
+                dot={false}
+                connectNulls
+                strokeWidth={1.5}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </Section>
+
+      <Section title="Position par tour">
+        <p className="note" style={{ marginBottom: 12 }}>
+          Calculée à partir du temps cumulé sur piste à chaque tour (pas un flux de position officiel — jamais ingéré, cf. docs/DATA_SOURCES.md) : peut différer ponctuellement du classement officiel autour d'une neutralisation ou d'un drapeau rouge. Pilotes sélectionnés ci-dessus.
+        </p>
+        <ResponsiveContainer width="100%" height={360}>
+          <LineChart data={positionData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis dataKey="lap" label={{ value: "Tour", position: "insideBottom", offset: -4 }} />
+            <YAxis
+              type="number"
+              domain={[1, Math.max(1, driverCount)]}
+              reversed
+              allowDecimals={false}
+              width={40}
+            />
+            <Tooltip formatter={(v) => `P${v}`} labelFormatter={(l) => `Tour ${l}`} />
             <Legend />
             {[...selected].map((name, i) => (
               <Line
@@ -635,21 +695,21 @@ function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) 
       </Section>
 
       <Section title={`Messages de course (${rcm.length})`}>
-        <div style={{ maxHeight: 320, overflowY: "auto", border: "1px solid #eee", borderRadius: 6 }}>
-          <table style={tableStyle}>
+        <div className="tablewrap" style={{ maxHeight: 320, overflowY: "auto" }}>
+          <table>
             <thead>
               <tr>
                 {["Heure", "Catégorie", "Message"].map((h) => (
-                  <th key={h} style={thStyle}>{h}</th>
+                  <th key={h}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {rcm.map((m, i) => (
                 <tr key={i}>
-                  <td style={tdStyle}>{new Date(m.message_time).toLocaleTimeString("fr-FR")}</td>
-                  <td style={tdStyle}>{m.category || ""}</td>
-                  <td style={tdStyle}>{m.message}</td>
+                  <td>{new Date(m.message_time).toLocaleTimeString("fr-FR")}</td>
+                  <td>{m.category || ""}</td>
+                  <td>{m.message}</td>
                 </tr>
               ))}
             </tbody>
@@ -659,22 +719,22 @@ function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) 
 
       {overtakes && overtakes.length > 0 && (
         <Section title={`Dépassements (${overtakes.length})`}>
-          <div style={{ maxHeight: 320, overflowY: "auto", border: "1px solid #eee", borderRadius: 6 }}>
-            <table style={tableStyle}>
+          <div className="tablewrap" style={{ maxHeight: 320, overflowY: "auto" }}>
+            <table>
               <thead>
                 <tr>
                   {["Heure", "Dépasse", "Dépassé", "Position résultante"].map((h) => (
-                    <th key={h} style={thStyle}>{h}</th>
+                    <th key={h}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {overtakes.map((o, i) => (
                   <tr key={i}>
-                    <td style={tdStyle}>{new Date(o.overtake_time).toLocaleTimeString("fr-FR")}</td>
-                    <td style={tdStyle}>{o.overtaking_driver}</td>
-                    <td style={tdStyle}>{o.overtaken_driver}</td>
-                    <td style={tdStyle}>{o.position ?? ""}</td>
+                    <td>{new Date(o.overtake_time).toLocaleTimeString("fr-FR")}</td>
+                    <td>{o.overtaking_driver}</td>
+                    <td>{o.overtaken_driver}</td>
+                    <td>{o.position ?? ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -694,7 +754,3 @@ function Section({ title, children }) {
     </section>
   );
 }
-
-const tableStyle = { width: "100%", borderCollapse: "collapse", fontSize: 13 };
-const thStyle = { textAlign: "left", padding: "6px 10px", borderBottom: "2px solid var(--border-strong)", background: "var(--surface-raised)", color: "var(--text-muted)" };
-const tdStyle = { padding: "6px 10px", borderBottom: "1px solid var(--border)" };

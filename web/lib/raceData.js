@@ -36,9 +36,15 @@ export async function getResults(raceId) {
 
 export async function getLapTimesByDriver(raceId) {
   // Un point par tour, temps converti en secondes pour le graphique.
+  // session_time (temps écoulé dans la session au moment où le tour est
+  // bouclé) sert aussi de base au graphique de position par tour côté
+  // client (RawDataTab) : trier tous les pilotes par ce temps cumulé à un
+  // tour donné donne directement leur position sur la piste à ce moment,
+  // sans avoir besoin d'ingérer un flux "position" séparé côté OpenF1.
   const rows = await query(
     `SELECT d.family_name, res.car_number, lt.lap_number,
             EXTRACT(EPOCH FROM lt.lap_time) AS lap_seconds,
+            EXTRACT(EPOCH FROM lt.session_time) AS session_seconds,
             lt.pit_in_time IS NOT NULL AS pit_in
      FROM lap_times lt
      JOIN results res ON res.race_id = lt.race_id AND res.car_number = lt.car_number
@@ -53,6 +59,7 @@ export async function getLapTimesByDriver(raceId) {
     byDriver[row.family_name].push({
       lap: row.lap_number,
       seconds: row.lap_seconds ? Number(row.lap_seconds) : null,
+      sessionSeconds: row.session_seconds != null ? Number(row.session_seconds) : null,
       pitIn: row.pit_in,
     });
   }

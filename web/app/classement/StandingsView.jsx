@@ -48,19 +48,19 @@ export default function StandingsView({ driversByRound, constructorsByRound }) {
 
       <section>
         <h2 style={{ fontSize: 18, marginBottom: 10 }}>Pilotes</h2>
-        <div style={{ overflowX: "auto" }}>
-          <table style={tableStyle}>
+        <div className="tablewrap">
+          <table>
             <thead>
-              <tr>{["Pos", "Pilote", "Écurie", "Points", "Victoires"].map((h) => <th key={h} style={thStyle}>{h}</th>)}</tr>
+              <tr>{["Pos", "Pilote", "Écurie", "Points", "Victoires"].map((h) => <th key={h}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {(driversByRound[shownRound] || []).map((d, i) => (
                 <tr key={i}>
-                  <td style={tdStyle}>{d.position ?? "—"}</td>
-                  <td style={tdStyle}>{d.given_name} {d.family_name}</td>
-                  <td style={tdStyle}>{d.team_name || ""}</td>
-                  <td style={tdStyle}>{d.points}</td>
-                  <td style={tdStyle}>{d.wins}</td>
+                  <td>{d.position ?? "—"}</td>
+                  <td>{d.given_name} {d.family_name}</td>
+                  <td>{d.team_name || ""}</td>
+                  <td>{d.points}</td>
+                  <td>{d.wins}</td>
                 </tr>
               ))}
             </tbody>
@@ -70,18 +70,18 @@ export default function StandingsView({ driversByRound, constructorsByRound }) {
 
       <section>
         <h2 style={{ fontSize: 18, marginBottom: 10 }}>Constructeurs</h2>
-        <div style={{ overflowX: "auto" }}>
-          <table style={tableStyle}>
+        <div className="tablewrap">
+          <table>
             <thead>
-              <tr>{["Pos", "Écurie", "Points", "Victoires"].map((h) => <th key={h} style={thStyle}>{h}</th>)}</tr>
+              <tr>{["Pos", "Écurie", "Points", "Victoires"].map((h) => <th key={h}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {(constructorsByRound[shownRound] || []).map((c, i) => (
                 <tr key={i}>
-                  <td style={tdStyle}>{c.position ?? "—"}</td>
-                  <td style={tdStyle}>{c.team_name}</td>
-                  <td style={tdStyle}>{c.points}</td>
-                  <td style={tdStyle}>{c.wins}</td>
+                  <td>{c.position ?? "—"}</td>
+                  <td>{c.team_name}</td>
+                  <td>{c.points}</td>
+                  <td>{c.wins}</td>
                 </tr>
               ))}
             </tbody>
@@ -97,7 +97,3 @@ export default function StandingsView({ driversByRound, constructorsByRound }) {
     </div>
   );
 }
-
-const tableStyle = { width: "100%", borderCollapse: "collapse", fontSize: 13 };
-const thStyle = { textAlign: "left", padding: "6px 10px", borderBottom: "2px solid #ddd", background: "#fafafa" };
-const tdStyle = { padding: "6px 10px", borderBottom: "1px solid #eee" };
