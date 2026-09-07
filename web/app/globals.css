@@ -12,8 +12,15 @@
     --good:#227048;
     --bad:#A03D3D;
     --measure:66ch;
-    --panel:min(100%, 960px);
-    --panel-w:min(100vw, 960px);
+    /* 960px était le "container" Bootstrap ~2012-2018 ; les repères actuels
+       (Tailwind max-w-7xl, GitHub, Bootstrap 5 xxl…) tournent plutôt autour
+       de 1200-1280px pour une zone de contenu — élargi à 1200px, cf. le
+       raisonnement dans l'historique de commit. La mesure de lecture
+       (--measure, 66ch) ne change pas : c'est une contrainte typographique
+       indépendante, déjà alignée sur la bonne pratique (50-90 caractères
+       par ligne). */
+    --panel:min(100%, 1200px);
+    --panel-w:min(100vw, 1200px);
     --header-h:112px;
     font-synthesis:none;
   }
