@@ -1,73 +1,94 @@
 # Architecture technique
 
-Vue en couches. Chaque couche est pensée pour rester simple tant que le volume d'utilisateurs et de données reste celui d'un cercle restreint — pas de sur-ingénierie pour une échelle qu'on n'atteindra pas.
+Vue en couches, **à jour de l'implémentation réelle** (dernière relecture : 7 septembre 2026). Ce document a longtemps décrit une architecture cible (backend Python/FastAPI séparé, Redis, Tailwind) qui n'a jamais été construite ainsi — ce qui a réellement été codé est plus simple, et documenté ci-dessous tel quel. Voir [`ROADMAP.md`](ROADMAP.md) pour ce qui reste à faire.
+
+## Vue d'ensemble
+
+Il n'y a **pas de backend séparé**. Next.js (App Router) fait tout : rendu des pages côté serveur, requêtes SQL directes à PostgreSQL depuis les Server Components (`web/lib/raceData.js` → `web/lib/db.js` → `pg`), et le peu d'interactivité côté client (onglets, anti-spoiler, sélecteur de langue) en composants `"use client"`. L'ingestion de données est un ensemble de scripts Python déclenchés par GitHub Actions, qui écrivent directement dans la même base PostgreSQL — aucune API intermédiaire entre l'ingestion et le site.
+
+```
+Sources externes (Jolpica, OpenF1)
+        │
+        ▼
+scripts/*.py  ──(GitHub Actions, cron + manuel)──►  PostgreSQL (Neon)
+                                                            │
+                                                            ▼
+                                          Next.js Server Components (web/lib/raceData.js)
+                                                            │
+                                                            ▼
+                                                   Pages rendues (Vercel)
+```
 
 ## 1. Ingestion de données
 
-| Source | Donnée récupérée | Méthode |
-|---|---|---|
-| [Jolpica-F1](https://github.com/jolpica/jolpica-f1) (fork Ergast) | Résultats, grilles, classements historiques et courants | API REST |
-| [OpenF1](https://openf1.org) | Temps au tour (avec secteurs), stints pneus, météo, messages de course, données de timing officielles | API REST, accessible depuis GitHub Actions sans restriction |
-| formula1.com | Comptes-rendus officiels, communiqués, résultats détaillés (arrêts aux stands, meilleurs tours) | Scraping structuré respectueux (robots.txt, rate limit) |
-| Pirelli press | Analyses pneus, choix de gommes, données de dégradation | Scraping/RSS |
-| Presse spécialisée (Motorsport.com, The Race, Reuters) | Contexte, déclarations pilotes/équipes, analyses techniques | RSS/scraping léger, citée comme source secondaire |
-| API météo (ex. OpenWeatherMap) | Conditions par circuit et par session | API REST |
-| Reddit (optionnel) | Perception communautaire, débats — jamais utilisé comme preuve factuelle | API Reddit, usage éditorial uniquement |
+| Source | Donnée récupérée | Script | Déclenchement |
+|---|---|---|---|
+| [Jolpica-F1](https://github.com/jolpica/jolpica-f1) (fork Ergast) | Calendrier, résultats de course, classements pilotes/constructeurs | `scripts/ingest_jolpica.py` | **Automatique** — cron quotidien (`ingest-production.yml`, `0 6 * * *` UTC) + déclenchement manuel |
+| [OpenF1](https://openf1.org) | Temps au tour (avec secteurs), stints pneus, météo, messages de course, statuts piste, dépassements — course uniquement | `scripts/ingest_openf1.py` | Manuel (`ingest-openf1.yml`, `workflow_dispatch`) |
+| OpenF1 | Mêmes données que ci-dessus, mais par séance (EL1/EL2/EL3/Qualifs/Sprint) | `scripts/ingest_openf1_practice.py` | Manuel (`ingest-openf1-practice.yml`, `workflow_dispatch`) |
 
-Principes :
-- Chaque enregistrement ingéré conserve sa source et son horodatage.
-- Distinction stricte entre donnée factuelle (résultats, temps, données officielles) et contenu d'opinion/analyse (presse, réseaux sociaux).
-- Orchestration par jobs planifiés (cron simple pour démarrer ; Prefect/Dagster seulement si la complexité de dépendances le justifie).
+**Sources abandonnées** : un premier pipeline basé sur FastF1/`livetiming.formula1.com` a été abandonné — cette source bloque les IP de datacenter et exigeait une étape manuelle depuis un appareil personnel. OpenF1 le remplace intégralement et tourne sans restriction depuis un runner GitHub Actions (confirmé en conditions réelles). Le fichier `db/schema_fastf1.sql` garde ce nom pour des raisons historiques, mais ne contient plus que le schéma alimenté par OpenF1.
+
+Principes réellement appliqués :
+- Les upserts sont idempotents (`INSERT ... ON CONFLICT DO UPDATE`) — relancer un script plusieurs fois ou faire tourner le cron un jour sans nouvelle donnée ne casse rien.
+- Les pilotes sont identifiés par numéro de course (`car_number`/`driver_number`) plutôt que par résolution `driver_id` à l'ingestion — la correspondance se fait par jointure au moment des requêtes (cf. commentaire en tête de `db/schema_fastf1.sql`).
+- Pas d'orchestrateur (Prefect/Dagster) : GitHub Actions (cron + déclenchement manuel) suffit largement au volume F1.
+- **Sources non implémentées à ce jour**, malgré la vision initiale : scraping formula1.com, Pirelli press, presse spécialisée (Motorsport.com/The Race/Reuters), API météo dédiée, Reddit. Voir [`ROADMAP.md`](ROADMAP.md) Phase 3.
+
+Détail des scripts et du runbook d'ingestion : [`OPERATIONS.md`](OPERATIONS.md).
 
 ## 2. Stockage
 
-- **PostgreSQL** : entité centrale pour tout ce qui est structuré — saisons, courses, pilotes, écuries, résultats, arrêts aux stands, stratégies pneus, évolutions techniques. Le volume F1 (quelques Go par saison au grand maximum) ne justifie pas un data warehouse séparé.
-- **Contenu éditorial** : les analyses (comptes-rendus, pré-analyses) en Markdown versionné — soit directement en base avec historique de versions, soit en repo Git séparé si on veut profiter du diff Git nativement.
-- **Redis** : cache pour les requêtes coûteuses et les résultats de simulation (Phase 5).
-- **Stockage objet** (Cloudflare R2 ou MinIO auto-hébergé) : images, exports, assets.
+- **PostgreSQL, hébergé chez [Neon](https://neon.tech)** (pas d'auto-hébergement Railway/Fly.io/Hetzner envisagé initialement — Neon a été retenu pour sa simplicité et son offre gratuite adaptée à ce volume). Connexion via `DATABASE_URL`, seul secret nécessaire à tout le projet (GitHub Actions + Vercel).
+- Deux fichiers de schéma, appliqués séparément :
+  - `db/schema.sql` — calendrier, courses, pilotes, écuries, résultats, classements (alimenté par Jolpica).
+  - `db/schema_fastf1.sql` — temps au tour, pneus, météo, messages de course, dépassements, séances d'essais (alimenté par OpenF1).
+- **Contenu éditorial : PAS en base de données.** Chaque analyse (compte-rendu de course, pré-analyse, EL1-3, Qualifs) est un module JS statique sous `web/app/courses/<round>/*.js`, exportant une constante `ROUND<N>_<TYPE>_<LANG>_HTML` (une chaîne HTML écrite à la main), importée et injectée via `dangerouslySetInnerHTML` par `RaceTabs.jsx`. Pas de CMS, pas d'éditeur, pas d'historique de versions au-delà de Git lui-même. C'est un choix délibéré de simplicité pour un cercle restreint d'utilisateurs et un rythme de publication d'un article par session — voir [`ROADMAP.md`](ROADMAP.md) si ça doit changer.
+- **Pas de Redis** : aucune page ne le justifie à ce volume (toutes les pages sont `export const dynamic = "force-dynamic"`, requêtées à chaque visite, sans mise en cache applicative).
+- **Pas de stockage objet** (pas d'images/assets uploadés — les seules images externes sont les polices Google Fonts).
 
-## 3. Backend
+## 3. "Backend"
 
-**Choix : Python + FastAPI.**
+Il n'y a pas de backend au sens d'un service séparé. La couche d'accès aux données est `web/lib/raceData.js` (fonctions `async` exécutant des requêtes SQL directement, appelées depuis les Server Components) — voir la liste complète des fonctions exportées dans ce fichier. Pas de couche ORM, pas de validation de schéma runtime (les requêtes SQL sont écrites à la main).
 
-Justification : l'écosystème de calcul de données (pandas, numpy, et plus tard scikit-learn/XGBoost pour la prédiction) est Python-natif. Faire le backend en Python évite une couche de traduction entre le service d'ingestion/calcul et l'API, et permet de réutiliser directement le même langage pour la Phase 5 (simulation/prédiction).
-
-Découpage en services (modules dans un même backend au départ, séparables plus tard si besoin) :
-- **Ingestion** : jobs de collecte et normalisation des sources externes
-- **Analytique** : calculs dérivés (gain d'undercut, dégradation pneus, écarts tour par tour, comparaisons de rythme)
-- **Éditorial** : gestion du contenu (articles, sources associées, statut de publication)
-- **Auth** : gestion des invitations et sessions
+`web/lib/db.js` gère un pool de connexions `pg` réutilisé entre les requêtes, initialisé paresseusement au premier appel.
 
 ## 4. Frontend
 
-**Choix : Next.js (React).**
+**Réel : Next.js 16 (App Router, Turbopack) + React 19.** Pas de Tailwind — CSS écrit à la main dans un unique `web/app/globals.css` (custom properties pour les tokens : couleurs, `--measure` pour la mesure de lecture, `--panel`/`--panel-w` pour le plafond de largeur du site). Voir [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) pour le détail de ce système et des pièges CSS déjà rencontrés (à relire avant toute modification de layout).
 
-- Design system dédié dès la Phase 1 : Tailwind CSS + composants sur-mesure plutôt qu'un template générique, cohérent avec la priorité donnée au design.
-- Data visualisation : Observable Plot ou D3 pour les graphiques spécifiques au domaine (écarts tour par tour, fenêtres de stratégie, timeline de course) — les librairies de graphiques génériques seront vite limitantes pour ce type de visualisation.
-- Pages clés :
-  - Accueil : dernière course analysée + pré-analyse du prochain GP
-  - Fiche course complète (verdict, contexte, dynamique de course, décisions stratégiques, bilan pilote par pilote et équipe par équipe — format déjà pratiqué)
-  - Fiches pilotes / écuries avec historique
-  - Comparateur (pilotes, stratégies, circuits)
-  - Page "Sources & méthodologie" : transparence sur l'origine de chaque donnée/analyse
+- **Data visualisation** : [Recharts](https://recharts.org) (`LineChart` pour les temps au tour et la météo) — pas Observable Plot/D3 comme envisagé initialement ; Recharts a suffi aux besoins actuels (comparaison de temps au tour, séries météo).
+- **Polices** : Big Shoulders Display (titres), Source Serif 4 (corps de texte), IBM Plex Mono (labels/métadonnées) — chargées via Google Fonts dans `layout.jsx`.
+- **Thème** : clair/sombre pris en charge via `prefers-color-scheme` + un attribut `data-theme` (cf. `:root[data-theme="dark"]` dans `globals.css`), pas de bouton de bascule visible dans l'UI actuellement (bascule automatique système uniquement).
+
+Pages réellement implémentées (routes App Router sous `web/app/`) :
+
+| Route | Fichier | Contenu |
+|---|---|---|
+| `/` | `page.jsx` + `HomeDashboard.jsx` | Dernier résultat + prochain GP (déterminé par présence réelle de données en base, pas par comparaison de date — cf. commentaire dans `page.jsx`) |
+| `/courses` | `courses/page.jsx` + `SeasonCalendar.jsx` | Calendrier de la saison : vue liste + carte interactive (SVG, zoom, statut disputée/ce week-end/à venir) |
+| `/courses/[round]` | `courses/[round]/page.jsx` + `RaceTabs.jsx` | Fiche course complète : onglets Pré-analyse / EL1 / EL2 / EL3 / Quali / Analyse / Raw data (temps au tour, pneus, météo, RCM, dépassements en graphiques Recharts + tableaux) |
+| `/classement` | `classement/page.jsx` + `StandingsView.jsx` | Classement pilotes/constructeurs, protégé par l'anti-spoiler (figé au dernier GP marqué "vu") |
+
+**Pages envisagées mais non implémentées** : fiches pilotes/écuries individuelles avec historique, comparateur, page "Sources & méthodologie" dédiée (chaque article a sa propre section sources en `<details>`, pas de page transverse).
+
+**Fonctionnalités transverses non prévues dans la vision initiale, ajoutées en cours de route** :
+- **Anti-spoiler** (`web/lib/spoilerGuard.js`) : granularité par séance (EL1/EL2/EL3/Quali/Race), déclarée manuellement par l'utilisateur, stockée en `localStorage` (pas de compte), effective à partir du round `SPOILER_FROM_ROUND` (13 actuellement). Contenu masqué derrière un bouton "J'ai regardé" tant que la séance n'est pas marquée vue.
+- **Bilingue FR/EN** (`web/lib/langPref.js`) : bascule stockée en `localStorage`, uniquement pour les rounds/séances qui ont réellement une traduction (sinon note explicite + repli en français, jamais de mélange silencieux).
 
 ## 5. Authentification et accès
 
-Cercle restreint → pas de système de rôles complexe :
-- Authentification par invitation (liste blanche d'emails + magic link), via Auth.js ou équivalent.
-- Un seul niveau d'accès au départ ; granularité par rôle seulement si le besoin apparaît réellement.
+**Pas d'authentification implémentée.** Le site est accessible publiquement à quiconque a l'URL de déploiement Vercel — la vision d'un accès par invitation (liste blanche + magic link, Auth.js ou équivalent) reste un principe directeur (cf. [`VISION.md`](VISION.md)) mais n'a jamais été codée. À corriger avant toute diffusion plus large de l'URL du site.
 
-## 6. Interactivité — simulation et prédiction (vision à terme)
+## 6. Interactivité — simulation et prédiction (vision à terme, non commencé)
 
-- **Prédiction** : modèles de gradient boosting (XGBoost/LightGBM) entraînés sur l'historique accumulé (grille de départ, choix pneus, météo, historique circuit) pour estimer des probabilités de podium/points.
-- **Simulation stratégique** : modèle de dégradation pneus + simulation Monte Carlo pour tester des scénarios alternatifs d'arrêts aux stands (dans l'esprit des analyses de type RaceOptiData déjà citées en source).
-- Ces traitements tournent en jobs asynchrones distincts du flux éditorial principal, consomment les données de la Phase 2, et exposent leurs résultats via l'API pour affichage interactif côté frontend.
+Rien n'a été codé sur ce plan : pas de modèle de prédiction, pas de simulateur de stratégie. Reste une vision de Phase 5 (voir [`ROADMAP.md`](ROADMAP.md)) — l'historique de données accumulé (Phase 2) est encore trop récent (saison 2026 en cours) pour la justifier.
 
 ## 7. Infrastructure
 
-- Frontend : Vercel.
-- Backend + PostgreSQL + Redis : Railway, Fly.io, ou VPS unique (Hetzner) selon le budget et le contrôle souhaité sur les données.
-- CI/CD : GitHub Actions (lint, tests, déploiement automatique).
-- Monitoring léger : Sentry pour les erreurs applicatives ; analytics respectueux de la vie privée (Plausible/Umami) optionnel vu la taille du cercle d'utilisateurs.
+- **Frontend + rendu des pages** : Vercel (déploiement automatique sur push vers la branche par défaut du dépôt GitHub, confirmé par le hash du bundle CSS servi qui change à chaque déploiement).
+- **Base de données** : Neon (PostgreSQL managé), un seul environnement de production — pas de staging séparé.
+- **CI/CD** : GitHub Actions — mais uniquement pour l'ingestion de données et des utilitaires de debug/lecture (voir [`OPERATIONS.md`](OPERATIONS.md)). **Aucun workflow de lint/test/build n'existe pour le code du site** (`web/`) : la validation (`npm run build`) se fait manuellement avant de pousser.
+- **Monitoring** : aucun (pas de Sentry, pas d'analytics). Les erreurs d'ingestion se voient en consultant manuellement les logs du run GitHub Actions concerné.
 
-Pas de besoin de scalabilité horizontale, de Kubernetes, ou d'architecture microservices distribuée tant que l'audience reste un cercle restreint — ces choix seraient de la sur-ingénierie prématurée.
+Pas de Kubernetes, pas de microservices — confirmé, l'audience reste un cercle restreint et rien ne justifie cette complexité à ce stade.

@@ -2,17 +2,21 @@
 
 Reprend et généralise l'approche de sourcing déjà pratiquée dans les analyses manuelles (comptes-rendus de course, pré-analyses de GP) : chaque donnée ou affirmation doit être reliée à sa source, avec une hiérarchie claire entre fait officiel, analyse de presse spécialisée, et interprétation communautaire.
 
+**État réel au 7 septembre 2026** : seules Jolpica-F1 et OpenF1 sont réellement ingérées en base de données, de façon automatisée ou semi-automatisée (voir [`OPERATIONS.md`](OPERATIONS.md)). Les autres sources listées ci-dessous ne sont utilisées qu'à la main, en lisant la page/l'article au moment de rédiger un article — aucun scraping ni pipeline automatisé ne les collecte. Colonne "Ingestion" ajoutée pour lever toute ambiguïté.
+
 ## Sources primaires (faits officiels)
 
-| Source | Type de donnée | Usage |
-|---|---|---|
-| formula1.com | Résultats, grilles, classements, communiqués, comptes-rendus officiels | Source de vérité pour les faits de course |
-| Jolpica-F1 (fork Ergast) | Historique de résultats et classements, format API | Alimentation base de données |
-| OpenF1 | Temps au tour (avec secteurs), stints pneus, météo, messages de course, timing détaillé | Alimentation base de données, calculs dérivés |
-| Pirelli press | Choix de gommes, analyses de dégradation officielles | Analyse stratégie pneus |
-| FIA (communiqués, ADUO) | Réglementation, pénalités, évaluations techniques officielles (ex. classement moteurs) | Contexte réglementaire et technique |
+| Source | Type de donnée | Usage | Ingestion |
+|---|---|---|---|
+| Jolpica-F1 (fork Ergast) | Historique de résultats et classements, format API | Alimentation base de données | ✅ Automatisée (`scripts/ingest_jolpica.py`, cron quotidien) |
+| OpenF1 | Temps au tour (avec secteurs), stints pneus, météo, messages de course, timing détaillé, séances d'essais | Alimentation base de données, calculs dérivés | ✅ Semi-automatisée (`scripts/ingest_openf1*.py`, déclenchement manuel après chaque session) |
+| formula1.com | Résultats, grilles, classements, communiqués, comptes-rendus officiels | Source de vérité pour les faits de course, lue à la main en rédigeant un article | ❌ Pas de scraping — lecture manuelle uniquement |
+| Pirelli press | Choix de gommes, analyses de dégradation officielles | Analyse stratégie pneus | ❌ Pas de scraping/RSS construit |
+| FIA (communiqués, ADUO) | Réglementation, pénalités, évaluations techniques officielles (ex. classement moteurs) | Contexte réglementaire et technique | ❌ Pas de pipeline |
 
 ## Sources secondaires (presse spécialisée)
+
+Aucune n'est ingérée automatiquement — citées à la main, article par article, quand elles apportent un élément factuel ou une déclaration.
 
 | Source | Usage |
 |---|---|
@@ -28,6 +32,10 @@ Reprend et généralise l'approche de sourcing déjà pratiquée dans les analys
 | Reddit (r/formula1) | Perception et débats des passionnés — jamais utilisé pour établir un fait technique, seulement pour signaler des interprétations ou controverses à mentionner |
 
 **Exclusions explicites** : publications Instagram/Facebook/YouTube non vérifiées ne sont pas utilisées comme preuve factuelle, conformément à la méthodologie déjà appliquée.
+
+## Source abandonnée : FastF1 / livetiming.formula1.com
+
+Un premier pipeline basé sur la librairie FastF1 (qui interroge `livetiming.formula1.com`) a été tenté avant OpenF1, puis abandonné : ce domaine bloque les requêtes depuis des IP de datacenter, ce qui aurait exigé une étape manuelle systématique depuis un appareil personnel pour chaque ingestion. OpenF1 couvre le même besoin (temps au tour, pneus, météo, messages de course) et est accessible sans restriction depuis un runner GitHub Actions — confirmé en conditions réelles avant la bascule. Le fichier `db/schema_fastf1.sql` garde ce nom pour des raisons historiques, mais ne contient plus que le schéma alimenté par OpenF1.
 
 ## Règles de sourcing pour le contenu publié
 

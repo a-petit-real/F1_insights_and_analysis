@@ -1,5 +1,7 @@
 # Vision produit
 
+> Ce document décrit l'**ambition** du projet, pas nécessairement son état actuel — voir [`ARCHITECTURE.md`](ARCHITECTURE.md) pour ce qui est réellement construit et [`ROADMAP.md`](ROADMAP.md) pour les écarts explicites entre les deux (le principal, à ce jour : pas d'authentification, le site est public).
+
 ## Ce que c'est
 
 Une plateforme privée d'analyse sportive Formule 1, à destination d'un cercle restreint d'utilisateurs (pas de vocation grand public, pas de modèle publicitaire).
