@@ -165,7 +165,7 @@
   .chip .gap{color:var(--text-muted); font-size:0.76rem;}
   .subverdict{margin-top:18px; color:var(--text-muted); font-size:0.95rem; max-width:var(--measure);}
 
-  /* ---------- Sections & sticky marker ---------- */
+  /* ---------- Sections & repère de section ---------- */
   section.block{
     position:relative; padding:clamp(28px,5vw,44px) 0; border-bottom:1px solid var(--border);
     display:grid; grid-template-columns:minmax(0,1fr); column-gap:26px;
@@ -173,34 +173,26 @@
   section.block:last-of-type{border-bottom:none;}
   section.block[data-num]{scroll-margin-top:var(--header-h);}
   section.block > *{grid-column:1;}
-  @media (min-width:980px){
-    /* minmax(0, ...) plutôt que "1fr"/"70px 1fr" nus : sans le "0" plancher,
-       un enfant de la piste avec une largeur chiffrée plus grande que
-       l'espace dispo (cf. .tablewrap.prose plus bas, qui sort volontairement
-       de cette colonne) force la piste elle-même à grandir pour l'accueillir
-       — et fait déborder toute la section. Vérifié en isolant le
-       comportement sur un gabarit de grille minimal avant/après ce correctif. */
-    section.block[data-num]{grid-template-columns:70px minmax(0,1fr);}
-    section.block[data-num] > .sec-marker{grid-column:1; grid-row:1 / -1;}
-    section.block[data-num] > *:not(.sec-marker){grid-column:2;}
-  }
-  .sec-marker{display:none;}
-  @media (min-width:980px){
-    .sec-marker{
-      display:block; position:sticky; top:calc(var(--header-h) + 18px); align-self:start;
-    }
-    .sec-marker .n{font-family:"Big Shoulders Display", sans-serif; font-weight:800; font-size:1.9rem; line-height:1; color:var(--border-strong);}
-    .sec-marker.active .n{color:var(--accent);}
-    .sec-marker .t{
-      display:block; margin-top:8px; font-family:"IBM Plex Mono", monospace; font-size:0.66rem; letter-spacing:0.05em; text-transform:uppercase;
-      color:var(--text-muted); max-width:130px; line-height:1.4;
-      opacity:0; transform:translateY(-4px);
-    }
-    .sec-marker.show-title .t{opacity:1; transform:none;}
-    @media (prefers-reduced-motion: no-preference){
-      .sec-marker .t{transition:opacity .25s ease, transform .25s ease;}
-    }
-  }
+
+  /* Le repère "01" vivait dans sa propre colonne de grille à gauche (dès
+     980px, 70px + 26px de gouttière), en position:sticky pendant tout le
+     défilement de la section — mais ça décalait TOUT le contenu de la
+     section (titre, paragraphes) de ~96px vers la droite par rapport au
+     hero et aux tableaux, restés flush à gauche eux : la page "serpentait"
+     visuellement d'un bloc à l'autre d'un bord à l'autre (repéré et confirmé
+     par capture). Le repère devient un simple bandeau statique juste
+     au-dessus du titre — l'ordre du HTML place déjà .sec-marker avant le
+     bloc .prose de chaque section (cf. le contenu des articles), donc ce
+     changement ne demande aucune réorganisation du balisage, seulement la
+     suppression de son placement en grille et de sa position sticky.
+     L'effet "chiffre qui suit le défilement dans la marge" disparaît avec —
+     assumé : la cohérence d'alignement prime. Visible à toutes les largeurs
+     désormais (masqué auparavant sous 980px uniquement parce que la colonne
+     dédiée n'avait pas la place — cette contrainte n'existe plus ici). */
+  .sec-marker{margin-bottom:10px;}
+  .sec-marker .n{font-family:"Big Shoulders Display", sans-serif; font-weight:800; font-size:1.7rem; line-height:1; color:var(--border-strong);}
+  .sec-marker.active .n{color:var(--accent);}
+  .sec-marker .t{display:none;}
 
   h2.sectitle{font-size:1.5rem; margin-bottom:16px; display:flex; align-items:baseline; gap:10px;}
   h2.sectitle .num{font-family:"IBM Plex Mono", monospace; color:var(--accent); font-size:0.9rem; font-weight:600;}
@@ -224,31 +216,29 @@
   /* Les tableaux (.tablewrap, doublé de la classe .prose dans le HTML des
      articles) héritaient du plafond typographique de .prose (66ch, ~577px)
      — correct pour du texte, mais ça laisse un tableau de données minuscule
-     entouré de vide sur un écran large, alors que .main autorise jusqu'à
-     960px. On fait "sortir" spécifiquement le tableau de la colonne de
-     lecture pour qu'il utilise toute la largeur de .main (960px - 40px de
-     marge), sans toucher aux paragraphes/callouts/hero qui restent à 66ch.
+     entouré de vide sur un écran large, alors que .main autorise plus de
+     large. En dessous de 641px, ce plafond reste tel quel : c'est lui qui
+     fait défiler le tableau horizontalement DANS sa propre boîte
+     (.tablewrap{overflow-x:auto}) plutôt que de faire déborder toute la
+     page — comportement mobile déjà correct, à ne pas toucher (un essai
+     sans ce garde-fou débordait de ~100-180px à 320-480px de large sur le
+     tableau "bilan équipe", qui n'a pas le repli en fiches empilées de
+     .verdict-table, mesuré).
 
-     Technique : position:relative + left:50% + translateX(-50%) recentre
-     l'élément sur le CENTRE de son propre conteneur (le calcul s'annule
-     algébriquement quelle que soit la largeur réelle de ce conteneur, tant
-     qu'il est lui-même centré dans .main — ce qui est le cas de .prose et de
-     section.block, qui n'a pas de padding horizontal). On lui donne ensuite
-     une largeur explicite = celle de .main, ce qui le recentre sur le MÊME
-     centre que .main plutôt que sur celui, plus étroit, de .prose.
-
-     Au-dessus de 980px, section.block[data-num] devient une grille à deux
-     colonnes (70px de repère de section + 26px de gouttière = 96px), donc le
-     conteneur direct du tableau n'est plus .prose entier mais sa deuxième
-     colonne, décalée de 96px vers la droite — pas centrée sur .main. Un
-     élargissement symétrique (comme en-dessous de 980px) a d'abord été
-     essayé, mais ça pousse le bord GAUCHE du tableau plus à gauche que le
-     repère de section lui-même (.sec-marker, colonne 1) : le tableau passe
-     alors visuellement PAR-DESSUS le numéro de section sticky, confirmé au
-     screenshot (le "04" se retrouvait superposé à l'en-tête du tableau). À
-     cette largeur, on élargit donc seulement vers la DROITE (le bord gauche
-     du tableau reste exactement là où il est aujourd'hui, aligné avec les
-     paragraphes) jusqu'au bord droit de .main. */
+     À partir de 641px, le tableau sort de la colonne de lecture pour
+     utiliser plus de la largeur de .main, en gardant son bord GAUCHE
+     exactement à sa position native (même colonne que les paragraphes et
+     le titre de section) et en élargissant uniquement vers la DROITE,
+     jusqu'au bord droit de .main. Un premier essai élargissait
+     symétriquement (les deux bords s'écartent du centre de .main) : ça
+     recréait, côté tableau, le même problème de "serpentine" gauche/droite
+     que .sec-marker avait côté titres (cf. plus haut, "Sections & repère
+     de section") — le bord gauche du tableau partait alors bien plus à
+     gauche que le paragraphe juste au-dessus ou en-dessous de lui (jusqu'à
+     ~290px d'écart à 1920px de large, mesuré). Une seule marge de lecture
+     à gauche, partagée par tout le contenu (hero, titres, paragraphes,
+     tableaux), élimine tout décalage résiduel — seule la largeur DROITE
+     varie selon le type de contenu. */
   .tablewrap.prose{
     /* !important nécessaire : le HTML des articles pose un style inline
        ="max-width:100%" sur ce même div (pour annuler le plafond de .prose
@@ -257,27 +247,27 @@
        ce max-width:100% recapait silencieusement la largeur ci-dessous à la
        taille du conteneur, quoi qu'on lui donne (piège trouvé en mesurant :
        la largeur calculée restait obstinément identique à celle d'avant ce
-       correctif, y compris marges correctement calculées à côté). */
-    max-width:none !important;
-    width:calc(var(--panel-w) - 40px);
-    margin-left:calc((100% - var(--panel-w) + 40px) / 2);
-    margin-right:calc((100% - var(--panel-w) + 40px) / 2);
+       correctif, y compris marges correctement calculées à côté). Scopé à
+       ≥641px comme le reste ci-dessous : en dessous, .tablewrap.prose doit
+       GARDER son plafond de .prose (cf. le paragraphe ci-dessus). */
   }
-  @media (min-width:980px){
-    /* Élargissement asymétrique, vers la droite seulement (cf. commentaire
-       plus haut) : le bord gauche ne bouge pas (margin-left:0, comme sans ce
-       bloc de règles) : le bord droit rejoint le bord de .main. La largeur
-       cible (172.75px + la moitié de la largeur de .main) est une constante
-       PURE au-dessus de 980px : .main plafonne à 960px dès 960px de large,
-       et 980 > 960, donc sa largeur ne varie plus jamais dans ce palier —
-       valeur dérivée puis vérifiée au pixel près par mesure réelle
-       (getBoundingClientRect) plutôt que gardée telle quelle après calcul à
-       la main (l'écart symétrique valait 48px sur le papier, 68px à la
-       mesure — même piège que la version précédente de cette règle). */
+  @media (min-width:641px){
     .tablewrap.prose{
+      max-width:none !important;
+      /* La largeur cible est dérivée pour rejoindre exactement le bord
+         droit de .main en partant du bord gauche fixe du paragraphe
+         (déjà décalé vers l'intérieur de .main par .prose{margin:0 auto})
+         — PAS "toute la largeur de .main" comme pour un élargissement
+         centré : cette dernière dépasserait le bord droit de .main de 150
+         à 270px selon la largeur, trouvé en mesurant plutôt qu'en le
+         supposant (cf. les pièges précédents sur cette même règle).
+         Valide uniquement une fois .prose effectivement centré/plafonné
+         (≥~618px, cf. --measure) : scopée à ≥641px, le même palier que le
+         reste des règles desktop de ce tableau plus bas, pour rester du
+         bon côté de ce seuil avec de la marge. */
+      width:calc((var(--panel-w) / 2) + 268.75px);
       margin-left:0;
-      margin-right:calc(100% - (var(--panel-w) / 2) - 172.75px);
-      width:calc((var(--panel-w) / 2) + 172.75px);
+      margin-right:calc(100% - (var(--panel-w) / 2) - 268.75px);
     }
   }
   table{border-collapse:collapse; width:100%; min-width:480px; font-size:0.9rem;}
