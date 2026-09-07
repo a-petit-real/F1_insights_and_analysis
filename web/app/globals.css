@@ -194,6 +194,40 @@
   .sec-marker.active .n{color:var(--accent);}
   .sec-marker .t{display:none;}
 
+  /* Bandeau "dans quel chapitre suis-je" — remplace, avec l'ancien repère
+     latéral sticky, la fonction de repère de navigation qu'il assurait en
+     scrollant (perdue avec lui, cf. commentaire ci-dessus). Rempli/affiché
+     via JS (RaceTabs.jsx, SectionTracker) une fois qu'une section a défilé
+     sous l'en-tête — masqué par défaut (rien avant la 1ère section). Posé
+     DANS .prose (donc à 66ch, même bord gauche que le reste du texte) plutôt
+     qu'à la largeur de .main : cohérent avec le principe d'un bord de
+     lecture unique établi plus haut, et un simple fil d'Ariane textuel n'a
+     de toute façon pas besoin de plus de largeur. */
+  .chapter-tracker{
+    position:sticky; top:var(--header-h); z-index:20;
+    display:flex; align-items:baseline; gap:10px; margin:0 0 -1px;
+    padding:9px 0; border-bottom:1px solid var(--border);
+    background:color-mix(in srgb, var(--bg) 92%, transparent);
+    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  }
+  /* React ne rend actuellement ce bandeau que quand il a un chapitre à
+     montrer (retourne null sinon), donc l'attribut [hidden] n'est jamais
+     réellement posé sur cet élément en pratique aujourd'hui — mais s'y fier
+     implicitement serait fragile : une règle d'auteur (display:flex) bat
+     TOUJOURS le display:none de la feuille de style par défaut du
+     navigateur pour [hidden], quelle que soit la spécificité comparée
+     entre les deux (les styles UA sont d'une origine plus faible dans la
+     cascade), donc sans cette règle explicite, poser l'attribut ne
+     masquerait rien. Vérifié : sans elle, .chapter-tracker restait
+     display:flex même avec hidden=true. */
+  .chapter-tracker[hidden]{display:none;}
+  .chapter-tracker-num{
+    font-family:"IBM Plex Mono", monospace; font-size:0.72rem; font-weight:600; letter-spacing:0.04em; color:var(--accent); flex:none;
+  }
+  .chapter-tracker-title{
+    font-size:0.85rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+
   h2.sectitle{font-size:1.5rem; margin-bottom:16px; display:flex; align-items:baseline; gap:10px;}
   h2.sectitle .num{font-family:"IBM Plex Mono", monospace; color:var(--accent); font-size:0.9rem; font-weight:600;}
   h3.subtitle{font-size:1.1rem; margin:26px 0 10px; color:var(--text);}
