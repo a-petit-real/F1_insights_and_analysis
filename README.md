@@ -12,7 +12,7 @@ Le projet couvre uniquement la partie **sportive** de la F1 (courses, stratégie
 
 Le site est **en production et publié** — pas en phase de cadrage. Saison 2026 couverte : 13 comptes-rendus de course rédigés (rounds 1-13, dont deux traduits en anglais), pré-analyses pour les rounds 13 et 14, articles de séance (EL1-3, Qualifs) pour le round 13. Ingestion automatisée des résultats/classements (Jolpica) et semi-automatisée des données détaillées de course (OpenF1 — temps au tour, pneus, météo). Anti-spoiler, bascule bilingue FR/EN, calendrier de saison interactif.
 
-**Écart notable à connaître** : le site est actuellement **public** (aucune authentification), alors que la vision produit prévoit un accès par invitation — voir [`docs/ROADMAP.md`](docs/ROADMAP.md#écarts-notables-à-traiter-en-priorité).
+**Écart assumé avec la vision produit** : le site est **public** (aucune authentification), alors que `VISION.md` prévoit un accès par invitation — décision volontaire tant que la diffusion reste limitée (URL non indexée, partagée à un cercle restreint, aucun contenu confidentiel). Voir [`docs/ROADMAP.md`](docs/ROADMAP.md#écarts-notables).
 
 ## Développement
 

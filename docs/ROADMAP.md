@@ -53,10 +53,10 @@ Rien n'a été codé. Reste cohérent avec le principe directeur ci-dessus : la 
 - ✅ Documentation technique tenue à jour — cette révision du 7 septembre 2026 (`ARCHITECTURE.md`, `OPERATIONS.md`, `DESIGN_SYSTEM.md`, ce document) vise précisément ça. À maintenir à chaque changement structurel, pas seulement en rattrapage périodique.
 - N/A Gestion multi-utilisateurs — sans authentification (Phase 1), la question ne se pose pas encore.
 
-## Écarts notables à traiter en priorité
+## Écarts notables
 
-Classés par risque produit, pas par difficulté de mise en œuvre :
+Classés par risque produit réel, pas par écart avec la vision initiale :
 
-1. **Authentification absente** — le site en production, principal livrable du projet, est actuellement accessible publiquement. À traiter avant toute diffusion de l'URL au-delà du cercle actuel de confiance.
-2. **Pas de monitoring d'ingestion** — le cron Jolpica quotidien peut échouer silencieusement ; personne n'est alerté.
-3. **Pas de CI** — un `npm run build` cassé n'est détecté qu'au moment de le lancer soi-même avant de pousser.
+1. **Pas de monitoring d'ingestion** — le cron Jolpica quotidien peut échouer silencieusement ; personne n'est alerté.
+2. **Pas de CI** — un `npm run build` cassé n'est détecté qu'au moment de le lancer soi-même avant de pousser.
+3. **Authentification absente** — écart avec `VISION.md`, mais **décision assumée, pas un risque en l'état** : le site n'est pas indexé (pas de `sitemap.xml`, jamais soumis à Google), l'URL n'a été partagée qu'à un cercle restreint de confiance (3 personnes), et le contenu n'a rien de confidentiel (analyses F1 à partir de données publiques — résultats officiels, API OpenF1 — pas de données personnelles, pas de compte utilisateur). À reconsidérer seulement si la diffusion de l'URL s'élargit sensiblement au-delà de ce cercle.
