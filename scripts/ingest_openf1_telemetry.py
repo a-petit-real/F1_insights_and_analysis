@@ -1,6 +1,7 @@
 """Ingère la télémétrie position/vitesse par tour depuis OpenF1 (endpoints
-`location` et `car_data`), pour le graphique "Vitesse par tour" et la carte
-du circuit colorée par vitesse, dans le Raw data.
+`location` et `car_data`), pour le graphique "Vitesse par tour" et le
+réplay animé multi-pilotes (jusqu'à 5, position sur circuit synchronisée
+sur le temps écoulé depuis le début du tour), dans le Raw data.
 
 Deux flux OpenF1, fusionnés ici :
   - `location` : position (x, y, z, en mètres, origine arbitraire par
@@ -77,10 +78,13 @@ def interp_speed(t, speed_times, speed_values):
 
 def build_lap_series(loc_in_lap, speed_times, speed_values):
     """loc_in_lap : [(t, x, y), ...] triés par t, >= 2 points.
-    -> (distance_m[], speed_kmh[], x_m[], y_m[]) — distance cumulée par
-    écart euclidien consécutif (x, y), vitesse interpolée sur car_data."""
-    distances, speeds, xs, ys = [0.0], [], [], []
+    -> (distance_m[], speed_kmh[], x_m[], y_m[], t_s[]) — distance cumulée
+    par écart euclidien consécutif (x, y), vitesse interpolée sur car_data,
+    t_s = secondes écoulées depuis le premier échantillon du tour (sert au
+    réplay animé multi-pilotes, cf. RaceTabs.jsx)."""
+    distances, speeds, xs, ys, ts = [0.0], [], [], [], []
     cumulative = 0.0
+    t_lap_start = loc_in_lap[0][0]
     for idx, (t, x, y) in enumerate(loc_in_lap):
         if idx > 0:
             t0, x0, y0 = loc_in_lap[idx - 1]
@@ -88,6 +92,7 @@ def build_lap_series(loc_in_lap, speed_times, speed_values):
             distances.append(cumulative)
         xs.append(x)
         ys.append(y)
+        ts.append(t - t_lap_start)
         v = interp_speed(t, speed_times, speed_values)
         speeds.append(v)
     # Un point de vitesse manquant (hors plage car_data) est comblé par la
@@ -110,7 +115,7 @@ def build_lap_series(loc_in_lap, speed_times, speed_values):
         elif last_known is not None:
             speeds[i] = last_known
     speeds = [v if v is not None else 0.0 for v in speeds]
-    return distances, speeds, xs, ys
+    return distances, speeds, xs, ys, ts
 
 
 def load_telemetry(cur, race_id, windows, location_by_driver, car_data_by_driver):
@@ -124,18 +129,18 @@ def load_telemetry(cur, race_id, windows, location_by_driver, car_data_by_driver
             loc_in_lap = [(t, x, y) for t, x, y in locations if start_t <= t <= end_t]
             if len(loc_in_lap) < 2:
                 continue  # tour sans assez d'échantillons pour tracer une courbe
-            distances, speeds, xs, ys = build_lap_series(loc_in_lap, speed_times, speed_values)
+            distances, speeds, xs, ys, ts = build_lap_series(loc_in_lap, speed_times, speed_values)
             cur.execute(
                 """
-                INSERT INTO lap_telemetry (race_id, car_number, lap_number, distance_m, speed_kmh, x_m, y_m)
-                VALUES (%(race_id)s, %(car_number)s, %(lap_number)s, %(distance_m)s, %(speed_kmh)s, %(x_m)s, %(y_m)s)
+                INSERT INTO lap_telemetry (race_id, car_number, lap_number, distance_m, speed_kmh, x_m, y_m, t_s)
+                VALUES (%(race_id)s, %(car_number)s, %(lap_number)s, %(distance_m)s, %(speed_kmh)s, %(x_m)s, %(y_m)s, %(t_s)s)
                 ON CONFLICT (race_id, car_number, lap_number) DO UPDATE SET
                     distance_m = EXCLUDED.distance_m, speed_kmh = EXCLUDED.speed_kmh,
-                    x_m = EXCLUDED.x_m, y_m = EXCLUDED.y_m
+                    x_m = EXCLUDED.x_m, y_m = EXCLUDED.y_m, t_s = EXCLUDED.t_s
                 """,
                 {
                     "race_id": race_id, "car_number": car_number, "lap_number": lap_number,
-                    "distance_m": distances, "speed_kmh": speeds, "x_m": xs, "y_m": ys,
+                    "distance_m": distances, "speed_kmh": speeds, "x_m": xs, "y_m": ys, "t_s": ts,
                 },
             )
             n += 1

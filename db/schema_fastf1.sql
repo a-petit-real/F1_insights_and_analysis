@@ -132,7 +132,10 @@ CREATE INDEX IF NOT EXISTS idx_overtakes_race ON overtakes(race_id);
 -- table, abandonnée : trop imprécise en sortie de virage/freinage). Les
 -- deux flux ont des grilles temporelles indépendantes : speed_kmh est
 -- interpolé linéairement sur les horodatages de `location`, pas une mesure
--- native à chaque point.
+-- native à chaque point. t_s (secondes écoulées depuis le PREMIER
+-- échantillon de position du tour, donc ~0 au départ) sert au réplay animé
+-- multi-pilotes (Raw data) : synchroniser plusieurs pilotes sur une même
+-- horloge de tour plutôt que sur le numéro de tour seul.
 CREATE TABLE IF NOT EXISTS lap_telemetry (
     race_id      INTEGER NOT NULL REFERENCES races(race_id) ON DELETE CASCADE,
     car_number   INTEGER NOT NULL,
@@ -141,8 +144,11 @@ CREATE TABLE IF NOT EXISTS lap_telemetry (
     speed_kmh    REAL[] NOT NULL,   -- vitesse (km/h) interpolée sur les horodatages de position, même index que distance_m
     x_m          REAL[],           -- position sur le circuit (mètres, origine arbitraire par circuit), même index
     y_m          REAL[],
+    t_s          REAL[],           -- secondes écoulées depuis le début du tour, même index
     PRIMARY KEY (race_id, car_number, lap_number)
 );
+
+ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS t_s REAL[];
 
 ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS x_m REAL[];
 ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS y_m REAL[];
