@@ -66,6 +66,42 @@ export async function getLapTimesByDriver(raceId) {
   return byDriver;
 }
 
+// --- Télémétrie vitesse/distance par tour (feature "Vitesse par tour") --
+// lap_telemetry est ingérée à la demande, un round à la fois (cf.
+// scripts/ingest_openf1_telemetry.py) — jamais garanti disponible pour un
+// round donné. getHasTelemetry sert de garde côté page pour ne proposer le
+// sélecteur de tour que quand il y a vraiment quelque chose à afficher.
+
+export async function getHasTelemetry(raceId) {
+  const rows = await query(
+    `SELECT EXISTS(SELECT 1 FROM lap_telemetry WHERE race_id = $1) AS has_data`,
+    [raceId]
+  );
+  return rows[0]?.has_data === true;
+}
+
+export async function getLapTelemetry(raceId, lapNumber) {
+  const rows = await query(
+    `SELECT d.family_name, lt.distance_m, lt.speed_kmh
+     FROM lap_telemetry lt
+     JOIN results res ON res.race_id = lt.race_id AND res.car_number = lt.car_number
+     JOIN drivers d ON d.driver_id = res.driver_id
+     WHERE lt.race_id = $1 AND lt.lap_number = $2
+     ORDER BY d.family_name`,
+    [raceId, lapNumber]
+  );
+  const byDriver = {};
+  for (const row of rows) {
+    const distances = row.distance_m || [];
+    const speeds = row.speed_kmh || [];
+    byDriver[row.family_name] = distances.map((d, i) => ({
+      distance: Number(d),
+      speed: speeds[i] != null ? Number(speeds[i]) : null,
+    }));
+  }
+  return byDriver;
+}
+
 export async function getTyreStints(raceId) {
   return query(
     `SELECT d.family_name, res.car_number, ts.stint_number, ts.compound, ts.is_new,

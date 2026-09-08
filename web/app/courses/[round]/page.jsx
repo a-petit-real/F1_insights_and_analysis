@@ -8,6 +8,7 @@ import {
   getWeatherSeries,
   getRaceControlMessages,
   getOvertakes,
+  getHasTelemetry,
   getPracticeSessions,
   getPracticeClassification,
   getPracticeLapTimesByDriver,
@@ -24,13 +25,14 @@ export default async function RacePage({ params }) {
   const race = await getRace(season, Number(round));
   if (!race) notFound();
 
-  const [results, lapTimes, tyreStints, weather, rcm, overtakes, practiceSessions] = await Promise.all([
+  const [results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry, practiceSessions] = await Promise.all([
     getResults(race.race_id),
     getLapTimesByDriver(race.race_id),
     getTyreStints(race.race_id),
     getWeatherSeries(race.race_id),
     getRaceControlMessages(race.race_id),
     getOvertakes(race.race_id),
+    getHasTelemetry(race.race_id),
     getPracticeSessions(race.race_id),
   ]);
 
@@ -62,12 +64,14 @@ export default async function RacePage({ params }) {
       </p>
       <RaceTabs
         round={race.round}
+        raceId={race.race_id}
         results={results}
         lapTimes={lapTimes}
         tyreStints={tyreStints}
         weather={weather}
         rcm={rcm}
         overtakes={overtakes}
+        hasTelemetry={hasTelemetry}
         practiceData={practiceData}
       />
     </main>

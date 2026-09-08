@@ -31,8 +31,9 @@ python scripts/ingest_jolpica.py --season 2026 --rounds 13 14
 
 - **`Ingestion OpenF1 (temps au tour, pneus, météo, messages de course)`** (`ingest-openf1.yml`) pour la session de course — entrées : `season` (défaut 2026), `rounds` (vide = toutes les courses déjà disputées).
 - **`Ingestion OpenF1 — séance par session`** (`ingest-openf1-practice.yml`) pour EL1/EL2/EL3/Qualifs/Sprint — entrées : `season`, `round` (obligatoire), `session` (menu déroulant : `Practice 1/2/3`, `Qualifying`, `Sprint Qualifying`, `Sprint`, `Race`). **Un round + une séance à la fois** — relancer le workflow pour chaque séance à ingérer.
+- **`Ingestion OpenF1 — télémétrie vitesse/distance par tour`** (`ingest-openf1-telemetry.yml`) pour le graphique "Vitesse par tour" du Raw data — entrées : `season`, `round` (obligatoire, **un seul round par lancement** : l'endpoint `car_data` pèse plusieurs Mo par pilote, contrairement aux autres endpoints OpenF1). Nécessite que `ingest-openf1.yml` ait déjà tourné pour ce round (bornes de tour lues depuis l'endpoint `laps`, refetché indépendamment de `lap_times`).
 
-Les deux appliquent `db/schema_fastf1.sql` avant d'ingérer (idempotent, sans risque de le relancer).
+Les trois appliquent `db/schema_fastf1.sql` avant d'ingérer (idempotent, sans risque de le relancer).
 
 **Piège connu** : la séance rookie obligatoire peut faire courir un pilote de réserve absent de la table `drivers` (résultats course) — `ingest_openf1_practice.py` résout donc les pilotes directement depuis l'endpoint `drivers` d'OpenF1 filtré par séance, jamais depuis `results`. Ne pas "simplifier" ce point si on retouche le script.
 

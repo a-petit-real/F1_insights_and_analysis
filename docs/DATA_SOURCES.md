@@ -9,10 +9,19 @@ Reprend et généralise l'approche de sourcing déjà pratiquée dans les analys
 | Source | Type de donnée | Usage | Ingestion |
 |---|---|---|---|
 | Jolpica-F1 (fork Ergast) | Historique de résultats et classements, format API | Alimentation base de données | ✅ Automatisée (`scripts/ingest_jolpica.py`, cron quotidien) |
-| OpenF1 | Temps au tour (avec secteurs), stints pneus, météo, messages de course, timing détaillé, séances d'essais | Alimentation base de données, calculs dérivés | ✅ Semi-automatisée (`scripts/ingest_openf1*.py`, déclenchement manuel après chaque session) |
+| OpenF1 | Temps au tour (avec secteurs), stints pneus, météo, messages de course, timing détaillé, séances d'essais, télémétrie voiture (vitesse/RPM/gaz/frein instantanés) | Alimentation base de données, calculs dérivés | ✅ Semi-automatisée (`scripts/ingest_openf1*.py`, déclenchement manuel après chaque session/course) |
 | formula1.com | Résultats, grilles, classements, communiqués, comptes-rendus officiels | Source de vérité pour les faits de course, lue à la main en rédigeant un article | ❌ Pas de scraping — lecture manuelle uniquement |
 | Pirelli press | Choix de gommes, analyses de dégradation officielles | Analyse stratégie pneus | ❌ Pas de scraping/RSS construit |
 | FIA (communiqués, ADUO) | Réglementation, pénalités, évaluations techniques officielles (ex. classement moteurs) | Contexte réglementaire et technique | ❌ Pas de pipeline |
+
+### Données dérivées côté web (Raw data)
+
+Deux graphiques de l'onglet Raw data ne correspondent à aucun flux OpenF1 direct — calculés côté site à partir d'un flux primaire, documenté ici pour ne pas les faire passer pour une mesure officielle :
+
+- **Position par tour** — OpenF1 n'a pas de flux "position" continu (seulement `overtakes`, ponctuel). Dérivée en triant tous les pilotes par leur temps cumulé sur piste (`lap_times.session_time`) à un tour donné.
+- **Vitesse par tour** (distance depuis le début du tour) — OpenF1 n'a pas de champ distance dans `car_data` (seulement des échantillons vitesse horodatés, sans position). Distance calculée à l'ingestion (`scripts/ingest_openf1_telemetry.py`) par intégration trapézoïdale de la vitesse sur le temps écoulé depuis le début du tour — une approximation standard en l'absence de position GPS exploitée, pas une mesure directe.
+
+Les deux affichent une note explicite sur la page plutôt que de se présenter comme une donnée officielle.
 
 ## Sources secondaires (presse spécialisée)
 

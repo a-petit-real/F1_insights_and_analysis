@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { fetchLapTelemetry } from "./telemetryActions";
 import { ROUND1_ANALYSE_FR_HTML } from "../1/analyse-fr";
 import { ROUND2_ANALYSE_FR_HTML } from "../2/analyse-fr";
 import { ROUND3_ANALYSE_FR_HTML } from "../3/analyse-fr";
@@ -92,7 +93,7 @@ const PRACTICE_EN_HTML = {
   },
 };
 
-export default function RaceTabs({ round, results, lapTimes, tyreStints, weather, rcm, overtakes, practiceData }) {
+export default function RaceTabs({ round, raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry, practiceData }) {
   const practiceSessions = PRACTICE_ORDER.filter((name) => practiceData && practiceData[name]);
   const hasPreAnalyse = Boolean(PREANALYSE_FR_HTML[round]);
   const hasResults = results && results.length > 0;
@@ -143,12 +144,14 @@ export default function RaceTabs({ round, results, lapTimes, tyreStints, weather
       {tab === "raw" && (
         <SpoilerGate spoiler={spoiler} session="Race" label="les données de course">
           <RawDataTab
+            raceId={raceId}
             results={results}
             lapTimes={lapTimes}
             tyreStints={tyreStints}
             weather={weather}
             rcm={rcm}
             overtakes={overtakes}
+            hasTelemetry={hasTelemetry}
           />
         </SpoilerGate>
       )}
@@ -475,7 +478,7 @@ function NoRaceDataYet({ message }) {
   );
 }
 
-function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) {
+function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry }) {
   const driverNames = Object.keys(lapTimes).sort();
   const defaultSelected = useMemo(() => {
     const top5 = results.slice(0, 5).map((r) => r.family_name);
@@ -535,6 +538,29 @@ function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) 
     return rows;
   }, [lapTimes, selected]);
   const driverCount = driverNames.length;
+  const maxLap = useMemo(
+    () => Math.max(0, ...Object.values(lapTimes).flatMap((laps) => laps.map((l) => l.lap))),
+    [lapTimes]
+  );
+
+  // Vitesse par tour : chargée à la demande via Server Action (pas au
+  // chargement de la page — cf. commentaire de telemetryActions.js), pour
+  // le seul tour choisi. Effacée puis rechargée à chaque changement de
+  // tour ; `cancelled` évite d'écraser l'état avec la réponse d'une
+  // requête devenue obsolète si l'utilisateur change de tour rapidement.
+  const [telemetryLap, setTelemetryLap] = useState(1);
+  const [telemetryData, setTelemetryData] = useState(null);
+  const [telemetryError, setTelemetryError] = useState(false);
+  useEffect(() => {
+    if (!hasTelemetry || !raceId) return;
+    let cancelled = false;
+    setTelemetryData(null);
+    setTelemetryError(false);
+    fetchLapTelemetry(raceId, telemetryLap)
+      .then((data) => { if (!cancelled) setTelemetryData(data); })
+      .catch(() => { if (!cancelled) setTelemetryError(true); });
+    return () => { cancelled = true; };
+  }, [raceId, telemetryLap, hasTelemetry]);
 
   const stintsByDriver = useMemo(() => {
     const map = {};
@@ -645,6 +671,61 @@ function RawDataTab({ results, lapTimes, tyreStints, weather, rcm, overtakes }) 
           </LineChart>
         </ResponsiveContainer>
       </Section>
+
+      {hasTelemetry && (
+        <Section title="Vitesse par tour">
+          <p className="note" style={{ marginBottom: 12 }}>
+            Distance approximative depuis le début du tour, calculée par intégration de la vitesse instantanée (OpenF1 ne fournit pas de position sur piste — cf. docs/DATA_SOURCES.md). Pilotes sélectionnés ci-dessus.
+          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 13 }}>
+            <label htmlFor="telemetry-lap">Tour :</label>
+            <select
+              id="telemetry-lap"
+              value={telemetryLap}
+              onChange={(e) => setTelemetryLap(Number(e.target.value))}
+              style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #ccc" }}
+            >
+              {Array.from({ length: maxLap }, (_, i) => i + 1).map((lap) => (
+                <option key={lap} value={lap}>{`Tour ${lap}`}</option>
+              ))}
+            </select>
+          </div>
+          {telemetryError && <p className="note">Erreur de chargement de la télémétrie pour ce tour.</p>}
+          {!telemetryError && !telemetryData && <p className="note">Chargement…</p>}
+          {telemetryData && (
+            <ResponsiveContainer width="100%" height={360}>
+              <LineChart margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis
+                  dataKey="distance"
+                  type="number"
+                  domain={["dataMin", "dataMax"]}
+                  unit=" m"
+                  label={{ value: "Distance depuis le début du tour (m)", position: "insideBottom", offset: -4 }}
+                />
+                <YAxis dataKey="speed" domain={["dataMin - 10", "dataMax + 10"]} unit=" km/h" width={70} />
+                <Tooltip formatter={(v) => `${Math.round(v)} km/h`} labelFormatter={(l) => `${Math.round(l)} m`} />
+                <Legend />
+                {[...selected].map((name, i) => (
+                  telemetryData[name] ? (
+                    <Line
+                      key={name}
+                      data={telemetryData[name]}
+                      dataKey="speed"
+                      name={name}
+                      type="monotone"
+                      stroke={DRIVER_LINE_COLORS[i % DRIVER_LINE_COLORS.length]}
+                      dot={false}
+                      strokeWidth={1.5}
+                      isAnimationActive={false}
+                    />
+                  ) : null
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </Section>
+      )}
 
       <Section title="Stratégie pneus">
         <div style={{ display: "grid", gap: 6 }}>

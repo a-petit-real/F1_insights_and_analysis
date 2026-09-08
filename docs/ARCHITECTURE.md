@@ -4,7 +4,7 @@ Vue en couches, **à jour de l'implémentation réelle** (dernière relecture : 
 
 ## Vue d'ensemble
 
-Il n'y a **pas de backend séparé**. Next.js (App Router) fait tout : rendu des pages côté serveur, requêtes SQL directes à PostgreSQL depuis les Server Components (`web/lib/raceData.js` → `web/lib/db.js` → `pg`), et le peu d'interactivité côté client (onglets, anti-spoiler, sélecteur de langue) en composants `"use client"`. L'ingestion de données est un ensemble de scripts Python déclenchés par GitHub Actions, qui écrivent directement dans la même base PostgreSQL — aucune API intermédiaire entre l'ingestion et le site.
+Il n'y a **pas de backend séparé**. Next.js (App Router) fait tout : rendu des pages côté serveur, requêtes SQL directes à PostgreSQL depuis les Server Components (`web/lib/raceData.js` → `web/lib/db.js` → `pg`), et le peu d'interactivité côté client (onglets, anti-spoiler, sélecteur de langue) en composants `"use client"`. Une seule exception à "tout se charge au rendu de la page" : le graphique "Vitesse par tour" (`courses/[round]/telemetryActions.js`) utilise une **Server Action** (`"use server"`) pour aller chercher la télémétrie d'un seul tour à la demande, plutôt que d'envoyer toute la télémétrie de la course au chargement — reste dans le même modèle (Next.js → Postgres directement, pas de route API/backend séparé), juste déclenché depuis le clic plutôt qu'au rendu initial. L'ingestion de données est un ensemble de scripts Python déclenchés par GitHub Actions, qui écrivent directement dans la même base PostgreSQL — aucune API intermédiaire entre l'ingestion et le site.
 
 ```
 Sources externes (Jolpica, OpenF1)
@@ -67,7 +67,7 @@ Pages réellement implémentées (routes App Router sous `web/app/`) :
 |---|---|---|
 | `/` | `page.jsx` + `HomeDashboard.jsx` | Dernier résultat + prochain GP (déterminé par présence réelle de données en base, pas par comparaison de date — cf. commentaire dans `page.jsx`) |
 | `/courses` | `courses/page.jsx` + `SeasonCalendar.jsx` | Calendrier de la saison : vue liste + carte interactive (SVG, zoom, statut disputée/ce week-end/à venir) |
-| `/courses/[round]` | `courses/[round]/page.jsx` + `RaceTabs.jsx` | Fiche course complète : onglets Pré-analyse / EL1 / EL2 / EL3 / Quali / Analyse / Raw data (temps au tour, pneus, météo, RCM, dépassements en graphiques Recharts + tableaux) |
+| `/courses/[round]` | `courses/[round]/page.jsx` + `RaceTabs.jsx` | Fiche course complète : onglets Pré-analyse / EL1 / EL2 / EL3 / Quali / Analyse / Raw data (temps au tour, position et vitesse par tour, pneus, météo, RCM, dépassements en graphiques Recharts + tableaux) |
 | `/classement` | `classement/page.jsx` + `StandingsView.jsx` | Classement pilotes/constructeurs, protégé par l'anti-spoiler (figé au dernier GP marqué "vu") |
 
 **Pages envisagées mais non implémentées** : fiches pilotes/écuries individuelles avec historique, comparateur, page "Sources & méthodologie" dédiée (chaque article a sa propre section sources en `<details>`, pas de page transverse).
