@@ -90,8 +90,11 @@ for fam, pos, status in official:
 
 calc_order = [fam for _, fam in ranking]
 official_classified = [fam for fam, pos, status in official if pos is not None]
-match = calc_order[: len(official_classified)] == official_classified
-print(f"\nOrdre calculé (dernier tour) == ordre officiel (classés) : {match}")
+# calc_order ne couvre que les pilotes encore au tour "last_lap" (les
+# doublés/abandonnés en sortent avant) : comparer sur ce même nombre de
+# pilotes côté officiel, pas l'inverse.
+match = calc_order == official_classified[: len(calc_order)]
+print(f"\nOrdre calculé (dernier tour, {len(calc_order)} pilotes) == ordre officiel sur ce même nombre : {match}")
 if not match:
     print("ÉCART — attendu dans une certaine mesure (tours restants différents en cas de tour(s) de retard,")
     print("drapeau à damier atteint à des lap_number différents) ; à examiner si l'écart est important.")
