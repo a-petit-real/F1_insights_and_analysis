@@ -478,15 +478,14 @@ function NoRaceDataYet({ message }) {
   );
 }
 
-function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry }) {
-  const driverNames = Object.keys(lapTimes).sort();
-  const defaultSelected = useMemo(() => {
-    const top5 = results.slice(0, 5).map((r) => r.family_name);
-    return new Set(top5.length ? top5 : driverNames.slice(0, 5));
-  }, [results, driverNames]);
-  const [selected, setSelected] = useState(defaultSelected);
-
-  function toggleDriver(name) {
+// Sélection de pilotes pour UN graphique — un Set + toggle indépendants,
+// pour que chaque section de Raw data garde son propre état plutôt que de
+// partager une case à cocher globale (source de confusion : cocher un
+// pilote pour comparer les temps au tour ne devrait pas aussi l'ajouter à
+// la carte du circuit).
+function useDriverSelection(defaultNames) {
+  const [selected, setSelected] = useState(() => new Set(defaultNames));
+  function toggle(name) {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
@@ -494,6 +493,206 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
       return next;
     });
   }
+  return [selected, toggle];
+}
+
+function DriverCheckboxes({ names, selected, onToggle }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+      {names.map((name) => (
+        <label key={name} style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+          <input type="checkbox" checked={selected.has(name)} onChange={() => onToggle(name)} />
+          {name}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function LapSelector({ value, onChange, maxLap }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 13 }}>
+      <label>Tour :</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #ccc" }}
+      >
+        {Array.from({ length: maxLap }, (_, i) => i + 1).map((lap) => (
+          <option key={lap} value={lap}>{`Tour ${lap}`}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// Charge la télémétrie d'UN tour à la demande (Server Action, cf.
+// telemetryActions.js) — jamais au chargement de la page. `cancelled`
+// évite d'écraser l'état avec la réponse d'une requête devenue obsolète
+// si l'utilisateur change de tour rapidement. Un seul hook pour les deux
+// sections qui en ont besoin (Vitesse par tour, Carte du circuit) : elles
+// ont chacune leur propre tour choisi, donc chacune son propre appel.
+function useLapTelemetry(raceId, lap, enabled) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    if (!enabled || !raceId) return;
+    let cancelled = false;
+    setData(null);
+    setError(false);
+    fetchLapTelemetry(raceId, lap)
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch(() => { if (!cancelled) setError(true); });
+    return () => { cancelled = true; };
+  }, [raceId, lap, enabled]);
+  return { data, error };
+}
+
+// Rampe séquentielle bleu clair -> bleu foncé (une seule teinte, du design
+// system du site) pour encoder une magnitude continue (la vitesse) — cf.
+// skill dataviz, jamais un dégradé arc-en-ciel pour une grandeur continue.
+const SPEED_RAMP = [
+  "#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7",
+  "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281", "#0d366b",
+];
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function speedToColor(speed, min, max) {
+  if (!(max > min)) return SPEED_RAMP[SPEED_RAMP.length - 1];
+  const t = Math.min(1, Math.max(0, (speed - min) / (max - min)));
+  const pos = t * (SPEED_RAMP.length - 1);
+  const i0 = Math.floor(pos);
+  const i1 = Math.min(SPEED_RAMP.length - 1, i0 + 1);
+  const frac = pos - i0;
+  const [r0, g0, b0] = hexToRgb(SPEED_RAMP[i0]);
+  const [r1, g1, b1] = hexToRgb(SPEED_RAMP[i1]);
+  const r = Math.round(r0 + (r1 - r0) * frac);
+  const g = Math.round(g0 + (g1 - g0) * frac);
+  const b = Math.round(b0 + (b1 - b0) * frac);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Petits multiples (un tracé par pilote coché) plutôt qu'un seul tracé
+// superposé : superposer plusieurs pilotes sur UNE carte forcerait à
+// coder à la fois l'identité (couleur par pilote) ET la vitesse (couleur
+// par magnitude) sur le même canal couleur, ce qui rend les deux
+// illisibles. Ici la couleur ne code que la vitesse (identité = position
+// du panneau + son titre), avec la même échelle sur tous les panneaux
+// affichés pour rester comparable d'un pilote à l'autre.
+function CircuitMap({ telemetryData, selected }) {
+  const names = Object.keys(telemetryData)
+    .filter((n) => selected.has(n) && telemetryData[n] && telemetryData[n].length > 1)
+    .sort();
+
+  const { project, W, H, minSpeed, maxSpeed } = useMemo(() => {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    let minS = Infinity, maxS = -Infinity;
+    for (const name of names) {
+      for (const p of telemetryData[name]) {
+        if (p.x == null || p.y == null) continue;
+        minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+        minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+        if (p.speed != null) { minS = Math.min(minS, p.speed); maxS = Math.max(maxS, p.speed); }
+      }
+    }
+    if (!isFinite(minX)) {
+      return { project: () => [0, 0], W: 400, H: 300, minSpeed: 0, maxSpeed: 1 };
+    }
+    const spanX = maxX - minX || 1;
+    const spanY = maxY - minY || 1;
+    const width = 400; // largeur logique fixe ; la hauteur préserve le rapport réel du tracé
+    const height = width * (spanY / spanX);
+    return {
+      project: (x, y) => [((x - minX) / spanX) * width, height - ((y - minY) / spanY) * height],
+      W: width,
+      H: height,
+      minSpeed: isFinite(minS) ? minS : 0,
+      maxSpeed: isFinite(maxS) ? maxS : 1,
+    };
+  }, [telemetryData, names.join("|")]);
+
+  if (names.length === 0) return <p className="note">Aucun pilote sélectionné.</p>;
+
+  const pad = 16;
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, fontSize: 12, color: "var(--text-muted)" }}>
+        <span>{Math.round(minSpeed)} km/h</span>
+        <div style={{ width: 160, height: 10, borderRadius: 5, background: `linear-gradient(to right, ${SPEED_RAMP.join(",")})` }} />
+        <span>{Math.round(maxSpeed)} km/h</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
+        {names.map((name) => {
+          const points = telemetryData[name];
+          return (
+            <div key={name}>
+              <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{name}</p>
+              <svg
+                viewBox={`${-pad} ${-pad} ${W + pad * 2} ${H + pad * 2}`}
+                style={{ width: "100%", height: "auto", aspectRatio: `${W + pad * 2} / ${H + pad * 2}`, background: "var(--surface-raised)", borderRadius: 8 }}
+              >
+                {/* Liseré sombre sous le tracé : le bout le plus clair de la
+                    rampe de vitesse (bleu très pâle) manque de contraste sur
+                    le fond du panneau seul — cf. skill dataviz, un WARN de
+                    contraste s'adresse par un repère visible, pas en
+                    comptant sur la couleur seule. */}
+                <polyline
+                  points={points.filter((p) => p.x != null && p.y != null).map((p) => project(p.x, p.y).join(",")).join(" ")}
+                  fill="none"
+                  stroke="var(--text-muted)"
+                  strokeOpacity={0.35}
+                  strokeWidth={7}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                {points.slice(1).map((p, i) => {
+                  const prev = points[i];
+                  if (p.x == null || p.y == null || prev.x == null || prev.y == null) return null;
+                  const [x1, y1] = project(prev.x, prev.y);
+                  const [x2, y2] = project(p.x, p.y);
+                  const avgSpeed = ((p.speed ?? 0) + (prev.speed ?? 0)) / 2;
+                  return (
+                    <line
+                      key={i}
+                      x1={x1} y1={y1} x2={x2} y2={y2}
+                      stroke={speedToColor(avgSpeed, minSpeed, maxSpeed)}
+                      strokeWidth={4}
+                      strokeLinecap="round"
+                    >
+                      <title>{`${Math.round(p.speed)} km/h · ${Math.round(p.distance)} m`}</title>
+                    </line>
+                  );
+                })}
+              </svg>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry }) {
+  const driverNames = Object.keys(lapTimes).sort();
+  const top5 = useMemo(() => {
+    const t = results.slice(0, 5).map((r) => r.family_name);
+    return t.length ? t : driverNames.slice(0, 5);
+  }, [results, driverNames]);
+  const top2 = useMemo(() => (top5.length ? top5.slice(0, 2) : driverNames.slice(0, 2)), [top5, driverNames]);
+
+  // Sélection de pilotes INDÉPENDANTE par graphique — cocher un pilote sur
+  // "Temps au tour" n'affecte pas "Position par tour" ni les deux
+  // graphiques de télémétrie : chacun garde son propre état, chacun
+  // démarre avec un défaut raisonnable (top 5, top 2 pour la carte du
+  // circuit dont chaque pilote coché ajoute un panneau entier).
+  const [selectedLapTimes, toggleLapTimesDriver] = useDriverSelection(top5);
+  const [selectedPosition, togglePositionDriver] = useDriverSelection(top5);
+  const [selectedSpeed, toggleSpeedDriver] = useDriverSelection(top5);
+  const [selectedMap, toggleMapDriver] = useDriverSelection(top2);
 
   // Fusionne les temps au tour de chaque pilote sélectionné en une seule série,
   // indexée par numéro de tour (format attendu par recharts).
@@ -502,14 +701,14 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
     const rows = [];
     for (let lap = 1; lap <= maxLap; lap++) {
       const row = { lap };
-      for (const name of selected) {
+      for (const name of selectedLapTimes) {
         const entry = (lapTimes[name] || []).find((l) => l.lap === lap);
         if (entry && entry.seconds && !entry.pitIn) row[name] = entry.seconds;
       }
       rows.push(row);
     }
     return rows;
-  }, [lapTimes, selected]);
+  }, [lapTimes, selectedLapTimes]);
 
   // Position sur piste tour par tour : pas un flux OpenF1 dédié (jamais
   // ingéré, cf. docs/DATA_SOURCES.md) mais dérivée de session_time (temps
@@ -517,8 +716,8 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
   // temps au tour ci-dessus) — trier TOUS les pilotes ayant couru ce tour
   // par ce temps cumulé donne directement leur position à ce moment-là.
   // Le classement est calculé sur l'ensemble des pilotes (pas seulement
-  // ceux cochés) avant de filtrer sur `selected`, pour rester exact même
-  // quand un pilote non affiché reste dans le peloton.
+  // ceux cochés) avant de filtrer sur `selectedPosition`, pour rester exact
+  // même quand un pilote non affiché reste dans le peloton.
   const positionData = useMemo(() => {
     const maxLap = Math.max(0, ...Object.values(lapTimes).flatMap((laps) => laps.map((l) => l.lap)));
     const rows = [];
@@ -531,36 +730,27 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
       atLap.sort((a, b) => a.t - b.t);
       const row = { lap };
       atLap.forEach((d, i) => {
-        if (selected.has(d.name)) row[d.name] = i + 1;
+        if (selectedPosition.has(d.name)) row[d.name] = i + 1;
       });
       rows.push(row);
     }
     return rows;
-  }, [lapTimes, selected]);
+  }, [lapTimes, selectedPosition]);
   const driverCount = driverNames.length;
   const maxLap = useMemo(
     () => Math.max(0, ...Object.values(lapTimes).flatMap((laps) => laps.map((l) => l.lap))),
     [lapTimes]
   );
 
-  // Vitesse par tour : chargée à la demande via Server Action (pas au
-  // chargement de la page — cf. commentaire de telemetryActions.js), pour
-  // le seul tour choisi. Effacée puis rechargée à chaque changement de
-  // tour ; `cancelled` évite d'écraser l'état avec la réponse d'une
-  // requête devenue obsolète si l'utilisateur change de tour rapidement.
-  const [telemetryLap, setTelemetryLap] = useState(1);
-  const [telemetryData, setTelemetryData] = useState(null);
-  const [telemetryError, setTelemetryError] = useState(false);
-  useEffect(() => {
-    if (!hasTelemetry || !raceId) return;
-    let cancelled = false;
-    setTelemetryData(null);
-    setTelemetryError(false);
-    fetchLapTelemetry(raceId, telemetryLap)
-      .then((data) => { if (!cancelled) setTelemetryData(data); })
-      .catch(() => { if (!cancelled) setTelemetryError(true); });
-    return () => { cancelled = true; };
-  }, [raceId, telemetryLap, hasTelemetry]);
+  // Vitesse par tour + carte du circuit : chargées à la demande via Server
+  // Action (pas au chargement de la page — cf. commentaire de
+  // telemetryActions.js), chacune pour le seul tour choisi dans SON PROPRE
+  // sélecteur — les deux graphiques sont indépendants l'un de l'autre,
+  // comme la sélection de pilotes.
+  const [speedLap, setSpeedLap] = useState(1);
+  const { data: speedData, error: speedError } = useLapTelemetry(raceId, speedLap, hasTelemetry);
+  const [mapLap, setMapLap] = useState(1);
+  const { data: mapData, error: mapError } = useLapTelemetry(raceId, mapLap, hasTelemetry);
 
   const stintsByDriver = useMemo(() => {
     const map = {};
@@ -606,14 +796,7 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
       </Section>
 
       <Section title="Temps au tour">
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-          {driverNames.map((name) => (
-            <label key={name} style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
-              <input type="checkbox" checked={selected.has(name)} onChange={() => toggleDriver(name)} />
-              {name}
-            </label>
-          ))}
-        </div>
+        <DriverCheckboxes names={driverNames} selected={selectedLapTimes} onToggle={toggleLapTimesDriver} />
         <ResponsiveContainer width="100%" height={360}>
           <LineChart data={chartData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -625,7 +808,7 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
             />
             <Tooltip formatter={(v) => formatLap(v)} labelFormatter={(l) => `Tour ${l}`} />
             <Legend />
-            {[...selected].map((name, i) => (
+            {[...selectedLapTimes].map((name, i) => (
               <Line
                 key={name}
                 type="monotone"
@@ -642,8 +825,9 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
 
       <Section title="Position par tour">
         <p className="note" style={{ marginBottom: 12 }}>
-          Calculée à partir du temps cumulé sur piste à chaque tour (pas un flux de position officiel — jamais ingéré, cf. docs/DATA_SOURCES.md) : peut différer ponctuellement du classement officiel autour d'une neutralisation ou d'un drapeau rouge. Pilotes sélectionnés ci-dessus.
+          Calculée à partir du temps cumulé sur piste à chaque tour (pas un flux de position officiel — jamais ingéré, cf. docs/DATA_SOURCES.md) : peut différer ponctuellement du classement officiel autour d'une neutralisation ou d'un drapeau rouge.
         </p>
+        <DriverCheckboxes names={driverNames} selected={selectedPosition} onToggle={togglePositionDriver} />
         <ResponsiveContainer width="100%" height={360}>
           <LineChart data={positionData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -657,7 +841,7 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
             />
             <Tooltip formatter={(v) => `P${v}`} labelFormatter={(l) => `Tour ${l}`} />
             <Legend />
-            {[...selected].map((name, i) => (
+            {[...selectedPosition].map((name, i) => (
               <Line
                 key={name}
                 type="monotone"
@@ -675,24 +859,13 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
       {hasTelemetry && (
         <Section title="Vitesse par tour">
           <p className="note" style={{ marginBottom: 12 }}>
-            Distance approximative depuis le début du tour, calculée par intégration de la vitesse instantanée (OpenF1 ne fournit pas de position sur piste — cf. docs/DATA_SOURCES.md). Pilotes sélectionnés ci-dessus.
+            Distance depuis le début du tour, mesurée par la position réelle sur circuit (endpoint OpenF1 `location`) — pas une approximation par intégration de la vitesse. Vitesse interpolée sur cette même grille de position (grilles temporelles `location`/`car_data` indépendantes côté OpenF1) — cf. docs/DATA_SOURCES.md.
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 13 }}>
-            <label htmlFor="telemetry-lap">Tour :</label>
-            <select
-              id="telemetry-lap"
-              value={telemetryLap}
-              onChange={(e) => setTelemetryLap(Number(e.target.value))}
-              style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #ccc" }}
-            >
-              {Array.from({ length: maxLap }, (_, i) => i + 1).map((lap) => (
-                <option key={lap} value={lap}>{`Tour ${lap}`}</option>
-              ))}
-            </select>
-          </div>
-          {telemetryError && <p className="note">Erreur de chargement de la télémétrie pour ce tour.</p>}
-          {!telemetryError && !telemetryData && <p className="note">Chargement…</p>}
-          {telemetryData && (
+          <LapSelector value={speedLap} onChange={setSpeedLap} maxLap={maxLap} />
+          <DriverCheckboxes names={driverNames} selected={selectedSpeed} onToggle={toggleSpeedDriver} />
+          {speedError && <p className="note">Erreur de chargement de la télémétrie pour ce tour.</p>}
+          {!speedError && !speedData && <p className="note">Chargement…</p>}
+          {speedData && (
             <ResponsiveContainer width="100%" height={360}>
               <LineChart margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -706,11 +879,11 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
                 <YAxis dataKey="speed" domain={["dataMin - 10", "dataMax + 10"]} unit=" km/h" width={70} />
                 <Tooltip formatter={(v) => `${Math.round(v)} km/h`} labelFormatter={(l) => `${Math.round(l)} m`} />
                 <Legend />
-                {[...selected].map((name, i) => (
-                  telemetryData[name] ? (
+                {[...selectedSpeed].map((name, i) => (
+                  speedData[name] ? (
                     <Line
                       key={name}
-                      data={telemetryData[name]}
+                      data={speedData[name]}
                       dataKey="speed"
                       name={name}
                       type="monotone"
@@ -724,6 +897,19 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
               </LineChart>
             </ResponsiveContainer>
           )}
+        </Section>
+      )}
+
+      {hasTelemetry && (
+        <Section title="Carte du circuit">
+          <p className="note" style={{ marginBottom: 12 }}>
+            Tracé réel (position OpenF1, endpoint `location`), un panneau par pilote coché, coloré par vitesse — même échelle de couleur sur tous les panneaux affichés pour rester comparable d'un pilote à l'autre. Survoler le tracé affiche la vitesse et la distance au point.
+          </p>
+          <LapSelector value={mapLap} onChange={setMapLap} maxLap={maxLap} />
+          <DriverCheckboxes names={driverNames} selected={selectedMap} onToggle={toggleMapDriver} />
+          {mapError && <p className="note">Erreur de chargement de la télémétrie pour ce tour.</p>}
+          {!mapError && !mapData && <p className="note">Chargement…</p>}
+          {mapData && <CircuitMap telemetryData={mapData} selected={selectedMap} />}
         </Section>
       )}
 

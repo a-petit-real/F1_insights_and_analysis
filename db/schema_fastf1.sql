@@ -116,26 +116,36 @@ CREATE TABLE IF NOT EXISTS overtakes (
 
 CREATE INDEX IF NOT EXISTS idx_overtakes_race ON overtakes(race_id);
 
--- Télémétrie vitesse/distance par tour (endpoint `car_data` d'OpenF1 —
--- échantillons speed/rpm/throttle/brake/n_gear/drs à ~3-5 Hz, pas de champ
--- distance direct). Une ligne par (course, voiture, tour) contenant deux
+-- Télémétrie position/vitesse par tour (endpoints `location` [x, y, z en
+-- mètres, ~3-5 Hz] et `car_data` [speed, ~3-5 Hz] d'OpenF1, fusionnés à
+-- l'ingestion). Une ligne par (course, voiture, tour) contenant des
 -- tableaux parallèles plutôt qu'une ligne par échantillon : pour une
 -- course, ça représente ~1000 lignes (20 voitures x ~55 tours) au lieu de
 -- plusieurs centaines de milliers — l'offre gratuite Neon (cf.
 -- docs/ARCHITECTURE.md) n'a pas vocation à stocker un point par échantillon
--- brut. distance_m est calculée à l'ingestion par intégration trapézoïdale
--- de speed_kmh sur le temps écoulé depuis le début du tour (cf.
--- scripts/ingest_openf1_telemetry.py) — approximation standard en l'absence
--- de position GPS exploitée (endpoint `location`, non ingéré), du même ordre
--- que celle utilisée par les outils de télémétrie F1 grand public.
+-- brut. x_m/y_m/z_m sont la position réelle sur le circuit (relative à une
+-- origine fixe par circuit, cf. OpenF1) ; distance_m est la distance
+-- parcourue depuis le début du tour, calculée à l'ingestion par somme des
+-- écarts euclidiens consécutifs entre points de position (cf.
+-- scripts/ingest_openf1_telemetry.py) — measure directe, pas une
+-- approximation par intégration de la vitesse (première version de cette
+-- table, abandonnée : trop imprécise en sortie de virage/freinage). Les
+-- deux flux ont des grilles temporelles indépendantes : speed_kmh est
+-- interpolé linéairement sur les horodatages de `location`, pas une mesure
+-- native à chaque point.
 CREATE TABLE IF NOT EXISTS lap_telemetry (
     race_id      INTEGER NOT NULL REFERENCES races(race_id) ON DELETE CASCADE,
     car_number   INTEGER NOT NULL,
     lap_number   INTEGER NOT NULL,
     distance_m   REAL[] NOT NULL,   -- distance parcourue depuis le début du tour (mètres), croissante
-    speed_kmh    REAL[] NOT NULL,   -- vitesse instantanée (km/h), même index que distance_m
+    speed_kmh    REAL[] NOT NULL,   -- vitesse (km/h) interpolée sur les horodatages de position, même index que distance_m
+    x_m          REAL[],           -- position sur le circuit (mètres, origine arbitraire par circuit), même index
+    y_m          REAL[],
     PRIMARY KEY (race_id, car_number, lap_number)
 );
+
+ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS x_m REAL[];
+ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS y_m REAL[];
 
 -- Séances d'essais libres (EL1/EL2/EL3) — schéma séparé des tables de course
 -- ci-dessus plutôt qu'une extension de celles-ci : une course a exactement

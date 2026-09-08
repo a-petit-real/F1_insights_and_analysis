@@ -31,7 +31,7 @@ python scripts/ingest_jolpica.py --season 2026 --rounds 13 14
 
 - **`Ingestion OpenF1 (temps au tour, pneus, météo, messages de course)`** (`ingest-openf1.yml`) pour la session de course — entrées : `season` (défaut 2026), `rounds` (vide = toutes les courses déjà disputées).
 - **`Ingestion OpenF1 — séance par session`** (`ingest-openf1-practice.yml`) pour EL1/EL2/EL3/Qualifs/Sprint — entrées : `season`, `round` (obligatoire), `session` (menu déroulant : `Practice 1/2/3`, `Qualifying`, `Sprint Qualifying`, `Sprint`, `Race`). **Un round + une séance à la fois** — relancer le workflow pour chaque séance à ingérer.
-- **`Ingestion OpenF1 — télémétrie vitesse/distance par tour`** (`ingest-openf1-telemetry.yml`) pour le graphique "Vitesse par tour" du Raw data — entrées : `season`, `round` (obligatoire, **un seul round par lancement** : l'endpoint `car_data` pèse plusieurs Mo par pilote, contrairement aux autres endpoints OpenF1). Nécessite que `ingest-openf1.yml` ait déjà tourné pour ce round (bornes de tour lues depuis l'endpoint `laps`, refetché indépendamment de `lap_times`).
+- **`Ingestion OpenF1 — télémétrie vitesse/distance par tour`** (`ingest-openf1-telemetry.yml`) pour "Vitesse par tour" et "Carte du circuit" du Raw data — entrées : `season`, `round` (obligatoire, **un seul round par lancement** : les endpoints `location` et `car_data` pèsent chacun plusieurs Mo par pilote, contrairement aux autres endpoints OpenF1). Nécessite que `ingest-openf1.yml` ait déjà tourné pour ce round (bornes de tour lues depuis l'endpoint `laps`, refetché indépendamment de `lap_times`).
 
 Les trois appliquent `db/schema_fastf1.sql` avant d'ingérer (idempotent, sans risque de le relancer).
 

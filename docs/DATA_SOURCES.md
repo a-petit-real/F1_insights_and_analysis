@@ -9,7 +9,7 @@ Reprend et généralise l'approche de sourcing déjà pratiquée dans les analys
 | Source | Type de donnée | Usage | Ingestion |
 |---|---|---|---|
 | Jolpica-F1 (fork Ergast) | Historique de résultats et classements, format API | Alimentation base de données | ✅ Automatisée (`scripts/ingest_jolpica.py`, cron quotidien) |
-| OpenF1 | Temps au tour (avec secteurs), stints pneus, météo, messages de course, timing détaillé, séances d'essais, télémétrie voiture (vitesse/RPM/gaz/frein instantanés) | Alimentation base de données, calculs dérivés | ✅ Semi-automatisée (`scripts/ingest_openf1*.py`, déclenchement manuel après chaque session/course) |
+| OpenF1 | Temps au tour (avec secteurs), stints pneus, météo, messages de course, timing détaillé, séances d'essais, télémétrie voiture (vitesse/RPM/gaz/frein instantanés), position sur circuit (x/y/z) | Alimentation base de données, calculs dérivés | ✅ Semi-automatisée (`scripts/ingest_openf1*.py`, déclenchement manuel après chaque session/course) |
 | formula1.com | Résultats, grilles, classements, communiqués, comptes-rendus officiels | Source de vérité pour les faits de course, lue à la main en rédigeant un article | ❌ Pas de scraping — lecture manuelle uniquement |
 | Pirelli press | Choix de gommes, analyses de dégradation officielles | Analyse stratégie pneus | ❌ Pas de scraping/RSS construit |
 | FIA (communiqués, ADUO) | Réglementation, pénalités, évaluations techniques officielles (ex. classement moteurs) | Contexte réglementaire et technique | ❌ Pas de pipeline |
@@ -19,9 +19,9 @@ Reprend et généralise l'approche de sourcing déjà pratiquée dans les analys
 Deux graphiques de l'onglet Raw data ne correspondent à aucun flux OpenF1 direct — calculés côté site à partir d'un flux primaire, documenté ici pour ne pas les faire passer pour une mesure officielle :
 
 - **Position par tour** — OpenF1 n'a pas de flux "position" continu (seulement `overtakes`, ponctuel). Dérivée en triant tous les pilotes par leur temps cumulé sur piste (`lap_times.session_time`) à un tour donné.
-- **Vitesse par tour** (distance depuis le début du tour) — OpenF1 n'a pas de champ distance dans `car_data` (seulement des échantillons vitesse horodatés, sans position). Distance calculée à l'ingestion (`scripts/ingest_openf1_telemetry.py`) par intégration trapézoïdale de la vitesse sur le temps écoulé depuis le début du tour — une approximation standard en l'absence de position GPS exploitée, pas une mesure directe.
+- **Vitesse par tour** et **Carte du circuit** (distance/tracé depuis le début du tour) — OpenF1 n'a pas de champ distance dans `car_data`, mais l'endpoint `location` donne la position réelle (x, y, z en mètres, ~3-5 Hz). distance_m et le tracé de la carte viennent donc directement de `location` (somme des écarts euclidiens consécutifs entre points de position) — une mesure directe, pas une approximation. `location` et `car_data` ont des grilles temporelles indépendantes côté OpenF1 : speed_kmh est interpolé linéairement sur les horodatages de `location` (cf. `scripts/ingest_openf1_telemetry.py`), donc pas une mesure native à chaque point affiché. Première version de cette table (intégration trapézoïdale de la vitesse, sans `location`) abandonnée — trop imprécise en sortie de virage/freinage.
 
-Les deux affichent une note explicite sur la page plutôt que de se présenter comme une donnée officielle.
+Les trois affichent une note explicite sur la page plutôt que de se présenter comme une donnée officielle.
 
 ## Sources secondaires (presse spécialisée)
 

@@ -57,7 +57,7 @@ Il n'y a pas de backend au sens d'un service séparé. La couche d'accès aux do
 
 **Réel : Next.js 16 (App Router, Turbopack) + React 19.** Pas de Tailwind — CSS écrit à la main dans un unique `web/app/globals.css` (custom properties pour les tokens : couleurs, `--measure` pour la mesure de lecture, `--panel`/`--panel-w` pour le plafond de largeur du site). Voir [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) pour le détail de ce système et des pièges CSS déjà rencontrés (à relire avant toute modification de layout).
 
-- **Data visualisation** : [Recharts](https://recharts.org) (`LineChart` pour les temps au tour et la météo) — pas Observable Plot/D3 comme envisagé initialement ; Recharts a suffi aux besoins actuels (comparaison de temps au tour, séries météo).
+- **Data visualisation** : [Recharts](https://recharts.org) (`LineChart` pour les temps au tour, la météo, la position/vitesse par tour) — pas Observable Plot/D3 comme envisagé initialement ; Recharts a suffi aux besoins actuels. Exception : la carte du circuit (Raw data) est du SVG fait main (`CircuitMap` dans `RaceTabs.jsx`), Recharts n'étant pas conçu pour un tracé 2D coloré par segment — cf. skill dataviz du projet pour la méthode (rampe séquentielle, petits multiples plutôt qu'un encodage couleur double identité+magnitude).
 - **Polices** : Big Shoulders Display (titres), Source Serif 4 (corps de texte), IBM Plex Mono (labels/métadonnées) — chargées via Google Fonts dans `layout.jsx`.
 - **Thème** : clair/sombre pris en charge via `prefers-color-scheme` + un attribut `data-theme` (cf. `:root[data-theme="dark"]` dans `globals.css`), pas de bouton de bascule visible dans l'UI actuellement (bascule automatique système uniquement).
 
@@ -67,7 +67,7 @@ Pages réellement implémentées (routes App Router sous `web/app/`) :
 |---|---|---|
 | `/` | `page.jsx` + `HomeDashboard.jsx` | Dernier résultat + prochain GP (déterminé par présence réelle de données en base, pas par comparaison de date — cf. commentaire dans `page.jsx`) |
 | `/courses` | `courses/page.jsx` + `SeasonCalendar.jsx` | Calendrier de la saison : vue liste + carte interactive (SVG, zoom, statut disputée/ce week-end/à venir) |
-| `/courses/[round]` | `courses/[round]/page.jsx` + `RaceTabs.jsx` | Fiche course complète : onglets Pré-analyse / EL1 / EL2 / EL3 / Quali / Analyse / Raw data (temps au tour, position et vitesse par tour, pneus, météo, RCM, dépassements en graphiques Recharts + tableaux) |
+| `/courses/[round]` | `courses/[round]/page.jsx` + `RaceTabs.jsx` | Fiche course complète : onglets Pré-analyse / EL1 / EL2 / EL3 / Quali / Analyse / Raw data (temps au tour, position et vitesse par tour, carte du circuit colorée par vitesse [SVG, pas Recharts], pneus, météo, RCM, dépassements en graphiques Recharts + tableaux) |
 | `/classement` | `classement/page.jsx` + `StandingsView.jsx` | Classement pilotes/constructeurs, protégé par l'anti-spoiler (figé au dernier GP marqué "vu") |
 
 **Pages envisagées mais non implémentées** : fiches pilotes/écuries individuelles avec historique, comparateur, page "Sources & méthodologie" dédiée (chaque article a sa propre section sources en `<details>`, pas de page transverse).

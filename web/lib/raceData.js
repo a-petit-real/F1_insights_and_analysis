@@ -82,7 +82,7 @@ export async function getHasTelemetry(raceId) {
 
 export async function getLapTelemetry(raceId, lapNumber) {
   const rows = await query(
-    `SELECT d.family_name, lt.distance_m, lt.speed_kmh
+    `SELECT d.family_name, lt.distance_m, lt.speed_kmh, lt.x_m, lt.y_m
      FROM lap_telemetry lt
      JOIN results res ON res.race_id = lt.race_id AND res.car_number = lt.car_number
      JOIN drivers d ON d.driver_id = res.driver_id
@@ -94,9 +94,13 @@ export async function getLapTelemetry(raceId, lapNumber) {
   for (const row of rows) {
     const distances = row.distance_m || [];
     const speeds = row.speed_kmh || [];
+    const xs = row.x_m || [];
+    const ys = row.y_m || [];
     byDriver[row.family_name] = distances.map((d, i) => ({
       distance: Number(d),
       speed: speeds[i] != null ? Number(speeds[i]) : null,
+      x: xs[i] != null ? Number(xs[i]) : null,
+      y: ys[i] != null ? Number(ys[i]) : null,
     }));
   }
   return byDriver;
