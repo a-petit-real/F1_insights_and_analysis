@@ -188,9 +188,16 @@ def main():
             print(f"  voiture #{car_number}...")
 
             loc_raw = api_get("location", session_key=session_key, driver_number=car_number)
+            # OpenF1 donne x/y en DIXIÈMES DE MÈTRE (décimètres), pas en
+            # mètres malgré ce que documentation/discussions laissent parfois
+            # croire — confirmé empiriquement (cf. scripts/debug_telemetry_check.py) :
+            # une distance de tour calculée sans cette conversion sortait à
+            # ~10x la longueur réelle du circuit (~57500m pour un tour de
+            # Monza qui en fait ~5793m). /10 restaure des mètres réels.
+            DM_TO_M = 0.1
             loc_samples = sorted(
                 (
-                    ((iso(s["date"]) - session_start).total_seconds(), s.get("x"), s.get("y"))
+                    ((iso(s["date"]) - session_start).total_seconds(), s.get("x") * DM_TO_M, s.get("y") * DM_TO_M)
                     for s in loc_raw if s.get("date") is not None and s.get("x") is not None and s.get("y") is not None
                 ),
                 key=lambda s: s[0],

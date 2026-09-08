@@ -117,8 +117,10 @@ CREATE TABLE IF NOT EXISTS overtakes (
 CREATE INDEX IF NOT EXISTS idx_overtakes_race ON overtakes(race_id);
 
 -- Télémétrie position/vitesse par tour (endpoints `location` [x, y, z en
--- mètres, ~3-5 Hz] et `car_data` [speed, ~3-5 Hz] d'OpenF1, fusionnés à
--- l'ingestion). Une ligne par (course, voiture, tour) contenant des
+-- DIXIÈMES DE MÈTRE côté API OpenF1 — confirmé empiriquement, converti en
+-- mètres à l'ingestion, cf. scripts/ingest_openf1_telemetry.py ; ~3-5 Hz]
+-- et `car_data` [speed, ~3-5 Hz] d'OpenF1, fusionnés à l'ingestion). Une
+-- ligne par (course, voiture, tour) contenant des
 -- tableaux parallèles plutôt qu'une ligne par échantillon : pour une
 -- course, ça représente ~1000 lignes (20 voitures x ~55 tours) au lieu de
 -- plusieurs centaines de milliers — l'offre gratuite Neon (cf.
