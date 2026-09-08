@@ -28,6 +28,6 @@ jobs:
       - name: Apply schema (idempotent)
         run: psql "$DATABASE_URL" -f db/schema_fastf1.sql
       - run: >
-          python scripts/ingest_openf1_telemetry.py
+          python -u scripts/ingest_openf1_telemetry.py
           --season "${{ inputs.season }}"
           --round "${{ inputs.round }}"
