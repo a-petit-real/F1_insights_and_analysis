@@ -128,18 +128,64 @@ function useDriverColors(driverNames, results) {
   }, [key, results]);
 }
 
-// Domaine d'axe temps borné aux 5e-95e percentiles des valeurs affichées
-// plutôt qu'à leur min/max bruts : un tour de safety car ou un tour
-// isolé très lent ne doit pas écraser toute l'échelle et rendre illisible
-// l'écart entre pilotes sur le reste du tracé (retour utilisateur :
-// "l'échelle n'est pas pertinente"). Rien n'est retiré des données —
-// seuls les points hors domaine ne sont simplement pas tracés (comportement
-// standard recharts).
-function trimmedDomain(values, pad = 0.4) {
+// Un temps de tour dans l'absolu (1:27.532) ne se compare pas d'un coup
+// d'œil — c'est l'ÉCART qui compte (retour utilisateur : "un temps dans
+// l'absolu c'est useless"). Les trois comparaisons de temps au tour
+// (Temps au tour, Meilleur tour, Temps moyen par tranche de 5 tours)
+// affichent donc l'écart au plus rapide du groupe sélectionné (0 pour le
+// plus rapide, +0.312 pour les autres) plutôt que le temps brut — même
+// convention que les écrans de chronométrage officiels F1. Un ralentissement
+// général (safety car, drapeau rouge) touche tout le monde à peu près
+// pareil et s'annule donc naturellement dans l'écart, sans recadrage
+// d'échelle nécessaire.
+function toGapRows(valuesByKey) {
+  const vals = Object.values(valuesByKey).filter((v) => v != null);
+  const min = vals.length ? Math.min(...vals) : null;
+  const gaps = {};
+  for (const [key, v] of Object.entries(valuesByKey)) {
+    if (v == null || min == null) continue;
+    gaps[key] = v - min;
+    gaps[`${key}__abs`] = v;
+  }
+  return gaps;
+}
+
+function formatGap(seconds) {
+  if (seconds == null) return "";
+  return seconds < 0.0005 ? "au plus rapide" : `+${seconds.toFixed(3)}s`;
+}
+
+// Domaine d'axe borné au 95e percentile des écarts plutôt qu'à leur max
+// brut : le plancher reste fixé à 0 (le plus rapide, par construction),
+// seul le haut est recadré pour qu'un décrochage isolé (accrochage,
+// erreur de pilotage) n'écrase pas la lisibilité du reste du peloton.
+function trimmedGapDomain(values, pad = 0.15) {
   const sorted = values.filter((v) => v != null).sort((a, b) => a - b);
   if (sorted.length === 0) return [0, 1];
-  const q = (p) => sorted[Math.min(sorted.length - 1, Math.floor(p * (sorted.length - 1)))];
-  return [q(0.05) - pad, q(0.95) + pad];
+  const hi = sorted[Math.min(sorted.length - 1, Math.floor(0.95 * (sorted.length - 1)))];
+  return [0, hi + pad];
+}
+
+// Infobulle partagée par les 3 comparaisons : écart en premier (ce qui
+// compte), temps absolu entre parenthèses pour qui le veut quand même —
+// lu depuis la clé jumelle `<nom>__abs` posée par toGapRows.
+function GapTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const rows = payload.filter((p) => !p.dataKey.endsWith("__abs") && p.value != null);
+  if (!rows.length) return null;
+  return (
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border-strong)", borderRadius: 8, padding: "8px 10px", fontSize: 12 }}>
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>{label}</div>
+      {[...rows].sort((a, b) => a.value - b.value).map((p) => {
+        const abs = p.payload[`${p.dataKey}__abs`];
+        return (
+          <div key={p.dataKey}>
+            <strong>{p.dataKey}</strong> : {formatGap(p.value)}{abs != null ? ` (${formatLap(abs)})` : ""}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function formatLap(seconds) {
@@ -850,23 +896,24 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
   // trop pour rester lisibles (cf. DriverCheckboxes max={5} plus bas).
   const [selectedMap, toggleMapDriver] = useDriverSelection(top2, 5);
 
-  // Fusionne les temps au tour de chaque pilote sélectionné en une seule série,
-  // indexée par numéro de tour (format attendu par recharts).
+  // Fusionne les temps au tour de chaque pilote sélectionné en une seule
+  // série, indexée par numéro de tour — en ÉCART au pilote le plus rapide
+  // DE CE TOUR (cf. toGapRows), pas en temps absolu.
   const chartData = useMemo(() => {
     const maxLap = Math.max(0, ...Object.values(lapTimes).flatMap((laps) => laps.map((l) => l.lap)));
     const rows = [];
     for (let lap = 1; lap <= maxLap; lap++) {
-      const row = { lap };
+      const valuesByDriver = {};
       for (const name of selectedLapTimes) {
         const entry = (lapTimes[name] || []).find((l) => l.lap === lap);
-        if (entry && entry.seconds && !entry.pitIn) row[name] = entry.seconds;
+        if (entry && entry.seconds && !entry.pitIn) valuesByDriver[name] = entry.seconds;
       }
-      rows.push(row);
+      rows.push({ lap, ...toGapRows(valuesByDriver) });
     }
     return rows;
   }, [lapTimes, selectedLapTimes]);
   const lapTimeDomain = useMemo(
-    () => trimmedDomain(chartData.flatMap((row) => [...selectedLapTimes].map((name) => row[name]))),
+    () => trimmedGapDomain(chartData.flatMap((row) => [...selectedLapTimes].map((name) => row[name]))),
     [chartData, selectedLapTimes]
   );
 
@@ -940,39 +987,53 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
   // de barres (le meilleur tour toutes gommes + un par gomme utilisée) —
   // même famille de composant Recharts que les deux graphiques en ligne
   // juste au-dessus, pour une expérience visuelle harmonisée plutôt qu'un
-  // tableau HTML à part.
-  const bestLapChartData = useMemo(
-    () => bestLapRows.map((r) => ({
+  // tableau HTML à part. En ÉCART au meilleur temps DU GROUPE SÉLECTIONNÉ
+  // (toutes gommes confondues, puis par gomme séparément — le repère "le
+  // plus rapide" n'est pas le même pilote d'une colonne à l'autre) : un
+  // temps de tour dans l'absolu ne se compare pas d'un coup d'œil.
+  const bestLapChartData = useMemo(() => {
+    const overallGaps = toGapRows(Object.fromEntries(bestLapRows.map((r) => [r.name, r.overall])));
+    const compoundGaps = {};
+    for (const c of compoundsUsed) {
+      compoundGaps[c] = toGapRows(Object.fromEntries(bestLapRows.map((r) => [r.name, r.byCompound[c]])));
+    }
+    return bestLapRows.map((r) => ({
       name: r.name,
-      "Toutes gommes": r.overall,
-      ...Object.fromEntries(compoundsUsed.map((c) => [c, r.byCompound[c]])),
-    })),
-    [bestLapRows, compoundsUsed]
-  );
-  const bestLapDomain = useMemo(() => {
-    const vals = bestLapRows.flatMap((r) => [r.overall, ...compoundsUsed.map((c) => r.byCompound[c])]);
-    return trimmedDomain(vals, 0.3);
+      "Toutes gommes": overallGaps[r.name],
+      "Toutes gommes__abs": overallGaps[`${r.name}__abs`],
+      ...Object.fromEntries(compoundsUsed.flatMap((c) => [
+        [c, compoundGaps[c][r.name]],
+        [`${c}__abs`, compoundGaps[c][`${r.name}__abs`]],
+      ])),
+    }));
   }, [bestLapRows, compoundsUsed]);
+  const bestLapDomain = useMemo(() => {
+    const vals = bestLapChartData.flatMap((row) => ["Toutes gommes", ...compoundsUsed].map((k) => row[k]));
+    return trimmedGapDomain(vals, 0.1);
+  }, [bestLapChartData, compoundsUsed]);
 
   // Temps moyen par tranche de 5 tours (non glissant : tours 1-5, 6-10, …)
   // — lisse le trafic, une erreur isolée ou une bataille/dépassement sur
-  // UN tour, qui rendent la comparaison tour par tour bruyante.
+  // UN tour, qui rendent la comparaison tour par tour bruyante. En écart
+  // au plus rapide DE CHAQUE TRANCHE, même logique que les deux graphiques
+  // ci-dessus.
   const bucketAvgData = useMemo(() => {
     const bucketSize = 5;
     const rows = [];
     for (let start = 1; start <= maxLap; start += bucketSize) {
       const end = Math.min(start + bucketSize - 1, maxLap);
-      const row = { bucket: start === end ? `T${start}` : `T${start}-${end}` };
+      const avgByDriver = {};
       for (const name of selectedLapTimes) {
         const laps = (lapTimes[name] || []).filter((l) => l.lap >= start && l.lap <= end && l.seconds && !l.pitIn);
-        if (laps.length) row[name] = laps.reduce((a, l) => a + l.seconds, 0) / laps.length;
+        if (laps.length) avgByDriver[name] = laps.reduce((a, l) => a + l.seconds, 0) / laps.length;
       }
-      rows.push(row);
+      const bucket = start === end ? `T${start}` : `T${start}-${end}`;
+      rows.push({ bucket, ...toGapRows(avgByDriver) });
     }
     return rows;
   }, [lapTimes, selectedLapTimes, maxLap]);
   const bucketDomain = useMemo(
-    () => trimmedDomain(bucketAvgData.flatMap((row) => [...selectedLapTimes].map((name) => row[name]))),
+    () => trimmedGapDomain(bucketAvgData.flatMap((row) => [...selectedLapTimes].map((name) => row[name]))),
     [bucketAvgData, selectedLapTimes]
   );
 
@@ -1030,13 +1091,16 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
       </Section>
 
       <Section title="Temps au tour">
+        <p className="note" style={{ marginBottom: 12 }}>
+          Écart au pilote le plus rapide DE CE TOUR parmi les pilotes cochés (0 = au plus rapide) — un temps de tour dans l'absolu (mm:ss.mmm) ne se compare pas d'un coup d'œil, contrairement à un écart en secondes. Temps absolu quand même visible en survolant un point.
+        </p>
         <DriverCheckboxes names={driverNames} selected={selectedLapTimes} onToggle={toggleLapTimesDriver} colors={driverColors} />
         <ResponsiveContainer width="100%" height={360}>
           <LineChart data={chartData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis dataKey="lap" label={{ value: "Tour", position: "insideBottom", offset: -4 }} />
-            <YAxis domain={lapTimeDomain} tickFormatter={formatLap} width={82} />
-            <Tooltip formatter={(v) => formatLap(v)} labelFormatter={(l) => `Tour ${l}`} />
+            <YAxis domain={lapTimeDomain} tickFormatter={(v) => `${v.toFixed(1)}s`} width={50} />
+            <Tooltip content={<GapTooltip />} labelFormatter={(l) => `Tour ${l}`} />
             <Legend />
             {[...selectedLapTimes].map((name) => (
               <Line
@@ -1053,12 +1117,15 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
         </ResponsiveContainer>
 
         <p style={{ fontSize: 13, fontWeight: 600, margin: "24px 0 10px" }}>Meilleur tour</p>
+        <p className="note" style={{ marginBottom: 12 }}>
+          Écart au meilleur temps du groupe sélectionné — toutes gommes confondues, puis par gomme (le repère "le plus rapide" change de colonne en colonne : ce n'est pas forcément le même pilote).
+        </p>
         <ResponsiveContainer width="100%" height={Math.max(140, bestLapChartData.length * 34 + 50)}>
           <BarChart data={bestLapChartData} layout="vertical" margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} horizontal={false} />
-            <XAxis type="number" domain={bestLapDomain} tickFormatter={formatLap} />
+            <XAxis type="number" domain={bestLapDomain} tickFormatter={(v) => `${v.toFixed(1)}s`} />
             <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} />
-            <Tooltip formatter={(v) => formatLap(v)} />
+            <Tooltip content={<GapTooltip />} />
             <Legend />
             <Bar dataKey="Toutes gommes" radius={[0, 4, 4, 0]}>
               {bestLapChartData.map((row) => <Cell key={row.name} fill={driverColors[row.name]} />)}
@@ -1071,14 +1138,14 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
 
         <p style={{ fontSize: 13, fontWeight: 600, margin: "24px 0 10px" }}>Temps moyen par tranche de 5 tours</p>
         <p className="note" style={{ marginBottom: 12 }}>
-          Lisse les effets de trafic, d'une erreur isolée ou d'une bataille/dépassement sur un seul tour — moyenne par groupe de 5 tours (1-5, 6-10, …), pas une moyenne glissante.
+          Lisse les effets de trafic, d'une erreur isolée ou d'une bataille/dépassement sur un seul tour — moyenne par groupe de 5 tours (1-5, 6-10, …), pas une moyenne glissante. Écart au plus rapide DE CHAQUE TRANCHE, même logique que "Temps au tour" ci-dessus.
         </p>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={bucketAvgData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis dataKey="bucket" />
-            <YAxis domain={bucketDomain} tickFormatter={formatLap} width={82} />
-            <Tooltip formatter={(v) => formatLap(v)} />
+            <YAxis domain={bucketDomain} tickFormatter={(v) => `${v.toFixed(1)}s`} width={50} />
+            <Tooltip content={<GapTooltip />} />
             <Legend />
             {[...selectedLapTimes].map((name) => (
               <Line
