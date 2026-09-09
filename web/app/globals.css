@@ -320,6 +320,31 @@
   td.driver .dot{margin-right:8px;}
   td.pos{font-family:"IBM Plex Mono", monospace; font-variant-numeric:tabular-nums; white-space:nowrap;}
   .dot{display:inline-block; width:9px; height:9px; border-radius:50%; vertical-align:middle; border:1px solid var(--border-strong); flex:none;}
+
+  /* Chips de sélection (Raw data : pilotes cochables, tour choisi) — un
+     bouton-pastille plutôt qu'une case à cocher nue + label brut (l'un des
+     "3 expériences différentes" pointées comme peu harmonieuses). La case
+     réelle reste dans le DOM (accessibilité clavier, association label/
+     for implicite du <label>) mais visuellement masquée : c'est le <label>
+     qui porte l'apparence de puce. */
+  .chip-row{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; font-family:"IBM Plex Mono", monospace;
+    font-size:0.74rem; letter-spacing:0.01em; padding:5px 11px 5px 8px; border-radius:999px;
+    border:1px solid var(--border); background:var(--surface-raised); color:var(--text-muted);
+    cursor:pointer; user-select:none; white-space:nowrap;
+    transition:background .12s ease, border-color .12s ease, color .12s ease, opacity .12s ease;
+  }
+  .chip:hover{border-color:var(--border-strong);}
+  .chip.active{background:var(--surface); border-color:var(--border-strong); color:var(--text); font-weight:600;}
+  .chip.disabled{opacity:0.4; cursor:not-allowed;}
+  .chip input{position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;}
+
+  .lap-select{
+    font-family:"IBM Plex Mono", monospace; font-size:0.78rem; padding:6px 12px; border-radius:999px;
+    border:1px solid var(--border); background:var(--surface-raised); color:var(--text); cursor:pointer;
+  }
+  .lap-select:hover{border-color:var(--border-strong);}
   .scrollhint{
     display:none; text-align:center; font-family:"IBM Plex Mono", monospace; font-size:0.68rem;
     color:var(--text-muted); letter-spacing:0.04em; padding:4px 0 0;

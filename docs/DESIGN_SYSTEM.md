@@ -63,6 +63,46 @@ Trois colonnes (Pilote / Départ→arrivée / Analyse), la troisième portant de
 - **Mobile (≤640px)** : la table devient une liste de fiches empilées (`display:block` sur `table`/`tr`/`td`, `<thead>` masqué) plutôt que de forcer un défilement horizontal en plus du texte qui wrappe déjà — illisible en combinaison. `.tablewrap:has(table.verdict-table){overflow-x:visible}` désactive le défilement horizontal de la boîte englobante dans ce mode (devenu inutile).
 - Les largeurs desktop sont scopées DANS leur propre `@media (min-width:641px)`, jamais en règle générale : une règle générale avec `:nth-child` bat en spécificité le `width:auto` du bloc mobile, même déclaré après dans la feuille — piège déjà tombé dessus une fois.
 
+## Sélecteurs pilotes/tour et couleur des pilotes (Raw data)
+
+Retour utilisateur direct (sélection "moche", couleurs de pilotes arbitraires,
+3 expériences visuelles différentes entre temps au tour / meilleur tour /
+moyenne 5 tours) — trois conventions posées depuis pour tout le Raw data
+(`RaceTabs.jsx`) :
+
+- **Chips `.chip`/`.chip-row`** (globals.css) plutôt qu'une case à cocher nue
+  + label : un `<label class="chip">` contenant l'`<input type="checkbox">`
+  visuellement masqué (pas `display:none`, qui casserait le focus clavier),
+  un point de couleur (`.dot`, déjà utilisé ailleurs pour les classements) et
+  le nom. États `active`/`disabled` en classes, pas en style inline. Le
+  sélecteur de tour (`<select>`) suit `.lap-select` — avant ça, son bord
+  `#ccc` codé en dur ignorait le thème sombre (`--border`) et devenait
+  quasi invisible en dark mode.
+- **Couleur par pilote = couleur d'écurie officielle**, pas un index dans la
+  sélection courante : `TEAM_COLORS` (mots-clés, pas égalité stricte —
+  `team_name` suit la nomenclature Jolpica, ex. "RB F1 Team") donne la
+  couleur de base, le second pilote d'une écurie reçoit cette même couleur
+  éclaircie (`lighten()`) plutôt qu'une teinte arbitraire. `useDriverColors`
+  construit UNE table {pilote -> couleur} partagée par les 4 graphiques —
+  un pilote garde la même couleur qu'il soit seul coché ou entouré d'autres,
+  contrairement à l'ancien schéma (couleur = position dans `selected`, donc
+  changeante d'un graphique à l'autre). Écurie non reconnue -> repli sur
+  l'ancienne palette catégorielle cyclique (`DRIVER_LINE_COLORS`).
+- **Échelle d'axe temps robuste aux valeurs aberrantes** (`trimmedDomain`) :
+  domaine borné aux 5e-95e percentiles des valeurs affichées plutôt qu'à
+  leur min/max bruts — un tour de safety car (souvent +50% du temps normal)
+  écrasait sinon toute l'échelle et rendait l'écart entre pilotes illisible
+  sur le reste du tracé. Rien n'est retiré des données, seuls les points
+  hors domaine ne sont pas tracés (comportement recharts standard).
+- **"Meilleur tour" en `BarChart` recharts**, pas un tableau HTML à part :
+  même famille de composant que les deux graphiques en ligne juste
+  au-dessus (mêmes marges, même `tickFormatter`, mêmes styles de grille) —
+  barres colorées par gomme (`COMPOUND_COLORS`, déjà utilisé pour la
+  stratégie pneus) pour la comparaison par gomme, et par couleur de pilote
+  (via `<Cell>`) pour la barre "toutes gommes" — deux langages couleur
+  cohérents avec le reste de la page plutôt qu'une troisième couleur
+  inventée pour ce seul graphique.
+
 ## Gabarit HTML d'un article
 
 Tous les articles (`web/app/courses/<round>/*.js`) suivent la même structure, injectée via `dangerouslySetInnerHTML` :

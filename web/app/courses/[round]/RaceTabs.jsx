@@ -35,6 +35,9 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  BarChart,
+  Bar,
+  Cell,
   XAxis,
   YAxis,
   Tooltip,
@@ -50,10 +53,94 @@ const COMPOUND_COLORS = {
   WET: "#1F6FEB",
 };
 
+// Repli catégorique pour un pilote dont l'écurie n'est pas reconnue par
+// TEAM_COLORS (pilote de réserve, libellé inhabituel) — ne devrait
+// normalement jamais servir sur le Raw data, cf. useDriverColors.
 const DRIVER_LINE_COLORS = [
   "#E8002D", "#00A19B", "#FF8000", "#1B3A93", "#B01030",
   "#229971", "#FF87BC", "#6C98FF", "#C9A24B", "#555555",
 ];
+
+// Couleurs officielles par écurie (grille 2026) — le second pilote d'une
+// écurie reçoit une teinte éclaircie de la même couleur plutôt qu'une
+// couleur arbitraire : l'écurie se reconnaît au premier coup d'œil, comme
+// sur les graphiques de télémétrie officiels, et les deux coéquipiers
+// restent visuellement liés d'un graphique à l'autre. Correspondance par
+// mot-clé (pas une égalité stricte) : team_name suit la nomenclature de
+// la source Jolpica, qui peut varier légèrement ("RB F1 Team",
+// "Racing Bulls", ...) — cf. docs/DESIGN_SYSTEM.md.
+const TEAM_COLORS = [
+  [/red bull/i, "#1B3A93"],
+  [/ferrari/i, "#E8002D"],
+  [/mercedes/i, "#00A19B"],
+  [/mclaren/i, "#FF8000"],
+  [/aston martin/i, "#229971"],
+  [/alpine/i, "#FF87BC"],
+  [/williams/i, "#6C98FF"],
+  [/haas/i, "#8C9096"],
+  [/\brb\b|racing bulls/i, "#4E5AE8"],
+  [/audi|sauber/i, "#2B2B2B"],
+  [/cadillac/i, "#C9A24B"],
+];
+
+function teamColorFor(teamName) {
+  if (!teamName) return null;
+  const hit = TEAM_COLORS.find(([re]) => re.test(teamName));
+  return hit ? hit[1] : null;
+}
+
+// Éclaircit une couleur hex de `amount` (0-1) vers le blanc — distingue
+// les deux pilotes d'une même écurie sans sortir de sa couleur.
+function lighten(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const mix = (c) => Math.round(c + (255 - c) * amount);
+  return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+}
+
+// Une couleur PAR PILOTE (pas par position dans la sélection courante) :
+// un pilote garde la même couleur sur les 4 graphiques du Raw data, qu'il
+// soit coché seul ou aux côtés de 4 autres — l'inverse de l'ancien schéma
+// (couleur = index dans `selected`), qui changeait la couleur d'un pilote
+// d'un graphique à l'autre selon qui d'autre était coché ailleurs.
+function useDriverColors(driverNames, results) {
+  const key = driverNames.join("|");
+  return useMemo(() => {
+    const teamOf = {};
+    for (const r of results) teamOf[r.family_name] = r.team_name;
+    const seenPerTeam = {};
+    const colors = {};
+    let fallbackIndex = 0;
+    for (const name of driverNames) {
+      const team = teamOf[name];
+      const base = teamColorFor(team);
+      if (base) {
+        const seen = seenPerTeam[team] || 0;
+        seenPerTeam[team] = seen + 1;
+        colors[name] = seen === 0 ? base : lighten(base, 0.42);
+      } else {
+        colors[name] = DRIVER_LINE_COLORS[fallbackIndex % DRIVER_LINE_COLORS.length];
+        fallbackIndex++;
+      }
+    }
+    return colors;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, results]);
+}
+
+// Domaine d'axe temps borné aux 5e-95e percentiles des valeurs affichées
+// plutôt qu'à leur min/max bruts : un tour de safety car ou un tour
+// isolé très lent ne doit pas écraser toute l'échelle et rendre illisible
+// l'écart entre pilotes sur le reste du tracé (retour utilisateur :
+// "l'échelle n'est pas pertinente"). Rien n'est retiré des données —
+// seuls les points hors domaine ne sont simplement pas tracés (comportement
+// standard recharts).
+function trimmedDomain(values, pad = 0.4) {
+  const sorted = values.filter((v) => v != null).sort((a, b) => a - b);
+  if (sorted.length === 0) return [0, 1];
+  const q = (p) => sorted[Math.min(sorted.length - 1, Math.floor(p * (sorted.length - 1)))];
+  return [q(0.05) - pad, q(0.95) + pad];
+}
 
 function formatLap(seconds) {
   if (seconds == null) return "";
@@ -500,19 +587,18 @@ function useDriverSelection(defaultNames, maxSelected) {
   return [selected, toggle];
 }
 
-function DriverCheckboxes({ names, selected, onToggle, max }) {
+function DriverCheckboxes({ names, selected, onToggle, colors, max }) {
   const atMax = max != null && selected.size >= max;
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+    <div className="chip-row">
       {names.map((name) => {
         const checked = selected.has(name);
         const disabled = !checked && atMax;
+        const color = colors?.[name] || "#999";
         return (
-          <label
-            key={name}
-            style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4, opacity: disabled ? 0.4 : 1 }}
-          >
+          <label key={name} className={`chip${checked ? " active" : ""}${disabled ? " disabled" : ""}`}>
             <input type="checkbox" checked={checked} disabled={disabled} onChange={() => onToggle(name)} />
+            <span className="dot" style={{ background: color, borderColor: color }} />
             {name}
           </label>
         );
@@ -524,12 +610,8 @@ function DriverCheckboxes({ names, selected, onToggle, max }) {
 function LapSelector({ value, onChange, maxLap }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 13 }}>
-      <label>Tour :</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #ccc" }}
-      >
+      <label style={{ color: "var(--text-muted)" }}>Tour :</label>
+      <select className="lap-select" value={value} onChange={(e) => onChange(Number(e.target.value))}>
         {Array.from({ length: maxLap }, (_, i) => i + 1).map((lap) => (
           <option key={lap} value={lap}>{`Tour ${lap}`}</option>
         ))}
@@ -628,12 +710,12 @@ function useAnimationClock(maxDuration) {
 // nuance de couleur à deviner. Un seul tracé de circuit (pas de petits
 // multiples) puisque la couleur code maintenant l'identité du pilote, pas
 // la vitesse.
-function RaceReplay({ telemetryData, selected }) {
+function RaceReplay({ telemetryData, selected, colors }) {
   const names = useMemo(
     () => Object.keys(telemetryData).filter((n) => selected.has(n) && telemetryData[n]?.length > 1).sort(),
     [telemetryData, selected]
   );
-  const colorOf = (name) => DRIVER_LINE_COLORS[names.indexOf(name) % DRIVER_LINE_COLORS.length];
+  const colorOf = (name) => colors?.[name] || "#999";
 
   const { project, W, H, casingPoints } = useMemo(() => {
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -752,6 +834,9 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
     return t.length ? t : driverNames.slice(0, 5);
   }, [results, driverNames]);
   const top2 = useMemo(() => (top5.length ? top5.slice(0, 2) : driverNames.slice(0, 2)), [top5, driverNames]);
+  // Une couleur par pilote (écurie officielle), partagée par les 4
+  // graphiques du Raw data — cf. useDriverColors.
+  const driverColors = useDriverColors(driverNames, results);
 
   // Sélection de pilotes INDÉPENDANTE par graphique — cocher un pilote sur
   // "Temps au tour" n'affecte pas "Position par tour" ni les deux
@@ -780,6 +865,10 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
     }
     return rows;
   }, [lapTimes, selectedLapTimes]);
+  const lapTimeDomain = useMemo(
+    () => trimmedDomain(chartData.flatMap((row) => [...selectedLapTimes].map((name) => row[name]))),
+    [chartData, selectedLapTimes]
+  );
 
   // Position sur piste tour par tour : pas un flux OpenF1 dédié (jamais
   // ingéré, cf. docs/DATA_SOURCES.md) mais dérivée de session_time (temps
@@ -847,6 +936,24 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
     });
   }, [selectedLapTimes, lapTimes, compoundsUsed, compoundAtLap]);
 
+  // Reformatage pour le BarChart : une ligne par pilote, une clé par série
+  // de barres (le meilleur tour toutes gommes + un par gomme utilisée) —
+  // même famille de composant Recharts que les deux graphiques en ligne
+  // juste au-dessus, pour une expérience visuelle harmonisée plutôt qu'un
+  // tableau HTML à part.
+  const bestLapChartData = useMemo(
+    () => bestLapRows.map((r) => ({
+      name: r.name,
+      "Toutes gommes": r.overall,
+      ...Object.fromEntries(compoundsUsed.map((c) => [c, r.byCompound[c]])),
+    })),
+    [bestLapRows, compoundsUsed]
+  );
+  const bestLapDomain = useMemo(() => {
+    const vals = bestLapRows.flatMap((r) => [r.overall, ...compoundsUsed.map((c) => r.byCompound[c])]);
+    return trimmedDomain(vals, 0.3);
+  }, [bestLapRows, compoundsUsed]);
+
   // Temps moyen par tranche de 5 tours (non glissant : tours 1-5, 6-10, …)
   // — lisse le trafic, une erreur isolée ou une bataille/dépassement sur
   // UN tour, qui rendent la comparaison tour par tour bruyante.
@@ -864,6 +971,10 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
     }
     return rows;
   }, [lapTimes, selectedLapTimes, maxLap]);
+  const bucketDomain = useMemo(
+    () => trimmedDomain(bucketAvgData.flatMap((row) => [...selectedLapTimes].map((name) => row[name]))),
+    [bucketAvgData, selectedLapTimes]
+  );
 
   // Vitesse par tour + carte du circuit : chargées à la demande via Server
   // Action (pas au chargement de la page — cf. commentaire de
@@ -919,24 +1030,20 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
       </Section>
 
       <Section title="Temps au tour">
-        <DriverCheckboxes names={driverNames} selected={selectedLapTimes} onToggle={toggleLapTimesDriver} />
+        <DriverCheckboxes names={driverNames} selected={selectedLapTimes} onToggle={toggleLapTimesDriver} colors={driverColors} />
         <ResponsiveContainer width="100%" height={360}>
           <LineChart data={chartData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis dataKey="lap" label={{ value: "Tour", position: "insideBottom", offset: -4 }} />
-            <YAxis
-              domain={["dataMin - 1", "dataMax + 1"]}
-              tickFormatter={formatLap}
-              width={82}
-            />
+            <YAxis domain={lapTimeDomain} tickFormatter={formatLap} width={82} />
             <Tooltip formatter={(v) => formatLap(v)} labelFormatter={(l) => `Tour ${l}`} />
             <Legend />
-            {[...selectedLapTimes].map((name, i) => (
+            {[...selectedLapTimes].map((name) => (
               <Line
                 key={name}
                 type="monotone"
                 dataKey={name}
-                stroke={DRIVER_LINE_COLORS[i % DRIVER_LINE_COLORS.length]}
+                stroke={driverColors[name]}
                 dot={false}
                 connectNulls
                 strokeWidth={1.5}
@@ -946,28 +1053,21 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
         </ResponsiveContainer>
 
         <p style={{ fontSize: 13, fontWeight: 600, margin: "24px 0 10px" }}>Meilleur tour</p>
-        <div className="tablewrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Pilote</th>
-                <th>Toutes gommes</th>
-                {compoundsUsed.map((c) => <th key={c}>{c}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {bestLapRows.map((r) => (
-                <tr key={r.name}>
-                  <td>{r.name}</td>
-                  <td>{r.overall != null ? formatLap(r.overall) : "—"}</td>
-                  {compoundsUsed.map((c) => (
-                    <td key={c}>{r.byCompound[c] != null ? formatLap(r.byCompound[c]) : "—"}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveContainer width="100%" height={Math.max(140, bestLapChartData.length * 34 + 50)}>
+          <BarChart data={bestLapChartData} layout="vertical" margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} horizontal={false} />
+            <XAxis type="number" domain={bestLapDomain} tickFormatter={formatLap} />
+            <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} />
+            <Tooltip formatter={(v) => formatLap(v)} />
+            <Legend />
+            <Bar dataKey="Toutes gommes" radius={[0, 4, 4, 0]}>
+              {bestLapChartData.map((row) => <Cell key={row.name} fill={driverColors[row.name]} />)}
+            </Bar>
+            {compoundsUsed.map((c) => (
+              <Bar key={c} dataKey={c} name={c} fill={COMPOUND_COLORS[c]} radius={[0, 4, 4, 0]} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
 
         <p style={{ fontSize: 13, fontWeight: 600, margin: "24px 0 10px" }}>Temps moyen par tranche de 5 tours</p>
         <p className="note" style={{ marginBottom: 12 }}>
@@ -977,15 +1077,15 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
           <LineChart data={bucketAvgData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis dataKey="bucket" />
-            <YAxis domain={["dataMin - 1", "dataMax + 1"]} tickFormatter={formatLap} width={82} />
+            <YAxis domain={bucketDomain} tickFormatter={formatLap} width={82} />
             <Tooltip formatter={(v) => formatLap(v)} />
             <Legend />
-            {[...selectedLapTimes].map((name, i) => (
+            {[...selectedLapTimes].map((name) => (
               <Line
                 key={name}
                 type="monotone"
                 dataKey={name}
-                stroke={DRIVER_LINE_COLORS[i % DRIVER_LINE_COLORS.length]}
+                stroke={driverColors[name]}
                 dot={{ r: 3 }}
                 connectNulls
                 strokeWidth={1.5}
@@ -999,7 +1099,7 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
         <p className="note" style={{ marginBottom: 12 }}>
           Calculée à partir du temps cumulé sur piste à chaque tour (pas un flux de position officiel — jamais ingéré, cf. docs/DATA_SOURCES.md) : peut différer ponctuellement du classement officiel autour d'une neutralisation ou d'un drapeau rouge.
         </p>
-        <DriverCheckboxes names={driverNames} selected={selectedPosition} onToggle={togglePositionDriver} />
+        <DriverCheckboxes names={driverNames} selected={selectedPosition} onToggle={togglePositionDriver} colors={driverColors} />
         <ResponsiveContainer width="100%" height={360}>
           <LineChart data={positionData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -1013,12 +1113,12 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
             />
             <Tooltip formatter={(v) => `P${v}`} labelFormatter={(l) => `Tour ${l}`} />
             <Legend />
-            {[...selectedPosition].map((name, i) => (
+            {[...selectedPosition].map((name) => (
               <Line
                 key={name}
                 type="monotone"
                 dataKey={name}
-                stroke={DRIVER_LINE_COLORS[i % DRIVER_LINE_COLORS.length]}
+                stroke={driverColors[name]}
                 dot={false}
                 connectNulls
                 strokeWidth={1.5}
@@ -1034,7 +1134,7 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
             Distance depuis le début du tour, mesurée par la position réelle sur circuit (endpoint OpenF1 `location`) — pas une approximation par intégration de la vitesse. Vitesse interpolée sur cette même grille de position (grilles temporelles `location`/`car_data` indépendantes côté OpenF1) — cf. docs/DATA_SOURCES.md.
           </p>
           <LapSelector value={speedLap} onChange={setSpeedLap} maxLap={maxLap} />
-          <DriverCheckboxes names={driverNames} selected={selectedSpeed} onToggle={toggleSpeedDriver} />
+          <DriverCheckboxes names={driverNames} selected={selectedSpeed} onToggle={toggleSpeedDriver} colors={driverColors} />
           {speedError && <p className="note">Erreur de chargement de la télémétrie pour ce tour.</p>}
           {!speedError && !speedData && <p className="note">Chargement…</p>}
           {speedData && (
@@ -1051,7 +1151,7 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
                 <YAxis dataKey="speed" domain={["dataMin - 10", "dataMax + 10"]} unit=" km/h" width={70} />
                 <Tooltip formatter={(v) => `${Math.round(v)} km/h`} labelFormatter={(l) => `${Math.round(l)} m`} />
                 <Legend />
-                {[...selectedSpeed].map((name, i) => (
+                {[...selectedSpeed].map((name) => (
                   speedData[name] ? (
                     <Line
                       key={name}
@@ -1059,7 +1159,7 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
                       dataKey="speed"
                       name={name}
                       type="monotone"
-                      stroke={DRIVER_LINE_COLORS[i % DRIVER_LINE_COLORS.length]}
+                      stroke={driverColors[name]}
                       dot={false}
                       strokeWidth={1.5}
                       isAnimationActive={false}
@@ -1078,10 +1178,10 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
             Position réelle sur circuit (endpoint OpenF1 `location`), jusqu'à 5 pilotes, synchronisés sur le temps écoulé depuis le début du tour choisi — pour voir directement qui est devant à quel moment, plutôt que de deviner une différence de couleur. Lecture compressée sur {PLAYBACK_SECONDS}s quelle que soit la durée réelle du tour.
           </p>
           <LapSelector value={mapLap} onChange={setMapLap} maxLap={maxLap} />
-          <DriverCheckboxes names={driverNames} selected={selectedMap} onToggle={toggleMapDriver} max={5} />
+          <DriverCheckboxes names={driverNames} selected={selectedMap} onToggle={toggleMapDriver} colors={driverColors} max={5} />
           {mapError && <p className="note">Erreur de chargement de la télémétrie pour ce tour.</p>}
           {!mapError && !mapData && <p className="note">Chargement…</p>}
-          {mapData && <RaceReplay telemetryData={mapData} selected={selectedMap} />}
+          {mapData && <RaceReplay telemetryData={mapData} selected={selectedMap} colors={driverColors} />}
         </Section>
       )}
 
