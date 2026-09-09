@@ -345,6 +345,20 @@
     border:1px solid var(--border); background:var(--surface-raised); color:var(--text); cursor:pointer;
   }
   .lap-select:hover{border-color:var(--border-strong);}
+
+  /* Matrice delta pilote × pilote (Raw data : "Qui bat qui") — cellules
+     chiffrées mono, couleur sémantique négatif/positif réutilisant les
+     mêmes tokens que .delta (verdict) plutôt que d'introduire une nouvelle
+     paire de couleurs : "plus rapide" reste vert partout sur le site. */
+  table.delta-matrix{min-width:0;}
+  table.delta-matrix th, table.delta-matrix td{
+    font-family:"IBM Plex Mono", monospace; font-size:0.76rem; text-align:center; padding:8px 10px; white-space:nowrap;
+  }
+  table.delta-matrix thead th{text-transform:none; letter-spacing:0; font-size:0.76rem;}
+  table.delta-matrix tbody th{text-align:left; background:var(--surface-raised); font-weight:700;}
+  table.delta-matrix td.diag{color:var(--text-muted);}
+  table.delta-matrix td.neg{color:var(--good);}
+  table.delta-matrix td.pos{color:var(--bad);}
   .scrollhint{
     display:none; text-align:center; font-family:"IBM Plex Mono", monospace; font-size:0.68rem;
     color:var(--text-muted); letter-spacing:0.04em; padding:4px 0 0;

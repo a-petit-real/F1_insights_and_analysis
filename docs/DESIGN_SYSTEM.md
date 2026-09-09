@@ -88,20 +88,41 @@ moyenne 5 tours) — trois conventions posées depuis pour tout le Raw data
   contrairement à l'ancien schéma (couleur = position dans `selected`, donc
   changeante d'un graphique à l'autre). Écurie non reconnue -> repli sur
   l'ancienne palette catégorielle cyclique (`DRIVER_LINE_COLORS`).
-- **Échelle d'axe temps robuste aux valeurs aberrantes** (`trimmedDomain`) :
-  domaine borné aux 5e-95e percentiles des valeurs affichées plutôt qu'à
-  leur min/max bruts — un tour de safety car (souvent +50% du temps normal)
-  écrasait sinon toute l'échelle et rendait l'écart entre pilotes illisible
-  sur le reste du tracé. Rien n'est retiré des données, seuls les points
-  hors domaine ne sont pas tracés (comportement recharts standard).
-- **"Meilleur tour" en `BarChart` recharts**, pas un tableau HTML à part :
-  même famille de composant que les deux graphiques en ligne juste
-  au-dessus (mêmes marges, même `tickFormatter`, mêmes styles de grille) —
-  barres colorées par gomme (`COMPOUND_COLORS`, déjà utilisé pour la
-  stratégie pneus) pour la comparaison par gomme, et par couleur de pilote
-  (via `<Cell>`) pour la barre "toutes gommes" — deux langages couleur
-  cohérents avec le reste de la page plutôt qu'une troisième couleur
-  inventée pour ce seul graphique.
+- **Écart au plus rapide, pas temps absolu** (`toGapRows`/`GapTooltip`) : les
+  trois comparaisons de rythme (Temps au tour, Meilleur tour, Temps moyen
+  par tranche de 5 tours) ainsi que Qualif vs Course affichent l'ÉCART au
+  pilote le plus rapide du groupe/de la séance sélectionnée (0 = au plus
+  rapide, +0.322s pour les autres) — même convention que les écrans de
+  chronométrage officiels F1. Un temps de tour absolu (mm:ss.mmm) ne se
+  compare pas d'un coup d'œil, quelle que soit l'échelle choisie (retour
+  utilisateur répété deux fois avant ce changement). Le temps absolu reste
+  visible entre parenthèses dans `GapTooltip`, via la clé jumelle
+  `<nom>__abs` posée par `toGapRows`. `trimmedGapDomain` recadre encore le
+  haut de l'axe (au 95e percentile, plancher fixé à 0) pour amortir un
+  décrochage isolé (erreur de pilotage, accrochage) — mais plus les tours
+  SC/VSC/drapeau rouge, désormais exclus en amont (cf. `clean` posé par
+  `getLapTimesByDriver`, `docs/DATA_SOURCES.md`) plutôt que recadrés après
+  coup : un ralentissement général qui reste dans les données s'annule de
+  toute façon naturellement dans un écart, mais le retirer en amont évite
+  qu'il pollue "Meilleur tour" et les moyennes par tranche.
+- **"Meilleur tour" et "Qualif vs Course" en `BarChart` recharts**, pas un
+  tableau HTML à part : même famille de composant que les graphiques en
+  ligne juste au-dessus (mêmes marges, même `tickFormatter`, mêmes styles
+  de grille) — barres colorées par gomme (`COMPOUND_COLORS`, déjà utilisé
+  pour la stratégie pneus) pour la comparaison par gomme, et par couleur de
+  pilote (via `<Cell>`) pour "toutes gommes" / "Course" — deux langages
+  couleur cohérents avec le reste de la page plutôt qu'une troisième
+  couleur inventée pour ces graphiques.
+- **Matrice delta pilote × pilote** (`DeltaMatrix`) : sous "Meilleur tour"
+  et "Qualif vs Course", une case (ligne, colonne) = temps de la ligne
+  moins temps de la colonne (négatif/vert = la ligne est plus rapide,
+  positif/rouge = plus lente), diagonale vide. Complète le graphique en
+  écart-au-plus-rapide (qui ne compare chaque pilote qu'au meilleur du
+  groupe) en permettant de comparer n'importe QUELLE paire directement —
+  benchmark concurrentiel (f1pace.com, "Race pace delta") qui a confirmé
+  l'intérêt du pattern. Couleurs négatif/positif réutilisent `--good`/
+  `--bad` (mêmes tokens que `.delta`, badges de verdict), pas une nouvelle
+  paire de couleurs.
 
 ## Gabarit HTML d'un article
 

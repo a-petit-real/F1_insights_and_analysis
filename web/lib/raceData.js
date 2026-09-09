@@ -34,6 +34,36 @@ export async function getResults(raceId) {
   );
 }
 
+// Codes de statut piste "sales" (course pas dans des conditions
+// représentatives) — cf. schema_fastf1.sql : 4=SC, 5=rouge, 6/7=VSC. Un tour
+// qui chevauche un de ces états n'est pas représentatif du rythme réel d'un
+// pilote, même filtrage que la référence du secteur (f1pace.com, benchmark
+// du 09/09/2026) : "removed the laps that were not raced under green or
+// yellow flag conditions."
+const DIRTY_TRACK_STATUS_CODES = new Set(["4", "5", "6", "7"]);
+
+// Reconstruit les intervalles [début, fin] (en secondes de session_time)
+// pendant lesquels la piste était dans un état "sale" (SC/VSC/rouge), à
+// partir de la séquence chronologique brute des changements de statut.
+// Un intervalle sans retransition au vert avant la fin de la course (piste
+// encore SC au moment du dernier événement connu, rare) reste ouvert
+// jusqu'à +Infinity plutôt que d'être ignoré.
+function buildDirtyIntervals(statusEvents) {
+  const intervals = [];
+  let start = null;
+  for (const e of statusEvents) {
+    const t = Number(e.t);
+    const dirty = DIRTY_TRACK_STATUS_CODES.has(String(e.status_code));
+    if (dirty && start == null) start = t;
+    if (!dirty && start != null) {
+      intervals.push([start, t]);
+      start = null;
+    }
+  }
+  if (start != null) intervals.push([start, Infinity]);
+  return intervals;
+}
+
 export async function getLapTimesByDriver(raceId) {
   // Un point par tour, temps converti en secondes pour le graphique.
   // session_time (temps écoulé dans la session au moment où le tour est
@@ -41,26 +71,55 @@ export async function getLapTimesByDriver(raceId) {
   // client (RawDataTab) : trier tous les pilotes par ce temps cumulé à un
   // tour donné donne directement leur position sur la piste à ce moment,
   // sans avoir besoin d'ingérer un flux "position" séparé côté OpenF1.
-  const rows = await query(
-    `SELECT d.family_name, res.car_number, lt.lap_number,
-            EXTRACT(EPOCH FROM lt.lap_time) AS lap_seconds,
-            EXTRACT(EPOCH FROM lt.session_time) AS session_seconds,
-            lt.pit_in_time IS NOT NULL AS pit_in
-     FROM lap_times lt
-     JOIN results res ON res.race_id = lt.race_id AND res.car_number = lt.car_number
-     JOIN drivers d ON d.driver_id = res.driver_id
-     WHERE lt.race_id = $1 AND lt.lap_time IS NOT NULL
-     ORDER BY d.family_name, lt.lap_number`,
-    [raceId]
-  );
+  //
+  // prev_session_seconds (LAG côté SQL, par voiture) donne l'instant de
+  // début de CE tour = fin du tour précédent — nécessaire pour savoir si un
+  // tour chevauche un intervalle "sale" (cf. buildDirtyIntervals), sans
+  // requêter lap_times une deuxième fois.
+  const [rows, statusEvents] = await Promise.all([
+    query(
+      `SELECT d.family_name, res.car_number, lt.lap_number,
+              EXTRACT(EPOCH FROM lt.lap_time) AS lap_seconds,
+              EXTRACT(EPOCH FROM lt.session_time) AS session_seconds,
+              EXTRACT(EPOCH FROM LAG(lt.session_time) OVER (PARTITION BY lt.car_number ORDER BY lt.lap_number)) AS prev_session_seconds,
+              lt.pit_in_time IS NOT NULL AS pit_in,
+              lt.pit_out_time IS NOT NULL AS pit_out
+       FROM lap_times lt
+       JOIN results res ON res.race_id = lt.race_id AND res.car_number = lt.car_number
+       JOIN drivers d ON d.driver_id = res.driver_id
+       WHERE lt.race_id = $1 AND lt.lap_time IS NOT NULL
+       ORDER BY d.family_name, lt.lap_number`,
+      [raceId]
+    ),
+    query(
+      `SELECT EXTRACT(EPOCH FROM session_time) AS t, status_code
+       FROM track_status_events WHERE race_id = $1 ORDER BY session_time`,
+      [raceId]
+    ),
+  ]);
+  const dirtyIntervals = buildDirtyIntervals(statusEvents);
+
   const byDriver = {};
   for (const row of rows) {
     if (!byDriver[row.family_name]) byDriver[row.family_name] = [];
+    const t = Number(row.session_seconds);
+    const prevT = row.prev_session_seconds != null ? Number(row.prev_session_seconds) : 0;
+    const dirty = dirtyIntervals.some(([s, e]) => t >= s && prevT <= e);
+    // "propre" : ni tour d'entrée/sortie stands (temps gonflé par la voie
+    // des stands), ni 1er tour (pas représentatif du rythme, cf. f1pace),
+    // ni tour chevauchant SC/VSC/drapeau rouge — c'est ce filtre en amont,
+    // pas un recadrage d'échelle a posteriori, qui écarte les tours non
+    // représentatifs des comparaisons de rythme (Temps au tour, Meilleur
+    // tour, Temps moyen par tranche de 5 tours dans RaceTabs.jsx). Un
+    // décrochage isolé (erreur de pilotage, accrochage) hors de ces cas
+    // reste dans les données : trimmedGapDomain s'en charge côté affichage.
+    const clean = !row.pit_in && !row.pit_out && row.lap_number > 1 && !dirty;
     byDriver[row.family_name].push({
       lap: row.lap_number,
       seconds: row.lap_seconds ? Number(row.lap_seconds) : null,
       sessionSeconds: row.session_seconds != null ? Number(row.session_seconds) : null,
       pitIn: row.pit_in,
+      clean,
     });
   }
   return byDriver;

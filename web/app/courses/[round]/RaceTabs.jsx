@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { fetchLapTelemetry } from "./telemetryActions";
 import { ROUND1_ANALYSE_FR_HTML } from "../1/analyse-fr";
 import { ROUND2_ANALYSE_FR_HTML } from "../2/analyse-fr";
@@ -285,6 +285,7 @@ export default function RaceTabs({ round, raceId, results, lapTimes, tyreStints,
             rcm={rcm}
             overtakes={overtakes}
             hasTelemetry={hasTelemetry}
+            qualiClassification={practiceData?.Qualifying?.classification}
           />
         </SpoilerGate>
       )}
@@ -688,198 +689,60 @@ function useLapTelemetry(raceId, lap, enabled) {
   return { data, error };
 }
 
-// Interpole (x, y, distance, speed) à l'instant t depuis un tableau de
-// points triés par point.t (recherche linéaire : ~300 points par tour,
-// largement assez rapide à 60 fps pour 5 pilotes). Reste sur la première/
-// dernière valeur hors plage plutôt que d'extrapoler.
-function interpolateAt(points, t) {
-  if (!points || points.length === 0) return null;
-  if (t <= points[0].t) return points[0];
-  const last = points[points.length - 1];
-  if (t >= last.t) return last;
-  let i = 1;
-  while (i < points.length && points[i].t < t) i++;
-  const p0 = points[i - 1], p1 = points[i];
-  const frac = p1.t === p0.t ? 0 : (t - p0.t) / (p1.t - p0.t);
-  return {
-    x: p0.x + (p1.x - p0.x) * frac,
-    y: p0.y + (p1.y - p0.y) * frac,
-    distance: p0.distance + (p1.distance - p0.distance) * frac,
-    speed: (p0.speed ?? 0) + ((p1.speed ?? 0) - (p0.speed ?? 0)) * frac,
-  };
-}
-
-// Horloge de lecture : le tour réel dure ~1-2 minutes, bien trop long à
-// regarder tel quel — compressé sur PLAYBACK_SECONDS de lecture quelle que
-// soit la durée réelle du tour, pour un temps de visionnage constant.
-const PLAYBACK_SECONDS = 14;
-
-function useAnimationClock(maxDuration) {
-  const [simTime, setSimTime] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const rafRef = useRef(null);
-  const lastRef = useRef(null);
-
-  useEffect(() => {
-    if (!playing || maxDuration <= 0) return;
-    const scale = maxDuration / PLAYBACK_SECONDS;
-    function step(now) {
-      if (lastRef.current == null) lastRef.current = now;
-      const dt = (now - lastRef.current) / 1000;
-      lastRef.current = now;
-      setSimTime((t) => {
-        const next = t + dt * scale;
-        if (next >= maxDuration) {
-          setPlaying(false);
-          return maxDuration;
-        }
-        return next;
-      });
-      rafRef.current = requestAnimationFrame(step);
-    }
-    rafRef.current = requestAnimationFrame(step);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      lastRef.current = null;
-    };
-  }, [playing, maxDuration]);
-
-  return { simTime, setSimTime, playing, setPlaying };
-}
-
-// Réplay animé : jusqu'à 5 pilotes (plafond géré par DriverCheckboxes
-// max={5}), positions synchronisées sur t_s (secondes depuis le début du
-// tour, cf. schéma) plutôt que sur le numéro de tour seul — répond
-// directement au retour "on ne distingue pas les différences" sur
-// l'ancienne carte statique colorée par vitesse : ici l'écart entre
-// pilotes se voit directement (points qui se dépassent) plutôt que par une
-// nuance de couleur à deviner. Un seul tracé de circuit (pas de petits
-// multiples) puisque la couleur code maintenant l'identité du pilote, pas
-// la vitesse.
-function RaceReplay({ telemetryData, selected, colors }) {
-  const names = useMemo(
-    () => Object.keys(telemetryData).filter((n) => selected.has(n) && telemetryData[n]?.length > 1).sort(),
-    [telemetryData, selected]
-  );
-  const colorOf = (name) => colors?.[name] || "#999";
-
-  const { project, W, H, casingPoints } = useMemo(() => {
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    for (const name of names) {
-      for (const p of telemetryData[name]) {
-        if (p.x == null || p.y == null) continue;
-        minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
-        minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
-      }
-    }
-    if (!isFinite(minX)) return { project: () => [0, 0], W: 480, H: 360, casingPoints: "" };
-    const spanX = maxX - minX || 1;
-    const spanY = maxY - minY || 1;
-    const width = 480;
-    const height = width * (spanY / spanX);
-    const proj = (x, y) => [((x - minX) / spanX) * width, height - ((y - minY) / spanY) * height];
-    // Tracé de fond = le pilote avec le plus d'échantillons (trajectoire la
-    // plus complète), simple repère visuel du circuit.
-    const ref = [...names].sort((a, b) => telemetryData[b].length - telemetryData[a].length)[0];
-    const casing = ref
-      ? telemetryData[ref].filter((p) => p.x != null && p.y != null).map((p) => proj(p.x, p.y).join(",")).join(" ")
-      : "";
-    return { project: proj, W: width, H: height, casingPoints: casing };
-  }, [telemetryData, names]);
-
-  const maxDuration = useMemo(
-    () => Math.max(0, ...names.map((n) => telemetryData[n]?.at(-1)?.t ?? 0)),
-    [telemetryData, names]
-  );
-
-  const { simTime, setSimTime, playing, setPlaying } = useAnimationClock(maxDuration);
-  useEffect(() => { setSimTime(0); setPlaying(false); }, [telemetryData, setSimTime, setPlaying]);
-
-  if (names.length === 0) return <p className="note">Aucun pilote sélectionné (5 maximum).</p>;
-
-  const positionsNow = names.map((name) => ({
-    name,
-    color: colorOf(name),
-    point: interpolateAt(telemetryData[name], simTime),
-  }));
-  const ranking = positionsNow.filter((d) => d.point).sort((a, b) => b.point.distance - a.point.distance);
-  const pad = 16;
-
+// Matrice delta pilote × pilote : la case (ligne, colonne) donne l'écart
+// ligne − colonne (négatif = la ligne est plus rapide que la colonne) — sur
+// une métrique donnée (meilleur tour course, meilleur tour qualif, …).
+// Complète le "gap au plus rapide" des graphiques : celui-ci ne compare
+// chaque pilote qu'au meilleur du groupe, la matrice permet de comparer
+// n'importe QUELLE paire directement (cf. "Race pace delta" de f1pace.com,
+// benchmark du 09/09/2026 — même principe). Pilotes triés par valeur
+// croissante (le plus rapide en premier) pour rester lisible sans avoir à
+// chercher qui est qui.
+function DeltaMatrix({ names, valueByName, colors }) {
+  const ordered = [...names]
+    .filter((n) => valueByName[n] != null)
+    .sort((a, b) => valueByName[a] - valueByName[b]);
+  if (ordered.length < 2) {
+    return <p className="note">Pas assez de pilotes avec un temps valide pour cette comparaison.</p>;
+  }
   return (
-    <div>
-      <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 320px", minWidth: 260 }}>
-          <svg
-            viewBox={`${-pad} ${-pad} ${W + pad * 2} ${H + pad * 2}`}
-            style={{ width: "100%", height: "auto", aspectRatio: `${W + pad * 2} / ${H + pad * 2}`, background: "var(--surface-raised)", borderRadius: 8 }}
-          >
-            <polyline
-              points={casingPoints}
-              fill="none"
-              stroke="var(--text-muted)"
-              strokeOpacity={0.4}
-              strokeWidth={6}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            {positionsNow.map((d) => d.point && (
-              <circle
-                key={d.name}
-                cx={project(d.point.x, d.point.y)[0]}
-                cy={project(d.point.x, d.point.y)[1]}
-                r={8}
-                fill={d.color}
-                stroke="#fff"
-                strokeWidth={1.5}
-              >
-                <title>{`${d.name} — ${Math.round(d.point.speed)} km/h`}</title>
-              </circle>
+    <div className="tablewrap">
+      <table className="delta-matrix">
+        <thead>
+          <tr>
+            <th></th>
+            {ordered.map((c) => (
+              <th key={c} style={{ color: colors?.[c] }}>{c}</th>
             ))}
-          </svg>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 8, fontSize: 12 }}>
-            {positionsNow.map((d) => (
-              <span key={d.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: d.color, display: "inline-block" }} />
-                {d.name}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div style={{ flex: "0 0 160px" }}>
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>Ordre à cet instant</p>
-          <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
-            {ranking.map((d) => (
-              <li key={d.name} style={{ color: d.color, fontWeight: 600 }}>{d.name}</li>
-            ))}
-          </ol>
-        </div>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 16 }}>
-        <button className="bridge-btn" onClick={() => setPlaying((p) => !p)}>
-          {playing ? "⏸ Pause" : "▶ Lecture"}
-        </button>
-        <input
-          type="range"
-          min={0}
-          max={maxDuration}
-          step={0.05}
-          value={simTime}
-          onChange={(e) => { setPlaying(false); setSimTime(Number(e.target.value)); }}
-          style={{ flex: 1 }}
-        />
-        <span style={{ fontSize: 12, color: "var(--text-muted)", width: 46, textAlign: "right" }}>{simTime.toFixed(1)}s</span>
-      </div>
+          </tr>
+        </thead>
+        <tbody>
+          {ordered.map((row) => (
+            <tr key={row}>
+              <th style={{ color: colors?.[row] }}>{row}</th>
+              {ordered.map((col) => {
+                if (row === col) return <td key={col} className="diag">—</td>;
+                const d = valueByName[row] - valueByName[col];
+                return (
+                  <td key={col} className={d < 0 ? "neg" : "pos"}>
+                    {d > 0 ? "+" : ""}{d.toFixed(3)}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
 
-function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry }) {
+function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry, qualiClassification }) {
   const driverNames = Object.keys(lapTimes).sort();
   const top5 = useMemo(() => {
     const t = results.slice(0, 5).map((r) => r.family_name);
     return t.length ? t : driverNames.slice(0, 5);
   }, [results, driverNames]);
-  const top2 = useMemo(() => (top5.length ? top5.slice(0, 2) : driverNames.slice(0, 2)), [top5, driverNames]);
   // Une couleur par pilote (écurie officielle), partagée par les 4
   // graphiques du Raw data — cf. useDriverColors.
   const driverColors = useDriverColors(driverNames, results);
@@ -887,18 +750,18 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
   // Sélection de pilotes INDÉPENDANTE par graphique — cocher un pilote sur
   // "Temps au tour" n'affecte pas "Position par tour" ni les deux
   // graphiques de télémétrie : chacun garde son propre état, chacun
-  // démarre avec un défaut raisonnable (top 5, top 2 pour la carte du
-  // circuit dont chaque pilote coché ajoute un panneau entier).
+  // démarre avec un défaut raisonnable (top 5).
   const [selectedLapTimes, toggleLapTimesDriver] = useDriverSelection(top5);
   const [selectedPosition, togglePositionDriver] = useDriverSelection(top5);
   const [selectedSpeed, toggleSpeedDriver] = useDriverSelection(top5);
-  // 5 maximum pour le réplay animé : au-delà, les points se chevauchent
-  // trop pour rester lisibles (cf. DriverCheckboxes max={5} plus bas).
-  const [selectedMap, toggleMapDriver] = useDriverSelection(top2, 5);
+  const [selectedQualiRace, toggleQualiRaceDriver] = useDriverSelection(top5);
 
   // Fusionne les temps au tour de chaque pilote sélectionné en une seule
   // série, indexée par numéro de tour — en ÉCART au pilote le plus rapide
-  // DE CE TOUR (cf. toGapRows), pas en temps absolu.
+  // DE CE TOUR (cf. toGapRows), pas en temps absolu. Seuls les tours
+  // "propres" entrent en jeu (cf. `clean` posé par getLapTimesByDriver :
+  // ni 1er tour, ni entrée/sortie stands, ni SC/VSC/drapeau rouge) — un
+  // filtrage en amont plutôt qu'un recadrage d'échelle après coup.
   const chartData = useMemo(() => {
     const maxLap = Math.max(0, ...Object.values(lapTimes).flatMap((laps) => laps.map((l) => l.lap)));
     const rows = [];
@@ -906,7 +769,7 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
       const valuesByDriver = {};
       for (const name of selectedLapTimes) {
         const entry = (lapTimes[name] || []).find((l) => l.lap === lap);
-        if (entry && entry.seconds && !entry.pitIn) valuesByDriver[name] = entry.seconds;
+        if (entry && entry.seconds && entry.clean) valuesByDriver[name] = entry.seconds;
       }
       rows.push({ lap, ...toGapRows(valuesByDriver) });
     }
@@ -972,7 +835,7 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
   // extension directe de cette comparaison, pas un graphique séparé).
   const bestLapRows = useMemo(() => {
     return [...selectedLapTimes].map((name) => {
-      const laps = (lapTimes[name] || []).filter((l) => l.seconds && !l.pitIn);
+      const laps = (lapTimes[name] || []).filter((l) => l.seconds && l.clean);
       const overall = laps.length ? Math.min(...laps.map((l) => l.seconds)) : null;
       const byCompound = {};
       for (const c of compoundsUsed) {
@@ -1024,7 +887,7 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
       const end = Math.min(start + bucketSize - 1, maxLap);
       const avgByDriver = {};
       for (const name of selectedLapTimes) {
-        const laps = (lapTimes[name] || []).filter((l) => l.lap >= start && l.lap <= end && l.seconds && !l.pitIn);
+        const laps = (lapTimes[name] || []).filter((l) => l.lap >= start && l.lap <= end && l.seconds && l.clean);
         if (laps.length) avgByDriver[name] = laps.reduce((a, l) => a + l.seconds, 0) / laps.length;
       }
       const bucket = start === end ? `T${start}` : `T${start}-${end}`;
@@ -1037,15 +900,64 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
     [bucketAvgData, selectedLapTimes]
   );
 
-  // Vitesse par tour + carte du circuit : chargées à la demande via Server
-  // Action (pas au chargement de la page — cf. commentaire de
-  // telemetryActions.js), chacune pour le seul tour choisi dans SON PROPRE
-  // sélecteur — les deux graphiques sont indépendants l'un de l'autre,
-  // comme la sélection de pilotes.
+  // Vitesse par tour : chargée à la demande via Server Action (pas au
+  // chargement de la page — cf. commentaire de telemetryActions.js), pour
+  // le seul tour choisi dans son sélecteur.
   const [speedLap, setSpeedLap] = useState(1);
   const { data: speedData, error: speedError } = useLapTelemetry(raceId, speedLap, hasTelemetry);
-  const [mapLap, setMapLap] = useState(1);
-  const { data: mapData, error: mapError } = useLapTelemetry(raceId, mapLap, hasTelemetry);
+
+  // Meilleur tour qualif vs course — le numéro de voiture (stable entre
+  // séances d'un même week-end) sert de pont entre les pilotes de la
+  // qualification (car_number côté practice_drivers/practice_laps, labellés
+  // par acronyme) et ceux de la course (family_name côté résultats), qui ne
+  // partagent pas le même identifiant textuel.
+  const carNumberToName = useMemo(() => {
+    const map = {};
+    for (const r of results) map[r.car_number] = r.family_name;
+    return map;
+  }, [results]);
+
+  const qualiVsRaceRows = useMemo(() => {
+    const qualiBest = {};
+    for (const q of qualiClassification || []) {
+      const name = carNumberToName[q.car_number];
+      if (name && q.best_lap != null) qualiBest[name] = Number(q.best_lap);
+    }
+    const raceBest = {};
+    for (const name of driverNames) {
+      const laps = (lapTimes[name] || []).filter((l) => l.seconds && l.clean);
+      if (laps.length) raceBest[name] = Math.min(...laps.map((l) => l.seconds));
+    }
+    return { qualiBest, raceBest };
+  }, [qualiClassification, carNumberToName, driverNames, lapTimes]);
+
+  // Une colonne "Qualif", une colonne "Course" — chacune en écart au
+  // meilleur temps DE SA PROPRE séance (pas forcément le même pilote d'une
+  // colonne à l'autre, comme pour "Meilleur tour" plus haut). `delta` =
+  // écart course moins écart qualif : négatif (le pilote a progressé par
+  // rapport au reste du groupe entre les deux séances), positif (il a
+  // reculé) — répond directement à la demande de prioriser cette
+  // comparaison plutôt que le réplay animé (cf. benchmark du 09/09/2026).
+  const qualiVsRaceChartData = useMemo(() => {
+    const names = [...selectedQualiRace].filter(
+      (n) => qualiVsRaceRows.qualiBest[n] != null || qualiVsRaceRows.raceBest[n] != null
+    );
+    const qualiGaps = toGapRows(Object.fromEntries(names.map((n) => [n, qualiVsRaceRows.qualiBest[n]])));
+    const raceGaps = toGapRows(Object.fromEntries(names.map((n) => [n, qualiVsRaceRows.raceBest[n]])));
+    return names.map((name) => ({
+      name,
+      "Qualif": qualiGaps[name],
+      "Qualif__abs": qualiGaps[`${name}__abs`],
+      "Course": raceGaps[name],
+      "Course__abs": raceGaps[`${name}__abs`],
+      delta: raceGaps[name] != null && qualiGaps[name] != null ? raceGaps[name] - qualiGaps[name] : null,
+    }));
+  }, [selectedQualiRace, qualiVsRaceRows]);
+  const qualiVsRaceDomain = useMemo(
+    () => trimmedGapDomain(qualiVsRaceChartData.flatMap((r) => [r["Qualif"], r["Course"]])),
+    [qualiVsRaceChartData]
+  );
+  const deltaAbsMax = Math.max(0.2, ...qualiVsRaceChartData.map((r) => Math.abs(r.delta ?? 0)));
 
   const stintsByDriver = useMemo(() => {
     const map = {};
@@ -1090,9 +1002,69 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
         </div>
       </Section>
 
+      <Section title="Qualif vs Course : meilleur tour">
+        <p className="note" style={{ marginBottom: 12 }}>
+          Écart au meilleur temps DE LA SÉANCE — qualification et course, chacune comparée séparément (le repère "le plus rapide" peut ne pas être le même pilote d'une colonne à l'autre). Les écarts sont typiquement resserrés en qualif (souvent &lt;0.2s en tête) et bien plus larges en course, où l'usure des pneus et le niveau de carburant pèsent — cf. benchmark f1pace.com du 09/09/2026. Meilleur tour course calculé sur les tours propres uniquement (hors 1er tour, entrée/sortie stands, SC/VSC/drapeau rouge — cf. "Temps au tour" plus bas).
+        </p>
+        <DriverCheckboxes names={driverNames} selected={selectedQualiRace} onToggle={toggleQualiRaceDriver} colors={driverColors} />
+        {qualiVsRaceChartData.length === 0 && (
+          <p className="note">Qualification pas encore ingérée pour ce round, ou aucun pilote sélectionné n'a de meilleur tour valide.</p>
+        )}
+        {qualiVsRaceChartData.length > 0 && (
+          <>
+            <ResponsiveContainer width="100%" height={Math.max(140, qualiVsRaceChartData.length * 34 + 50)}>
+              <BarChart data={qualiVsRaceChartData} layout="vertical" margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} horizontal={false} />
+                <XAxis type="number" domain={qualiVsRaceDomain} tickFormatter={(v) => `${v.toFixed(1)}s`} />
+                <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} />
+                <Tooltip content={<GapTooltip />} />
+                <Legend />
+                <Bar dataKey="Qualif" fill="var(--text-muted)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="Course" radius={[0, 4, 4, 0]}>
+                  {qualiVsRaceChartData.map((row) => <Cell key={row.name} fill={driverColors[row.name]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+
+            <p style={{ fontSize: 13, fontWeight: 600, margin: "24px 0 10px" }}>Δ rythme qualif → course</p>
+            <p className="note" style={{ marginBottom: 12 }}>
+              Écart au plus rapide en course moins écart au plus rapide en qualif. Négatif (vert) : a relativement progressé entre les deux séances. Positif (rouge) : a relativement reculé.
+            </p>
+            <ResponsiveContainer width="100%" height={Math.max(120, qualiVsRaceChartData.length * 30 + 40)}>
+              <BarChart data={qualiVsRaceChartData} layout="vertical" margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} horizontal={false} />
+                <XAxis type="number" domain={[-deltaAbsMax, deltaAbsMax]} tickFormatter={(v) => `${v > 0 ? "+" : ""}${v.toFixed(1)}s`} />
+                <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(v) => (v == null ? "" : `${v > 0 ? "+" : ""}${v.toFixed(3)}s`)} />
+                <Bar dataKey="delta" radius={[4, 4, 4, 4]}>
+                  {qualiVsRaceChartData.map((row) => (
+                    <Cell key={row.name} fill={row.delta == null ? "var(--border)" : row.delta < 0 ? "var(--good)" : "var(--bad)"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+
+            <p style={{ fontSize: 13, fontWeight: 600, margin: "24px 0 10px" }}>Qui bat qui</p>
+            <p className="note" style={{ marginBottom: 12 }}>
+              Case (ligne, colonne) = temps de la ligne moins temps de la colonne — négatif : la ligne est plus rapide que la colonne. Permet de comparer n'importe quelle paire de pilotes, pas seulement chacun contre le meilleur du groupe.
+            </p>
+            <div style={{ display: "grid", gap: 20, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+              <div>
+                <p className="note" style={{ marginBottom: 6, fontWeight: 600 }}>Qualif</p>
+                <DeltaMatrix names={[...selectedQualiRace]} valueByName={qualiVsRaceRows.qualiBest} colors={driverColors} />
+              </div>
+              <div>
+                <p className="note" style={{ marginBottom: 6, fontWeight: 600 }}>Course</p>
+                <DeltaMatrix names={[...selectedQualiRace]} valueByName={qualiVsRaceRows.raceBest} colors={driverColors} />
+              </div>
+            </div>
+          </>
+        )}
+      </Section>
+
       <Section title="Temps au tour">
         <p className="note" style={{ marginBottom: 12 }}>
-          Écart au pilote le plus rapide DE CE TOUR parmi les pilotes cochés (0 = au plus rapide) — un temps de tour dans l'absolu (mm:ss.mmm) ne se compare pas d'un coup d'œil, contrairement à un écart en secondes. Temps absolu quand même visible en survolant un point.
+          Écart au pilote le plus rapide DE CE TOUR parmi les pilotes cochés (0 = au plus rapide) — un temps de tour dans l'absolu (mm:ss.mmm) ne se compare pas d'un coup d'œil, contrairement à un écart en secondes. Temps absolu quand même visible en survolant un point. Tours d'entrée/sortie stands, 1er tour et tours SC/VSC/drapeau rouge exclus (pas représentatifs du rythme réel — même filtrage que f1pace.com).
         </p>
         <DriverCheckboxes names={driverNames} selected={selectedLapTimes} onToggle={toggleLapTimesDriver} colors={driverColors} />
         <ResponsiveContainer width="100%" height={360}>
@@ -1135,6 +1107,16 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
             ))}
           </BarChart>
         </ResponsiveContainer>
+
+        <p style={{ fontSize: 13, fontWeight: 600, margin: "24px 0 10px" }}>Qui bat qui (toutes gommes)</p>
+        <p className="note" style={{ marginBottom: 12 }}>
+          Case (ligne, colonne) = meilleur tour de la ligne moins meilleur tour de la colonne — négatif : la ligne est plus rapide que la colonne.
+        </p>
+        <DeltaMatrix
+          names={[...selectedLapTimes]}
+          valueByName={Object.fromEntries(bestLapRows.map((r) => [r.name, r.overall]))}
+          colors={driverColors}
+        />
 
         <p style={{ fontSize: 13, fontWeight: 600, margin: "24px 0 10px" }}>Temps moyen par tranche de 5 tours</p>
         <p className="note" style={{ marginBottom: 12 }}>
@@ -1236,19 +1218,6 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
               </LineChart>
             </ResponsiveContainer>
           )}
-        </Section>
-      )}
-
-      {hasTelemetry && (
-        <Section title="Réplay animé">
-          <p className="note" style={{ marginBottom: 12 }}>
-            Position réelle sur circuit (endpoint OpenF1 `location`), jusqu'à 5 pilotes, synchronisés sur le temps écoulé depuis le début du tour choisi — pour voir directement qui est devant à quel moment, plutôt que de deviner une différence de couleur. Lecture compressée sur {PLAYBACK_SECONDS}s quelle que soit la durée réelle du tour.
-          </p>
-          <LapSelector value={mapLap} onChange={setMapLap} maxLap={maxLap} />
-          <DriverCheckboxes names={driverNames} selected={selectedMap} onToggle={toggleMapDriver} colors={driverColors} max={5} />
-          {mapError && <p className="note">Erreur de chargement de la télémétrie pour ce tour.</p>}
-          {!mapError && !mapData && <p className="note">Chargement…</p>}
-          {mapData && <RaceReplay telemetryData={mapData} selected={selectedMap} colors={driverColors} />}
         </Section>
       )}
 

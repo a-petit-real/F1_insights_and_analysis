@@ -67,7 +67,7 @@ Pages réellement implémentées (routes App Router sous `web/app/`) :
 |---|---|---|
 | `/` | `page.jsx` + `HomeDashboard.jsx` | Dernier résultat + prochain GP (déterminé par présence réelle de données en base, pas par comparaison de date — cf. commentaire dans `page.jsx`) |
 | `/courses` | `courses/page.jsx` + `SeasonCalendar.jsx` | Calendrier de la saison : vue liste + carte interactive (SVG, zoom, statut disputée/ce week-end/à venir) |
-| `/courses/[round]` | `courses/[round]/page.jsx` + `RaceTabs.jsx` | Fiche course complète : onglets Pré-analyse / EL1 / EL2 / EL3 / Quali / Analyse / Raw data (temps au tour + meilleur tour par gomme + moyenne par tranche de 5 tours, position et vitesse par tour, réplay animé jusqu'à 5 pilotes [SVG, pas Recharts], pneus, météo, RCM, dépassements en graphiques Recharts + tableaux) |
+| `/courses/[round]` | `courses/[round]/page.jsx` + `RaceTabs.jsx` | Fiche course complète : onglets Pré-analyse / EL1 / EL2 / EL3 / Quali / Analyse / Raw data (qualif vs course + matrices delta pilote × pilote, temps au tour + meilleur tour par gomme + moyenne par tranche de 5 tours, position et vitesse par tour, pneus, météo, RCM, dépassements — en graphiques Recharts + tableaux) |
 | `/classement` | `classement/page.jsx` + `StandingsView.jsx` | Classement pilotes/constructeurs, protégé par l'anti-spoiler (figé au dernier GP marqué "vu") |
 
 **Pages envisagées mais non implémentées** : fiches pilotes/écuries individuelles avec historique, comparateur, page "Sources & méthodologie" dédiée (chaque article a sa propre section sources en `<details>`, pas de page transverse).
