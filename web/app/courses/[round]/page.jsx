@@ -14,6 +14,7 @@ import {
   getPracticeLapTimesByDriver,
   getPracticeStints,
   getPracticeWeather,
+  getRaceWinners,
 } from "../../../lib/raceData";
 import RaceTabs from "./RaceTabs";
 
@@ -25,7 +26,7 @@ export default async function RacePage({ params }) {
   const race = await getRace(season, Number(round));
   if (!race) notFound();
 
-  const [results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry, practiceSessions] = await Promise.all([
+  const [results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry, practiceSessions, raceWinners] = await Promise.all([
     getResults(race.race_id),
     getLapTimesByDriver(race.race_id),
     getTyreStints(race.race_id),
@@ -34,6 +35,7 @@ export default async function RacePage({ params }) {
     getOvertakes(race.race_id),
     getHasTelemetry(race.race_id),
     getPracticeSessions(race.race_id),
+    getRaceWinners(season),
   ]);
 
   // Une entrée par séance ingérée (0 à 3 : EL1/EL2/EL3) — vide pour tous
@@ -73,6 +75,7 @@ export default async function RacePage({ params }) {
         overtakes={overtakes}
         hasTelemetry={hasTelemetry}
         practiceData={practiceData}
+        raceWinners={raceWinners}
       />
     </main>
   );

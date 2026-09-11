@@ -31,6 +31,7 @@ import { ROUND14_PREANALYSE_FR_HTML } from "../14/preanalyse-fr";
 import { ROUND14_PREANALYSE_EN_HTML } from "../14/preanalyse-en";
 import { useRoundSpoilerState } from "../../../lib/spoilerGuard";
 import { useLangPref } from "../../../lib/langPref";
+import { PTW_PICKS } from "../../../lib/ptwPicks";
 import {
   ResponsiveContainer,
   LineChart,
@@ -226,7 +227,7 @@ const PRACTICE_EN_HTML = {
   },
 };
 
-export default function RaceTabs({ round, raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry, practiceData }) {
+export default function RaceTabs({ round, raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry, practiceData, raceWinners }) {
   const practiceSessions = PRACTICE_ORDER.filter((name) => practiceData && practiceData[name]);
   const hasPreAnalyse = Boolean(PREANALYSE_FR_HTML[round]);
   const hasResults = results && results.length > 0;
@@ -286,6 +287,8 @@ export default function RaceTabs({ round, raceId, results, lapTimes, tyreStints,
             overtakes={overtakes}
             hasTelemetry={hasTelemetry}
             qualiClassification={practiceData?.Qualifying?.classification}
+            round={round}
+            raceWinners={raceWinners}
           />
         </SpoilerGate>
       )}
@@ -348,8 +351,66 @@ function PreAnalyseTab({ round, lang, langHydrated }) {
       {langHydrated && lang === "en" && !showEn && (
         <p className="note" style={{ marginBottom: 16 }}>This preview isn't translated to English yet — showing the French version.</p>
       )}
+      <PtwPickBadge round={round} />
       <div dangerouslySetInnerHTML={{ __html: showEn ? enHtml : PREANALYSE_FR_HTML[round] }} />
     </div>
+  );
+}
+
+// "Pick de PTW" — pronostic assumé du site pour le vainqueur, affiché AVANT
+// la course (donc jamais un spoiler : c'est une prédiction, pas un
+// résultat) dans la Pré-analyse. `PTW_PICKS` est un import statique
+// (cf. web/lib/ptwPicks.js), pas une prop : contenu éditorial écrit à la
+// main comme le reste de la Pré-analyse, pas une donnée qui transite par la
+// page serveur.
+function PtwPickBadge({ round }) {
+  const pick = PTW_PICKS[round];
+  if (!pick) return null;
+  return (
+    <p className="note" style={{ marginBottom: 16 }}>
+      🎯 <strong>Pick de PTW :</strong> {pick}
+    </p>
+  );
+}
+
+// Révèle si le pick était bon, une fois la course disputée — placé dans
+// Raw data (déjà derrière SpoilerGate côté RaceTabs) plutôt que dans
+// l'Analyse : révéler juste/faux revient à révéler le vainqueur, donc ça
+// doit vivre derrière le même verrou anti-spoiler que le reste de la
+// course, jamais dans un composant non gaté.
+function PtwPickReveal({ round, winner }) {
+  const pick = PTW_PICKS[round];
+  if (!pick) return null;
+  if (!winner) {
+    return (
+      <p className="note" style={{ marginBottom: 16 }}>
+        🎯 <strong>Pick de PTW :</strong> {pick} — résultat pas encore disponible.
+      </p>
+    );
+  }
+  const correct = pick === winner;
+  return (
+    <p className="note" style={{ marginBottom: 16 }}>
+      {correct ? "✅" : "❌"} <strong>Pick de PTW :</strong> {pick}
+      {correct ? " — correct !" : ` — c'est ${winner} qui l'a emporté.`}
+    </p>
+  );
+}
+
+// Bilan cumulé sur la saison : combien de picks confirmés (round disputé ET
+// pronostic écrit pour ce round) étaient corrects. N'affiche rien tant
+// qu'aucun pick n'a encore de résultat en face — pas la peine d'un "0/0"
+// creux dès le round 1.
+function PtwTrackRecord({ raceWinners }) {
+  const rounds = Object.keys(PTW_PICKS)
+    .map(Number)
+    .filter((r) => raceWinners && raceWinners[r] != null);
+  if (rounds.length === 0) return null;
+  const correct = rounds.filter((r) => PTW_PICKS[r] === raceWinners[r]).length;
+  return (
+    <p className="note" style={{ marginBottom: 16 }}>
+      📊 Bilan des pronostics PTW cette saison : {correct}/{rounds.length} corrects.
+    </p>
   );
 }
 
@@ -737,8 +798,12 @@ function DeltaMatrix({ names, valueByName, colors }) {
   );
 }
 
-function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry, qualiClassification }) {
+function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry, qualiClassification, round, raceWinners }) {
   const driverNames = Object.keys(lapTimes).sort();
+  // Vainqueur DE CE round, dérivé de `results` (déjà chargé pour le tableau
+  // "Résultats" juste en dessous) — pas besoin de relire raceWinners[round],
+  // qui sert seulement au bilan cumulé sur toute la saison.
+  const winner = results.find((r) => r.finish_position === 1)?.family_name;
   const top5 = useMemo(() => {
     const t = results.slice(0, 5).map((r) => r.family_name);
     return t.length ? t : driverNames.slice(0, 5);
@@ -976,6 +1041,8 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
   return (
     <div style={{ display: "grid", gap: 36 }}>
       <Section title="Résultats">
+        <PtwPickReveal round={round} winner={winner} />
+        <PtwTrackRecord raceWinners={raceWinners} />
         <div className="tablewrap">
           <table>
             <thead>

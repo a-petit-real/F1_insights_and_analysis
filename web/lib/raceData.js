@@ -21,6 +21,26 @@ export async function getRace(season, round) {
   return rows[0] || null;
 }
 
+// Vainqueur de chaque course de la saison (round -> family_name), pour
+// confronter les pronostics "Pick de PTW" (web/lib/ptwPicks.js) aux
+// résultats réels sur toute la saison, pas seulement le round courant —
+// nécessaire pour le bilan cumulé ("X/Y corrects") affiché dans Raw data.
+// Une seule requête pour toute la saison (13-14 lignes) plutôt qu'un
+// aller-retour par round.
+export async function getRaceWinners(season) {
+  const rows = await query(
+    `SELECT r.round, d.family_name
+     FROM results res
+     JOIN races r ON r.race_id = res.race_id
+     JOIN drivers d ON d.driver_id = res.driver_id
+     WHERE r.season = $1 AND res.finish_position = 1`,
+    [season]
+  );
+  const byRound = {};
+  for (const row of rows) byRound[row.round] = row.family_name;
+  return byRound;
+}
+
 export async function getResults(raceId) {
   return query(
     `SELECT res.finish_position, res.grid, res.car_number, res.points, res.status, res.time_text,
