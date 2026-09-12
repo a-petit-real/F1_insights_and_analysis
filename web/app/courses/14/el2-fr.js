@@ -25,6 +25,10 @@ export const ROUND14_EL2_FR_HTML = `
       <div class="chip"><span class="pos">5</span> <span class="dot" style="background:#00A19B"></span><span class="drv">Russell</span> <span class="gap">+0,337s</span></div>
     </div>
     <p class="subverdict">L'EL1 avait donné Russell devant Antonelli ; l'EL2 inverse l'ordre chez Mercedes, toujours devant, avec Ferrari toujours aussi proche (deux dixièmes à peine séparent Leclerc et Hamilton du sommet). Mais la donnée brute occulte les deux vrais événements de la séance : Lando Norris, sixième en EL1, ne boucle que deux tours avant une panne de boîte de vitesses qui le renvoie au garage pour le reste de l'heure ; Arvid Lindblad, auteur d'un rythme de P4 "au mérite" selon ses propres mots, part à la faute au virage 13 et déclenche le drapeau rouge de la séance.</p>
+    <div class="videowrap">
+      <iframe src="https://www.youtube.com/embed/DyKH1qMZEpY" title="FP2 Highlights | 2026 Spanish Grand Prix" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <p class="scrollhint" style="text-align:center;">Temps forts officiels EL2 — chaîne YouTube Formula 1</p>
   </div>
 </section>
 
@@ -108,7 +112,7 @@ export const ROUND14_EL2_FR_HTML = `
 
 <section class="block" id="sec-el2-7">
   <details class="sources">
-    <summary>Sources utilisées — EL2 Madring (3 liens)</summary>
+    <summary>Sources utilisées — EL2 Madring (3 liens externes)</summary>
     <div class="srcgroup">
       <h5>Données de séance</h5>
       <ul>
@@ -120,6 +124,12 @@ export const ROUND14_EL2_FR_HTML = `
       <ul>
         <li><a href="https://www.formula1.com/en/latest/article/a-big-setback-mclaren-confirm-gearbox-issue-as-norris-misses-fp2-in-madrid.5xJCa0u4fR3K9KuY4GPVcC" data-desc="Panne de boîte de Norris confirmée par McLaren, citations de Mark Temple et Oscar Piastri.">Formula1.com — panne de boîte de Norris</a><span class="desc">Formula1.com</span></li>
         <li><a href="https://www.formula1.com/en/latest/article/i-was-running-p4-on-merit-lindblad-highlights-positives-after-fp2-crash-in-spain.1HE4r0a1dAJuY7Swpc4udc" data-desc="Détail et citations de Lindblad après sa sortie de piste au virage 13.">Formula1.com — Lindblad après son accrochage</a><span class="desc">Formula1.com</span></li>
+      </ul>
+    </div>
+    <div class="srcgroup">
+      <h5>Vidéo</h5>
+      <ul>
+        <li><a href="https://www.youtube.com/watch?v=DyKH1qMZEpY" data-desc="Temps forts officiels de la séance, chaîne YouTube Formula 1.">YouTube — FP2 Highlights, 2026 Spanish Grand Prix</a><span class="desc">Chaîne officielle Formula 1</span></li>
       </ul>
     </div>
   </details>

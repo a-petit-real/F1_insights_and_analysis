@@ -28,6 +28,10 @@ export const ROUND14_EL3_FR_HTML = `
       <div class="chip"><span class="pos">5</span> <span class="dot" style="background:#1B3A93"></span><span class="drv">Verstappen</span> <span class="gap">+0,375s</span></div>
     </div>
     <p class="subverdict">Troisième séance, deuxième référence Antonelli (après l'EL2) — mais surtout un écart à Leclerc qui continue de se resserrer (0,459s en EL1, 0,113s en EL2, 0,166s ici). La vraie nouvelle du jour est ailleurs : McLaren, en délicatesse tout le vendredi, revient à moins d'un quart de seconde du sommet avec ses deux pilotes en P3 et P4 — Norris compris, deux jours après avoir perdu la quasi-totalité de l'EL2 sur panne de boîte. La séance, plus courte que les deux précédentes en nombre de tours pour la plupart des pilotes, a été coupée par deux drapeaux rouges consécutifs.</p>
+    <div class="videowrap">
+      <iframe src="https://www.youtube.com/embed/FA-QkDHTyT8" title="FP3 Highlights | 2026 Spanish Grand Prix" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <p class="scrollhint" style="text-align:center;">Temps forts officiels EL3 — chaîne YouTube Formula 1</p>
   </div>
 </section>
 
@@ -112,11 +116,17 @@ export const ROUND14_EL3_FR_HTML = `
 
 <section class="block" id="sec-el3-7">
   <details class="sources">
-    <summary>Sources utilisées — EL3 Madring (0 lien externe)</summary>
+    <summary>Sources utilisées — EL3 Madring (1 lien externe)</summary>
     <div class="srcgroup">
       <h5>Données de séance</h5>
       <ul>
         <li><span class="desc">The Pit Wall — pipeline OpenF1 (scripts/ingest_openf1_practice.py), classement/secteurs/relais/météo, primaire.</span></li>
+      </ul>
+    </div>
+    <div class="srcgroup">
+      <h5>Vidéo</h5>
+      <ul>
+        <li><a href="https://www.youtube.com/watch?v=FA-QkDHTyT8" data-desc="Temps forts officiels de la séance, chaîne YouTube Formula 1.">YouTube — FP3 Highlights, 2026 Spanish Grand Prix</a><span class="desc">Chaîne officielle Formula 1</span></li>
       </ul>
     </div>
   </details>

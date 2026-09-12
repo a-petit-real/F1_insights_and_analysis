@@ -249,6 +249,15 @@
   }
   .bridge-btn:hover{filter:brightness(1.08);}
 
+  /* ---------- Vidéo ---------- */
+  /* Embed responsive 16:9 (temps forts officiels de la chaîne YouTube
+     Formula 1, jamais un contenu payant/scrapé — cf. docs/DATA_SOURCES.md) —
+     même arrondi/bordure que .tablewrap pour rester dans le même langage
+     visuel que le reste des articles plutôt que d'introduire un troisième
+     style d'encadré. */
+  .videowrap{position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:10px; border:1px solid var(--border); background:var(--surface-raised);}
+  .videowrap iframe{position:absolute; top:0; left:0; width:100%; height:100%; border:0;}
+
   /* ---------- Tables ---------- */
   .tablewrap{overflow-x:auto; border:1px solid var(--border); border-radius:10px; background:var(--surface); position:relative;}
   /* Les tableaux (.tablewrap, doublé de la classe .prose dans le HTML des

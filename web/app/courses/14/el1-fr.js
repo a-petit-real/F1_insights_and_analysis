@@ -24,6 +24,10 @@ export const ROUND14_EL1_FR_HTML = `
       <div class="chip"><span class="pos">5</span> <span class="dot" style="background:#1B3A93"></span><span class="drv">Verstappen</span> <span class="gap">+0,626s</span></div>
     </div>
     <p class="subverdict">Une heure d'essais sans le moindre repère chronométrique antérieur — la première fois qu'une monoplace de F1 boucle un tour de course sur ce tracé, hors journée de tournage encadrée de Ferrari. Mercedes prend la tête comme annoncé (Russell, puis Antonelli), Ferrari referme l'écart bien plus vite que la pré-analyse ne le laissait attendre, et McLaren — déjà en délicatesse à Monza — n'apparaît qu'en 6<sup>e</sup> et 8<sup>e</sup> positions. Prudence de rigueur : programmes d'essais mélangés, charges d'essence inconnues, une seule heure de roulage sur un circuit que personne ne connaît.</p>
+    <div class="videowrap">
+      <iframe src="https://www.youtube.com/embed/aiAr7EPPl4U" title="FP1 Highlights | 2026 Spanish Grand Prix" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <p class="scrollhint" style="text-align:center;">Temps forts officiels EL1 — chaîne YouTube Formula 1</p>
   </div>
 </section>
 
@@ -116,7 +120,7 @@ export const ROUND14_EL1_FR_HTML = `
 
 <section class="block" id="sec-el1-6">
   <details class="sources">
-    <summary>Sources utilisées — EL1 Madring (2 liens)</summary>
+    <summary>Sources utilisées — EL1 Madring (2 liens externes)</summary>
     <div class="srcgroup">
       <h5>Données de séance</h5>
       <ul>
@@ -127,6 +131,12 @@ export const ROUND14_EL1_FR_HTML = `
       <h5>Recoupement et contexte narratif</h5>
       <ul>
         <li><a href="https://www.formula1.com/en/latest/article/fp1-russell-leads-antonelli-and-leclerc-as-cars-hit-madring-for-first-time.1CiLnqKjDFMohqIlyx5uAm" data-desc="Déroulé de séance, citation d'Ocon, incidents Perez/Tsunoda, classement complet — concorde exactement avec la base à la milliseconde près.">Formula1.com — rapport EL1</a><span class="desc">Formula1.com</span></li>
+      </ul>
+    </div>
+    <div class="srcgroup">
+      <h5>Vidéo</h5>
+      <ul>
+        <li><a href="https://www.youtube.com/watch?v=aiAr7EPPl4U" data-desc="Temps forts officiels de la séance, chaîne YouTube Formula 1.">YouTube — FP1 Highlights, 2026 Spanish Grand Prix</a><span class="desc">Chaîne officielle Formula 1</span></li>
       </ul>
     </div>
   </details>
