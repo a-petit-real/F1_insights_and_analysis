@@ -250,13 +250,22 @@
   .bridge-btn:hover{filter:brightness(1.08);}
 
   /* ---------- Vidéo ---------- */
-  /* Embed responsive 16:9 (temps forts officiels de la chaîne YouTube
-     Formula 1, jamais un contenu payant/scrapé — cf. docs/DATA_SOURCES.md) —
-     même arrondi/bordure que .tablewrap pour rester dans le même langage
-     visuel que le reste des articles plutôt que d'introduire un troisième
-     style d'encadré. */
-  .videowrap{position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:10px; border:1px solid var(--border); background:var(--surface-raised);}
-  .videowrap iframe{position:absolute; top:0; left:0; width:100%; height:100%; border:0;}
+  /* Miniature cliquable vers YouTube plutôt qu'un <iframe> embarqué : les
+     vidéos officielles de la chaîne Formula 1 sont pour beaucoup bloquées à
+     l'embed hors youtube.com par Formula One Management (droits de
+     diffusion télé — Canal+ et consorts), ce qui affiche un gros encart
+     d'erreur YouTube à la place du lecteur si on tente quand même
+     l'embed (constaté en prod, pas une hypothèse). Une miniature statique
+     (img.youtube.com, jamais concernée par ce blocage) + un lien qui ouvre
+     YouTube dans un nouvel onglet est le seul choix qui marche à coup sûr
+     pour du contenu officiel F1 — même arrondi/bordure que .tablewrap.  */
+  .videolink{position:relative; display:block; border-radius:10px; overflow:hidden; border:1px solid var(--border); background:var(--surface-raised); text-decoration:none;}
+  .videolink img{display:block; width:100%; height:auto;}
+  .videolink .playbtn{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:64px; height:64px; border-radius:50%; background:rgba(0,0,0,0.65); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:22px; line-height:1;
+  }
 
   /* ---------- Tables ---------- */
   .tablewrap{overflow-x:auto; border:1px solid var(--border); border-radius:10px; background:var(--surface); position:relative;}

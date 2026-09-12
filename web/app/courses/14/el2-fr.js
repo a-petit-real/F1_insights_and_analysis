@@ -25,10 +25,11 @@ export const ROUND14_EL2_FR_HTML = `
       <div class="chip"><span class="pos">5</span> <span class="dot" style="background:#00A19B"></span><span class="drv">Russell</span> <span class="gap">+0,337s</span></div>
     </div>
     <p class="subverdict">L'EL1 avait donné Russell devant Antonelli ; l'EL2 inverse l'ordre chez Mercedes, toujours devant, avec Ferrari toujours aussi proche (deux dixièmes à peine séparent Leclerc et Hamilton du sommet). Mais la donnée brute occulte les deux vrais événements de la séance : Lando Norris, sixième en EL1, ne boucle que deux tours avant une panne de boîte de vitesses qui le renvoie au garage pour le reste de l'heure ; Arvid Lindblad, auteur d'un rythme de P4 "au mérite" selon ses propres mots, part à la faute au virage 13 et déclenche le drapeau rouge de la séance.</p>
-    <div class="videowrap">
-      <iframe src="https://www.youtube.com/embed/DyKH1qMZEpY" title="FP2 Highlights | 2026 Spanish Grand Prix" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    </div>
-    <p class="scrollhint" style="text-align:center;">Temps forts officiels EL2 — chaîne YouTube Formula 1</p>
+    <a class="videolink" href="https://www.youtube.com/watch?v=DyKH1qMZEpY" target="_blank" rel="noopener noreferrer">
+      <img src="https://img.youtube.com/vi/DyKH1qMZEpY/hqdefault.jpg" alt="FP2 Highlights | 2026 Spanish Grand Prix" />
+      <span class="playbtn">▶</span>
+    </a>
+    <p class="scrollhint" style="text-align:center;">Temps forts officiels EL2 — voir sur YouTube (chaîne Formula 1)</p>
   </div>
 </section>
 
