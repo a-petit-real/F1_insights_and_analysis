@@ -66,6 +66,11 @@ async function main() {
   const ghostlapText = await page.locator(".ghostlap-loading .scrollhint").allTextContents();
   console.log(`Éléments .ghostlap trouvés : ${ghostlapCount}`);
   console.log(`Éléments .ghostlap-loading trouvés : ${ghostlapLoadingCount} (texte: ${JSON.stringify(ghostlapText)})`);
+  if (ghostlapCount > 0) {
+    const html = await page.locator(".ghostlap").first().innerHTML();
+    console.log("\n=== .ghostlap innerHTML (tronqué à 3000 caractères) ===");
+    console.log(html.slice(0, 3000));
+  }
 
   const bodyText = await page.locator("body").innerText();
   console.log(`Contient "le tour de pole" : ${bodyText.includes("le tour de pole")}`);
