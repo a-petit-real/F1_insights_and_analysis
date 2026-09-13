@@ -233,4 +233,28 @@ CREATE TABLE IF NOT EXISTS practice_weather (
     UNIQUE (session_key, session_time)
 );
 
+-- Télémétrie position/vitesse par tour pour une séance d'essais/qualification
+-- (réplay comparatif multi-pilotes d'un duel précis, ex. bataille pour la
+-- pole). Même colonnes que lap_telemetry (course), mais clé sur session_key
+-- plutôt que race_id : une séance de qualification n'a pas de "lap_number"
+-- comparable à celui de la course (numérotation différente, tours multiples
+-- par relais), donc réutiliser lap_telemetry provoquerait une collision de
+-- clé primaire (race_id, car_number, lap_number) entre le tour N de la
+-- course et le tour N d'une séance d'essais/qualification du même week-end.
+-- Alimentée par scripts/ingest_openf1_telemetry.py --session "<nom>" (toute
+-- valeur autre que "Race", qui continue d'écrire dans lap_telemetry comme
+-- avant), à la demande, pour un tour précis plutôt que la séance entière
+-- (mêmes volumes par pilote qu'en course, cf. docstring du script).
+CREATE TABLE IF NOT EXISTS practice_telemetry (
+    session_key  INTEGER NOT NULL REFERENCES practice_sessions(session_key) ON DELETE CASCADE,
+    car_number   INTEGER NOT NULL,
+    lap_number   INTEGER NOT NULL,
+    distance_m   REAL[] NOT NULL,
+    speed_kmh    REAL[] NOT NULL,
+    x_m          REAL[],
+    y_m          REAL[],
+    t_s          REAL[],
+    PRIMARY KEY (session_key, car_number, lap_number)
+);
+
 CREATE INDEX IF NOT EXISTS idx_practice_weather_session ON practice_weather(session_key);

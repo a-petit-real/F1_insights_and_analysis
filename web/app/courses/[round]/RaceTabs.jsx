@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fetchLapTelemetry } from "./telemetryActions";
+import GhostLapReplay from "./GhostLapReplay";
 import { ROUND1_ANALYSE_FR_HTML } from "../1/analyse-fr";
 import { ROUND2_ANALYSE_FR_HTML } from "../2/analyse-fr";
 import { ROUND3_ANALYSE_FR_HTML } from "../3/analyse-fr";
@@ -298,7 +299,7 @@ export default function RaceTabs({ round, raceId, results, lapTimes, tyreStints,
       )}
       {practiceSessions.includes(tab) && (
         <SpoilerGate spoiler={spoiler} session={PRACTICE_LABELS[tab]} label={PRACTICE_LABELS[tab]}>
-          <PracticeTab round={round} sessionName={tab} data={practiceData[tab]} lang={lang} langHydrated={langHydrated} />
+          <PracticeTab raceId={raceId} round={round} sessionName={tab} data={practiceData[tab]} lang={lang} langHydrated={langHydrated} />
         </SpoilerGate>
       )}
     </div>
@@ -481,7 +482,17 @@ const PRACTICE_FR_HTML = {
   },
 };
 
-function PracticeAnalysis({ round, sessionName, lang, langHydrated }) {
+// Un seul duel en dur pour l'instant (Norris/Antonelli/Verstappen, pole du
+// round 14) plutôt qu'un mécanisme générique piloté par round/séance : la
+// valeur de cette feature vient du choix éditorial d'UN duel précis, pas
+// d'un outil réutilisable pour n'importe quelle séance — cf. discussion
+// utilisateur sur l'angle "choix des pilotes comparés" plutôt qu'un réplay
+// générique. À dupliquer/paramétrer le jour où un autre duel le justifie.
+const GHOST_LAP_REPLAYS = {
+  "14|Qualifying": { carNumbers: [1, 12, 3], title: "Réplay — le tour de pole, seconde par seconde" },
+};
+
+function PracticeAnalysis({ raceId, round, sessionName, lang, langHydrated }) {
   const frHtml = PRACTICE_FR_HTML[round]?.[sessionName];
   if (!frHtml) {
     return (
@@ -492,17 +503,36 @@ function PracticeAnalysis({ round, sessionName, lang, langHydrated }) {
   }
   const enHtml = PRACTICE_EN_HTML[round]?.[sessionName];
   const showEn = lang === "en" && Boolean(enHtml);
+  const html = showEn ? enHtml : frHtml;
+
+  // <!--GHOST_LAP_REPLAY--> découpe l'article en deux blocs HTML statiques
+  // avec un composant React vivant intercalé entre les deux — le seul point
+  // de l'article qui n'est pas du dangerouslySetInnerHTML (cf. commentaire
+  // en tête de quali-fr.js).
+  const replayKey = `${round}|${sessionName}`;
+  const replay = GHOST_LAP_REPLAYS[replayKey];
+  const marker = "<!--GHOST_LAP_REPLAY-->";
+  const parts = replay && html.includes(marker) ? html.split(marker) : null;
+
   return (
     <div className="prose">
       {langHydrated && lang === "en" && !showEn && (
         <p className="note" style={{ marginBottom: 16 }}>This article isn't translated to English yet — showing the French version.</p>
       )}
-      <div dangerouslySetInnerHTML={{ __html: showEn ? enHtml : frHtml }} />
+      {parts ? (
+        <>
+          <div dangerouslySetInnerHTML={{ __html: parts[0] }} />
+          <GhostLapReplay raceId={raceId} sessionName={sessionName} carNumbers={replay.carNumbers} title={replay.title} />
+          <div dangerouslySetInnerHTML={{ __html: parts[1] }} />
+        </>
+      ) : (
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+      )}
     </div>
   );
 }
 
-function PracticeTab({ round, sessionName, data, lang, langHydrated }) {
+function PracticeTab({ raceId, round, sessionName, data, lang, langHydrated }) {
   const { classification, laps, stints, weather } = data;
   const driverLabels = Object.keys(laps).sort();
   const defaultSelected = useMemo(() => {
@@ -547,7 +577,7 @@ function PracticeTab({ round, sessionName, data, lang, langHydrated }) {
 
   return (
     <div style={{ display: "grid", gap: 36 }}>
-      <PracticeAnalysis round={round} sessionName={sessionName} lang={lang} langHydrated={langHydrated} />
+      <PracticeAnalysis raceId={raceId} round={round} sessionName={sessionName} lang={lang} langHydrated={langHydrated} />
       {!hasAnyData && (
         <NoRaceDataYet message="Données de séance pas encore disponibles — cette page se mettra à jour automatiquement une fois l'ingestion effectuée." />
       )}

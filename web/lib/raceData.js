@@ -187,6 +187,83 @@ export async function getLapTelemetry(raceId, lapNumber) {
   return byDriver;
 }
 
+// Télémétrie d'une séance d'essais/qualification (practice_telemetry,
+// alimentée par ingest_openf1_telemetry.py --session "<nom>") pour un duel
+// ciblé — pas la séance entière : on connaît à l'avance les tours (car
+// leur numéro vient de practice_laps, ex. le meilleur tour de chacun) et
+// les pilotes qu'on veut comparer, contrairement à getLapTelemetry (course)
+// qui laisse choisir le tour dans un sélecteur. Jointure sur
+// practice_drivers (pas `results`) : c'est la liste des pilotes ayant
+// réellement roulé CETTE séance précise, cf. docstring de
+// ingest_openf1_practice.py (pilote de réserve).
+export async function getPracticeTelemetryLaps(sessionKey, carLapPairs) {
+  if (!carLapPairs.length) return {};
+  const carNumbers = carLapPairs.map((p) => p.carNumber);
+  const lapNumbers = carLapPairs.map((p) => p.lapNumber);
+  const rows = await query(
+    `SELECT pd.name_acronym, pd.full_name, pd.team_name, pt.car_number, pt.distance_m, pt.speed_kmh, pt.x_m, pt.y_m, pt.t_s
+     FROM practice_telemetry pt
+     JOIN practice_drivers pd ON pd.session_key = pt.session_key AND pd.car_number = pt.car_number
+     JOIN UNNEST($2::int[], $3::int[]) AS wanted(car_number, lap_number)
+       ON wanted.car_number = pt.car_number AND wanted.lap_number = pt.lap_number
+     WHERE pt.session_key = $1`,
+    [sessionKey, carNumbers, lapNumbers]
+  );
+  const byDriver = {};
+  for (const row of rows) {
+    const distances = row.distance_m || [];
+    const speeds = row.speed_kmh || [];
+    const xs = row.x_m || [];
+    const ys = row.y_m || [];
+    const ts = row.t_s || [];
+    byDriver[row.name_acronym] = {
+      fullName: row.full_name,
+      teamName: row.team_name,
+      carNumber: row.car_number,
+      points: distances.map((d, i) => ({
+        distance: Number(d),
+        speed: speeds[i] != null ? Number(speeds[i]) : null,
+        x: xs[i] != null ? Number(xs[i]) : null,
+        y: ys[i] != null ? Number(ys[i]) : null,
+        t: ts[i] != null ? Number(ts[i]) : null,
+      })),
+    };
+  }
+  return byDriver;
+}
+
+// Point d'entrée unique pour un "duel" de réplay ciblé (ex. bataille pour
+// la pole) : résout la séance et le meilleur tour de chaque pilote demandé,
+// puis récupère leur télémétrie — le composant appelant n'a besoin de
+// connaître ni session_key ni numéro de tour à l'avance.
+export async function getQualiDuelReplay(raceId, sessionName, carNumbers) {
+  const sessionRows = await query(
+    `SELECT session_key FROM practice_sessions WHERE race_id = $1 AND session_name = $2`,
+    [raceId, sessionName]
+  );
+  const sessionKey = sessionRows[0]?.session_key;
+  if (!sessionKey) return null;
+
+  const bestLapRows = await query(
+    `SELECT DISTINCT ON (car_number) car_number, lap_number, lap_time
+     FROM practice_laps
+     WHERE session_key = $1 AND car_number = ANY($2::int[]) AND lap_time IS NOT NULL
+     ORDER BY car_number, lap_time ASC`,
+    [sessionKey, carNumbers]
+  );
+  if (!bestLapRows.length) return null;
+
+  const telemetry = await getPracticeTelemetryLaps(
+    sessionKey,
+    bestLapRows.map((r) => ({ carNumber: r.car_number, lapNumber: r.lap_number }))
+  );
+  const bestLapTimeByCarNumber = Object.fromEntries(bestLapRows.map((r) => [r.car_number, Number(r.lap_time)]));
+  for (const acronym of Object.keys(telemetry)) {
+    telemetry[acronym].bestLapTime = bestLapTimeByCarNumber[telemetry[acronym].carNumber] ?? null;
+  }
+  return telemetry;
+}
+
 export async function getTyreStints(raceId) {
   return query(
     `SELECT d.family_name, res.car_number, ts.stint_number, ts.compound, ts.is_new,

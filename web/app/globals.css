@@ -267,6 +267,41 @@
     display:flex; align-items:center; justify-content:center; font-size:22px; line-height:1;
   }
 
+  /* ---------- Réplay comparatif (GhostLapReplay) ---------- */
+  /* Cartes vitesse/écart en superposition sur le tracé plutôt qu'à côté :
+     le duel se lit en gardant l'œil sur les points ET les chiffres en même
+     temps, comme un HUD de retransmission — même esprit que .chip/.dot déjà
+     utilisés ailleurs (mêmes tokens de couleur par écurie), pas un nouveau
+     système de couleurs. */
+  .ghostlap{border:1px solid var(--border); border-radius:10px; background:var(--surface-raised); padding:16px; margin:20px 0;}
+  .ghostlap-title{font-family:"IBM Plex Mono", monospace; font-size:0.78rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 12px;}
+  .ghostlap-stage{position:relative;}
+  .ghostlap-track{width:100%; aspect-ratio:4/3; display:block;}
+  .ghostlap-line{fill:none; stroke:var(--border-strong); stroke-width:22; stroke-linecap:round; stroke-linejoin:round;}
+  .ghostlap-cards{
+    position:absolute; top:8px; left:8px; z-index:1;
+    display:flex; flex-direction:column; gap:6px; max-width:46%;
+  }
+  .ghostlap-card{
+    display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border);
+    border-left-width:3px; border-radius:6px; padding:6px 10px;
+    font-family:"IBM Plex Mono", monospace; font-size:0.72rem;
+  }
+  .ghostlap-drv{display:flex; align-items:center; gap:6px; font-weight:700; flex:none;}
+  .ghostlap-gap{color:var(--text-muted); flex:1; text-align:right; font-variant-numeric:tabular-nums;}
+  .ghostlap-speed{font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .ghostlap-speed small{font-weight:400; color:var(--text-muted);}
+  .ghostlap-controls{display:flex; align-items:center; gap:10px; margin-top:12px;}
+  .ghostlap-playbtn{
+    flex:none; width:32px; height:32px; border-radius:50%; border:1px solid var(--border-strong);
+    background:var(--surface); color:var(--text); font-size:13px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .ghostlap-playbtn:hover{border-color:var(--accent);}
+  .ghostlap-scrub{flex:1;}
+  .ghostlap-clock{font-family:"IBM Plex Mono", monospace; font-size:0.74rem; color:var(--text-muted); white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .ghostlap-loading{padding:24px; text-align:center;}
+
   /* ---------- Tables ---------- */
   .tablewrap{overflow-x:auto; border:1px solid var(--border); border-radius:10px; background:var(--surface); position:relative;}
   /* Les tableaux (.tablewrap, doublé de la classe .prose dans le HTML des

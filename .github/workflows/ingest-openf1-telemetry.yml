@@ -13,6 +13,21 @@ on:
       round:
         description: "Round à ingérer"
         required: true
+      session:
+        description: "Séance OpenF1 — 'Race' écrit dans lap_telemetry (comportement historique), toute autre valeur dans practice_telemetry"
+        default: "Race"
+        type: choice
+        options:
+          - "Race"
+          - "Practice 1"
+          - "Practice 2"
+          - "Practice 3"
+          - "Qualifying"
+          - "Sprint Qualifying"
+          - "Sprint"
+      cars:
+        description: "Numéros de voiture séparés par des virgules (ex. '4,12') — vide = toutes. Réserver le vide à la course ; restreindre pour un duel qualif ciblé."
+        required: false
 
 jobs:
   ingest:
@@ -31,3 +46,5 @@ jobs:
           python -u scripts/ingest_openf1_telemetry.py
           --season "${{ inputs.season }}"
           --round "${{ inputs.round }}"
+          --session "${{ inputs.session }}"
+          ${{ inputs.cars != '' && format('--cars {0}', inputs.cars) || '' }}

@@ -15,6 +15,14 @@
 // sourcés depuis deux rapports Formula1.com fetchés en primaire via
 // fetch-url.yml (rapport de qualifications + article dédié à la pénalité de
 // Sainz). Aucune donnée inventée.
+//
+// Marqueur <!--GHOST_LAP_REPLAY--> après la section Q3 : RaceTabs.jsx coupe
+// le HTML à cet endroit pour intercaler un composant React vivant
+// (GhostLapReplay) plutôt que du HTML statique — un réplay animé Norris vs
+// Antonelli vs Verstappen sur leur tour de pole, télémétrie réelle OpenF1.
+// Voir GhostLapReplay.jsx pour le détail (interpolation position/écart) et
+// db/schema_fastf1.sql (table practice_telemetry) pour pourquoi ce n'est
+// pas la même table que le "Vitesse par tour" du Raw data.
 export const ROUND14_QUALI_FR_HTML = `
 <section class="block">
   <div class="prose">
@@ -60,6 +68,8 @@ export const ROUND14_QUALI_FR_HTML = `
     <blockquote class="pull-quote">« Je suis sous le choc, un peu surpris d'être ici maintenant, mais bon sang, c'était probablement l'un des meilleurs tours de toute ma carrière. Très, très content, très fier, très content pour l'équipe. C'est un de ces tours où tout s'est mis en place. Je savais ce que je voulais faire, restait à savoir si mon cerveau allait me laisser le faire sur le dernier tour, et pratiquement tout a fonctionné à la perfection. Je suis juste très content — un de ces tours où tu regardes le chrono à la fin et tu te dis : "Ah, ça, c'était plutôt pas mal." » <cite>— Lando Norris</cite></blockquote>
   </div>
 </section>
+
+<!--GHOST_LAP_REPLAY-->
 
 <section class="block" data-num="04" id="sec-q-4">
   <div class="sec-marker"><span class="n">04</span><span class="t"></span></div>
@@ -123,6 +133,7 @@ export const ROUND14_QUALI_FR_HTML = `
       <h5>Données de séance</h5>
       <ul>
         <li><span class="desc">The Pit Wall — pipeline OpenF1 (scripts/ingest_openf1_practice.py --session "Qualifying"), classement/secteurs/relais/météo, primaire.</span></li>
+        <li><span class="desc">The Pit Wall — pipeline OpenF1 (scripts/ingest_openf1_telemetry.py --session "Qualifying"), position/vitesse par tour du réplay Norris/Antonelli/Verstappen ci-dessus, primaire.</span></li>
       </ul>
     </div>
     <div class="srcgroup">

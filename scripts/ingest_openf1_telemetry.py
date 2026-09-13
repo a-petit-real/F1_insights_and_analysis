@@ -1,7 +1,15 @@
 """Ingère la télémétrie position/vitesse par tour depuis OpenF1 (endpoints
-`location` et `car_data`), pour le graphique "Vitesse par tour" et le
-réplay animé multi-pilotes (jusqu'à 5, position sur circuit synchronisée
-sur le temps écoulé depuis le début du tour), dans le Raw data.
+`location` et `car_data`), pour le graphique "Vitesse par tour" (Raw data)
+et pour un réplay comparatif ciblé (duel qualif, ex. bataille pour la pole)
+publié dans un article.
+
+--session distingue la destination : "Race" (défaut, comportement
+historique de ce script) écrit dans `lap_telemetry` (clé race_id), toute
+autre valeur ("Qualifying", "Practice 1"...) écrit dans
+`practice_telemetry` (clé session_key) — cf. commentaire de cette table
+dans db/schema_fastf1.sql pour la raison de cette séparation (collision de
+lap_number possible entre course et séance d'essais/qualification sur un
+race_id partagé).
 
 Deux flux OpenF1, fusionnés ici :
   - `location` : position (x, y, z, en mètres, origine arbitraire par
@@ -29,6 +37,7 @@ docs/OPERATIONS.md.
 
 Usage :
     python scripts/ingest_openf1_telemetry.py --season 2026 --round 13
+    python scripts/ingest_openf1_telemetry.py --season 2026 --round 14 --session "Qualifying"
 """
 import argparse
 import bisect
@@ -118,7 +127,11 @@ def build_lap_series(loc_in_lap, speed_times, speed_values):
     return distances, speeds, xs, ys, ts
 
 
-def load_telemetry(cur, race_id, windows, location_by_driver, car_data_by_driver):
+def load_telemetry(cur, table, key_column, key_value, windows, location_by_driver, car_data_by_driver):
+    # table/key_column sont des constantes internes ("lap_telemetry"/"race_id"
+    # ou "practice_telemetry"/"session_key", jamais une valeur passée par
+    # l'utilisateur) : l'interpolation dans le SQL ci-dessous ne rejoue donc
+    # pas le risque d'injection qu'aurait un nom de table/colonne arbitraire.
     n = 0
     for car_number, laps in windows.items():
         locations = location_by_driver.get(car_number, [])
@@ -131,15 +144,15 @@ def load_telemetry(cur, race_id, windows, location_by_driver, car_data_by_driver
                 continue  # tour sans assez d'échantillons pour tracer une courbe
             distances, speeds, xs, ys, ts = build_lap_series(loc_in_lap, speed_times, speed_values)
             cur.execute(
-                """
-                INSERT INTO lap_telemetry (race_id, car_number, lap_number, distance_m, speed_kmh, x_m, y_m, t_s)
-                VALUES (%(race_id)s, %(car_number)s, %(lap_number)s, %(distance_m)s, %(speed_kmh)s, %(x_m)s, %(y_m)s, %(t_s)s)
-                ON CONFLICT (race_id, car_number, lap_number) DO UPDATE SET
+                f"""
+                INSERT INTO {table} ({key_column}, car_number, lap_number, distance_m, speed_kmh, x_m, y_m, t_s)
+                VALUES (%(key_value)s, %(car_number)s, %(lap_number)s, %(distance_m)s, %(speed_kmh)s, %(x_m)s, %(y_m)s, %(t_s)s)
+                ON CONFLICT ({key_column}, car_number, lap_number) DO UPDATE SET
                     distance_m = EXCLUDED.distance_m, speed_kmh = EXCLUDED.speed_kmh,
                     x_m = EXCLUDED.x_m, y_m = EXCLUDED.y_m, t_s = EXCLUDED.t_s
                 """,
                 {
-                    "race_id": race_id, "car_number": car_number, "lap_number": lap_number,
+                    "key_value": key_value, "car_number": car_number, "lap_number": lap_number,
                     "distance_m": distances, "speed_kmh": speeds, "x_m": xs, "y_m": ys, "t_s": ts,
                 },
             )
@@ -151,14 +164,21 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--season", type=int, required=True)
     parser.add_argument("--round", type=int, required=True)
+    parser.add_argument("--session", default="Race",
+                         help="Nom de séance OpenF1. 'Race' (défaut) écrit dans lap_telemetry (comportement "
+                              "historique) ; toute autre valeur ('Practice 1', 'Practice 2', 'Practice 3', "
+                              "'Qualifying', 'Sprint Qualifying', 'Sprint') écrit dans practice_telemetry.")
+    parser.add_argument("--cars", default=None,
+                         help="Numéros de voiture à ingérer, séparés par des virgules (ex. '4,12'). Par défaut, "
+                              "toutes les voitures de la séance — à réserver à la course (déjà fait une fois par "
+                              "round). Pour un duel qualif ciblé, restreindre ici évite de multiplier par 10 le "
+                              "volume de requêtes (location + car_data pour ~20 pilotes) pour 2-3 pilotes utiles.")
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
     args = parser.parse_args()
 
     if not args.database_url:
         print("DATABASE_URL manquant (variable d'environnement ou --database-url).", file=sys.stderr)
         sys.exit(1)
-
-    sessions_by_date = load_season_sessions(args.season)
 
     with psycopg.connect(args.database_url) as conn:
         with conn.cursor() as cur:
@@ -167,17 +187,54 @@ def main():
             print(f"Round {args.round} introuvable dans races (saison {args.season}) — ignoré.", file=sys.stderr)
             sys.exit(1)
 
-        session = sessions_by_date.get(race_date.isoformat())
-        if session is None:
-            print(f"Aucune session OpenF1 pour la date {race_date} — ignoré.", file=sys.stderr)
-            sys.exit(1)
+        if args.session == "Race":
+            sessions_by_date = load_season_sessions(args.season)
+            session = sessions_by_date.get(race_date.isoformat())
+            if session is None:
+                print(f"Aucune session OpenF1 pour la date {race_date} — ignoré.", file=sys.stderr)
+                sys.exit(1)
+            table, key_column, key_value = "lap_telemetry", "race_id", race_id
+        else:
+            # Même filtrage par proximité de date qu'ingest_openf1_practice.py
+            # (plus robuste aux libellés de circuit qu'un match sur
+            # circuit_short_name) plutôt qu'un lookup par date exacte de
+            # course, puisque cette séance a lieu un autre jour du week-end.
+            candidates = api_get("sessions", year=args.season, session_name=args.session)
+            session = next(
+                (s for s in candidates if abs((iso(s["date_start"]).date() - race_date).days) <= 3),
+                None,
+            )
+            if session is None:
+                print(f"Aucune session '{args.session}' OpenF1 trouvée à proximité du {race_date} "
+                      f"(round {args.round}). La séance n'a peut-être pas encore eu lieu.", file=sys.stderr)
+                sys.exit(1)
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO practice_sessions (session_key, race_id, session_name, date_start, date_end)
+                    VALUES (%(session_key)s, %(race_id)s, %(session_name)s, %(date_start)s, %(date_end)s)
+                    ON CONFLICT (session_key) DO UPDATE SET
+                        session_name = EXCLUDED.session_name, date_start = EXCLUDED.date_start,
+                        date_end = EXCLUDED.date_end
+                    """,
+                    {
+                        "session_key": session["session_key"], "race_id": race_id, "session_name": args.session,
+                        "date_start": iso(session.get("date_start")), "date_end": iso(session.get("date_end")),
+                    },
+                )
+            conn.commit()
+            table, key_column, key_value = "practice_telemetry", "session_key", session["session_key"]
 
         session_key = session["session_key"]
         session_start = iso(session["date_start"])
-        print(f"Round {args.round} — {session.get('circuit_short_name')} (session_key={session_key})")
+        print(f"Round {args.round} — {session.get('circuit_short_name')} — {args.session} "
+              f"(session_key={session_key})")
 
         laps = api_get("laps", session_key=session_key)
         windows = compute_lap_windows(laps, session_start)
+        if args.cars:
+            wanted = {int(c.strip()) for c in args.cars.split(",") if c.strip()}
+            windows = {c: w for c, w in windows.items() if c in wanted}
         car_numbers = sorted(windows.keys())
         total_laps = sum(len(v) for v in windows.values())
         print(f"{len(car_numbers)} voiture(s), {total_laps} tour(s) au total (bornes issues de l'endpoint laps).")
@@ -222,9 +279,9 @@ def main():
             time.sleep(0.3)
 
         with conn.pipeline(), conn.cursor() as cur:
-            n = load_telemetry(cur, race_id, windows, location_by_driver, car_data_by_driver)
+            n = load_telemetry(cur, table, key_column, key_value, windows, location_by_driver, car_data_by_driver)
         conn.commit()
-        print(f"\nlap_telemetry : {n} ligne(s) (une par tour/voiture, tours sans assez d'échantillons ignorés)")
+        print(f"\n{table} : {n} ligne(s) (une par tour/voiture, tours sans assez d'échantillons ignorés)")
 
 
 if __name__ == "__main__":
