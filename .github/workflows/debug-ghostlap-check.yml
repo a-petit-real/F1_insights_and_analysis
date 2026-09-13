@@ -31,6 +31,10 @@ on:
       cars:
         description: "[source=quali] numéros de voiture séparés par des virgules"
         default: ""
+      dump_json:
+        description: "Imprime les points bruts en JSON (inspection visuelle externe) plutôt que le résumé texte"
+        type: boolean
+        default: false
 
 jobs:
   check:
@@ -52,3 +56,4 @@ jobs:
           --drivers "${{ inputs.drivers }}"
           --session "${{ inputs.session }}"
           ${{ inputs.cars != '' && format('--cars {0}', inputs.cars) || '' }}
+          ${{ inputs.dump_json && '--dump-json' || '' }}

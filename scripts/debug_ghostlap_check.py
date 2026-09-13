@@ -120,6 +120,8 @@ def main():
     parser.add_argument("--session", default="Qualifying", help="[source=quali] nom de séance OpenF1")
     parser.add_argument("--cars", help="[source=quali] numéros de voiture séparés par des virgules")
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
+    parser.add_argument("--dump-json", action="store_true",
+                         help="Imprime les points bruts (x/y/t/speed/distance) en JSON sur stdout, pour inspection visuelle externe, au lieu du résumé texte habituel.")
     args = parser.parse_args()
 
     if not args.database_url:
@@ -139,12 +141,18 @@ def main():
         else:
             drivers = fetch_quali(cur, race_id, args.session, [int(c) for c in args.cars.split(",")])
 
-    print(f"race_id={race_id}, source={args.source}, pilotes trouvés: {list(drivers.keys())}\n")
     drivers = {k: v for k, v in drivers.items() if len(v["points"]) >= 2}
     if len(drivers) < 2:
-        print("PAS ASSEZ DE PILOTES AVEC TÉLÉMÉTRIE — pipeline non vérifiable (données manquantes ou pas encore ingérées).")
+        print(f"race_id={race_id}, source={args.source}, pilotes trouvés: {list(drivers.keys())}\n", file=sys.stderr)
+        print("PAS ASSEZ DE PILOTES AVEC TÉLÉMÉTRIE — pipeline non vérifiable (données manquantes ou pas encore ingérées).", file=sys.stderr)
         sys.exit(1)
 
+    if args.dump_json:
+        import json
+        print(json.dumps({name: d["points"] for name, d in drivers.items()}))
+        return
+
+    print(f"race_id={race_id}, source={args.source}, pilotes trouvés: {list(drivers.keys())}\n")
     ordered = sorted(drivers.items(), key=lambda kv: kv[1]["points"][-1]["t"])
     leader_name, leader = ordered[0]
     leader_duration = leader["points"][-1]["t"]
