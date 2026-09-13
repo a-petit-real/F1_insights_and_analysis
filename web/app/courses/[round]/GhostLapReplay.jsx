@@ -128,9 +128,11 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
   }, [raceId, source, sessionName, carNumbersKey, lapNumber, driverNamesKey]);
 
   // Tri par durée de tour réelle (dernier point t_s) plutôt qu'un champ
-  // séparé "meilleur temps" — vrai aussi bien pour un tour de qualification
-  // (bornes du tour = date_start/lap_duration de l'endpoint laps, donc
-  // t_s final == lap_duration exactement) que pour un tour de course.
+  // séparé "meilleur temps" — fiable depuis que t_s est calé sur l'instant
+  // OFFICIEL de passage sur la ligne (date_start de l'endpoint laps) plutôt
+  // que sur le premier échantillon location du tour, cf. correctif détaillé
+  // dans ingest_openf1_telemetry.py (le calage précédent inversait l'ordre
+  // réel pour un écart serré, ex. la pole de Madring décidée à 11ms).
   const drivers = useMemo(() => {
     if (!telemetry) return null;
     const list = Object.entries(telemetry)

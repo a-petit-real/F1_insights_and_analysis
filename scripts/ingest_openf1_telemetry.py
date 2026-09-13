@@ -30,6 +30,21 @@ une mesure de position directe, nettement plus fidèle.
 Les bornes de chaque tour (date_start, lap_duration) viennent de
 l'endpoint `laps`, comme dans la version précédente.
 
+t_s est calculé depuis `date_start` (l'instant officiel de passage sur la
+ligne), PAS depuis le premier échantillon `location` retenu dans la
+fenêtre du tour : `location` échantillonne à ~3-5 Hz, donc caler t=0 sur le
+premier échantillon introduit un décalage aléatoire par pilote pouvant
+atteindre une période d'échantillonnage (~0,2-0,3s) — largement supérieur à
+l'écart réel entre deux pilotes sur un tour serré. Bug constaté concrètement
+sur les qualifications de Madring (round 14) : classement officiel Norris
+91.824s < Antonelli 91.835s < Verstappen 91.964s, mais la durée dérivée de
+la télémétrie (avec l'ancien calage sur le premier échantillon) donnait
+Verstappen en tête à 91.680s — un classement totalement inversé pour un
+écart réel de 11 à 140 millièmes. Caler sur `date_start` élimine ce biais
+systématique (le seul biais résiduel devient le sous-échantillonnage du
+tout début de tour, de l'ordre de quelques dizaines de mètres, sans effet
+mesurable sur l'écart temporel).
+
 --round est obligatoire : `location` et `car_data` pèsent chacun plusieurs
 Mo par pilote (deux fois plus de requêtes que la version précédente), donc
 un round à la fois, sur déclenchement manuel après chaque course — cf.
@@ -85,15 +100,17 @@ def interp_speed(t, speed_times, speed_values):
     return v0 + (v1 - v0) * frac
 
 
-def build_lap_series(loc_in_lap, speed_times, speed_values):
+def build_lap_series(loc_in_lap, speed_times, speed_values, lap_start_t):
     """loc_in_lap : [(t, x, y), ...] triés par t, >= 2 points.
     -> (distance_m[], speed_kmh[], x_m[], y_m[], t_s[]) — distance cumulée
     par écart euclidien consécutif (x, y), vitesse interpolée sur car_data,
-    t_s = secondes écoulées depuis le premier échantillon du tour (sert au
-    réplay animé multi-pilotes, cf. RaceTabs.jsx)."""
+    t_s = secondes écoulées depuis `lap_start_t` (l'instant OFFICIEL de
+    passage sur la ligne, cf. `laps.date_start` — PAS le premier échantillon
+    `location` du tour, cf. commentaire de load_telemetry ci-dessous).
+    Sert au réplay animé multi-pilotes, cf. RaceTabs.jsx."""
     distances, speeds, xs, ys, ts = [0.0], [], [], [], []
     cumulative = 0.0
-    t_lap_start = loc_in_lap[0][0]
+    t_lap_start = lap_start_t
     for idx, (t, x, y) in enumerate(loc_in_lap):
         if idx > 0:
             t0, x0, y0 = loc_in_lap[idx - 1]
@@ -142,7 +159,7 @@ def load_telemetry(cur, table, key_column, key_value, windows, location_by_drive
             loc_in_lap = [(t, x, y) for t, x, y in locations if start_t <= t <= end_t]
             if len(loc_in_lap) < 2:
                 continue  # tour sans assez d'échantillons pour tracer une courbe
-            distances, speeds, xs, ys, ts = build_lap_series(loc_in_lap, speed_times, speed_values)
+            distances, speeds, xs, ys, ts = build_lap_series(loc_in_lap, speed_times, speed_values, start_t)
             cur.execute(
                 f"""
                 INSERT INTO {table} ({key_column}, car_number, lap_number, distance_m, speed_kmh, x_m, y_m, t_s)
