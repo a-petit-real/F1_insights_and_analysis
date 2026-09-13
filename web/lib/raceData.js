@@ -273,11 +273,14 @@ export async function getQualiDuelReplay(raceId, sessionName, carNumbers) {
 // results/drivers.
 export async function getRaceLapReplay(raceId, lapNumber, familyNames) {
   const rows = await query(
-    `SELECT d.family_name, c.name AS team_name, lt.car_number, lt.distance_m, lt.speed_kmh, lt.x_m, lt.y_m, lt.t_s
+    `SELECT d.family_name, c.name AS team_name, lt.car_number, lt.distance_m, lt.speed_kmh, lt.x_m, lt.y_m, lt.t_s,
+            EXTRACT(EPOCH FROM ltime.lap_time) AS lap_seconds
      FROM lap_telemetry lt
      JOIN results res ON res.race_id = lt.race_id AND res.car_number = lt.car_number
      JOIN drivers d ON d.driver_id = res.driver_id
      JOIN constructors c ON c.constructor_id = res.constructor_id
+     LEFT JOIN lap_times ltime ON ltime.race_id = lt.race_id AND ltime.car_number = lt.car_number
+                               AND ltime.lap_number = lt.lap_number
      WHERE lt.race_id = $1 AND lt.lap_number = $2 AND d.family_name = ANY($3::text[])`,
     [raceId, lapNumber, familyNames]
   );
@@ -291,6 +294,10 @@ export async function getRaceLapReplay(raceId, lapNumber, familyNames) {
     byDriver[row.family_name] = {
       teamName: row.team_name,
       carNumber: row.car_number,
+      // Temps officiel de CE tour (lap_times), pas dérivé de la
+      // télémétrie — cf. GhostLapReplay.jsx pour pourquoi ce chiffre sert
+      // de référence plutôt que le dernier point t_s.
+      lapTime: row.lap_seconds != null ? Number(row.lap_seconds) : null,
       points: distances.map((d, i) => ({
         distance: Number(d),
         speed: speeds[i] != null ? Number(speeds[i]) : null,

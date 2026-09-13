@@ -68,16 +68,22 @@ def to_points(dist, speed, xs, ys, ts):
 def fetch_race(cur, race_id, lap, driver_names):
     cur.execute(
         """
-        SELECT d.family_name, c.name AS team_name, lt.distance_m, lt.speed_kmh, lt.x_m, lt.y_m, lt.t_s
+        SELECT d.family_name, c.name AS team_name, lt.distance_m, lt.speed_kmh, lt.x_m, lt.y_m, lt.t_s,
+               EXTRACT(EPOCH FROM ltime.lap_time) AS lap_seconds
         FROM lap_telemetry lt
         JOIN results res ON res.race_id = lt.race_id AND res.car_number = lt.car_number
         JOIN drivers d ON d.driver_id = res.driver_id
         JOIN constructors c ON c.constructor_id = res.constructor_id
+        LEFT JOIN lap_times ltime ON ltime.race_id = lt.race_id AND ltime.car_number = lt.car_number
+                                  AND ltime.lap_number = lt.lap_number
         WHERE lt.race_id = %s AND lt.lap_number = %s AND d.family_name = ANY(%s)
         """,
         (race_id, lap, driver_names),
     )
-    return {row[0]: {"teamName": row[1], "points": to_points(*row[2:])} for row in cur.fetchall()}
+    return {
+        row[0]: {"teamName": row[1], "points": to_points(*row[2:7]), "officialTime": float(row[7]) if row[7] is not None else None}
+        for row in cur.fetchall()
+    }
 
 
 def fetch_quali(cur, race_id, session_name, car_numbers):
@@ -87,18 +93,20 @@ def fetch_quali(cur, race_id, session_name, car_numbers):
         return {}
     session_key = row[0]
     cur.execute(
-        "SELECT car_number, lap_number FROM practice_laps WHERE session_key=%s AND car_number = ANY(%s) "
+        "SELECT car_number, lap_number, lap_time FROM practice_laps WHERE session_key=%s AND car_number = ANY(%s) "
         "AND lap_time IS NOT NULL ORDER BY car_number, lap_time ASC",
         (session_key, car_numbers),
     )
     best_lap = {}
-    for car_number, lap_number in cur.fetchall():
+    best_lap_time = {}
+    for car_number, lap_number, lap_time in cur.fetchall():
         best_lap.setdefault(car_number, lap_number)  # premier = meilleur (déjà trié par lap_time)
+        best_lap_time.setdefault(car_number, float(lap_time))
     if not best_lap:
         return {}
     cur.execute(
         """
-        SELECT pd.name_acronym, pd.team_name, pt.distance_m, pt.speed_kmh, pt.x_m, pt.y_m, pt.t_s
+        SELECT pd.name_acronym, pd.team_name, pd.car_number, pt.distance_m, pt.speed_kmh, pt.x_m, pt.y_m, pt.t_s
         FROM practice_telemetry pt
         JOIN practice_drivers pd ON pd.session_key = pt.session_key AND pd.car_number = pt.car_number
         JOIN UNNEST(%s::int[], %s::int[]) AS wanted(car_number, lap_number)
@@ -107,7 +115,10 @@ def fetch_quali(cur, race_id, session_name, car_numbers):
         """,
         (list(best_lap.keys()), list(best_lap.values()), session_key),
     )
-    return {row[0]: {"teamName": row[1], "points": to_points(*row[2:])} for row in cur.fetchall()}
+    return {
+        row[0]: {"teamName": row[1], "points": to_points(*row[3:8]), "officialTime": best_lap_time.get(row[2])}
+        for row in cur.fetchall()
+    }
 
 
 def main():
@@ -153,10 +164,17 @@ def main():
         return
 
     print(f"race_id={race_id}, source={args.source}, pilotes trouvés: {list(drivers.keys())}\n")
-    ordered = sorted(drivers.items(), key=lambda kv: kv[1]["points"][-1]["t"])
+    # Tri par temps officiel (lap_time/bestLapTime), pas par dernier point
+    # t_s — même calé sur le départ officiel, t_s final sous-compte
+    # systématiquement la vraie durée (dernier échantillon location
+    # disponible, ~3-5 Hz), un biais suffisant pour inverser un classement
+    # serré (cf. commentaire de GhostLapReplay.jsx : Verstappen ressortait
+    # "leader" du duel de pole Madring alors qu'il a fini 3e).
+    official_time = lambda kv: kv[1].get("officialTime") if kv[1].get("officialTime") is not None else kv[1]["points"][-1]["t"]
+    ordered = sorted(drivers.items(), key=official_time)
     leader_name, leader = ordered[0]
-    leader_duration = leader["points"][-1]["t"]
-    print(f"Leader (tour le plus rapide) : {leader_name}, durée {leader_duration:.3f}s\n")
+    leader_duration = official_time((leader_name, leader))
+    print(f"Leader (temps officiel) : {leader_name}, durée {leader_duration:.3f}s\n")
 
     for frac in [0.0, 0.25, 0.5, 0.75, 1.0]:
         t = frac * leader_duration

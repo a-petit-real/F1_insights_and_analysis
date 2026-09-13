@@ -127,18 +127,29 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- *Key (chaînes stables) remplacent les tableaux carNumbers/driverNames (référence instable d'un rendu à l'autre)
   }, [raceId, source, sessionName, carNumbersKey, lapNumber, driverNamesKey]);
 
-  // Tri par durée de tour réelle (dernier point t_s) plutôt qu'un champ
-  // séparé "meilleur temps" — fiable depuis que t_s est calé sur l'instant
-  // OFFICIEL de passage sur la ligne (date_start de l'endpoint laps) plutôt
-  // que sur le premier échantillon location du tour, cf. correctif détaillé
-  // dans ingest_openf1_telemetry.py (le calage précédent inversait l'ordre
-  // réel pour un écart serré, ex. la pole de Madring décidée à 11ms).
+  // Tri par temps officiel (bestLapTime en mode quali, lapTime en mode
+  // course) plutôt que par dernier point t_s de la télémétrie. Même calé
+  // sur l'instant officiel de départ (cf. correctif dans
+  // ingest_openf1_telemetry.py), t_s final reste borné par le dernier
+  // échantillon `location` disponible (~3-5 Hz) — donc en sous-compte
+  // systématiquement la vraie durée de quelques dixièmes de seconde,
+  // variable par pilote. Négligeable pour un écart de plusieurs secondes
+  // (duel Antonelli/Russell, round 13), rédhibitoire pour une pole jouée à
+  // 11ms (Norris/Antonelli, round 14) : la première version de ce tri,
+  // basée sur t_s, désignait Verstappen leader d'un duel qu'il n'a pas
+  // gagné. `officialDuration` ne sert que pour CLASSER les pilotes et
+  // fixer la durée totale du réplay — l'écart affiché pendant l'animation
+  // (`timeAtDistance`) reste basé sur la télémétrie, dont l'alignement
+  // relatif entre pilotes est fiable une fois les départs correctement
+  // calés.
+  const officialDuration = (d) => d.bestLapTime ?? d.lapTime ?? d.points[d.points.length - 1].t;
+
   const drivers = useMemo(() => {
     if (!telemetry) return null;
     const list = Object.entries(telemetry)
       .filter(([, d]) => d.points && d.points.length >= 2)
       .map(([label, d]) => ({ label, ...d }))
-      .sort((a, b) => a.points[a.points.length - 1].t - b.points[b.points.length - 1].t);
+      .sort((a, b) => officialDuration(a) - officialDuration(b));
     const seenPerTeam = {};
     for (const d of list) {
       const base = teamColorFor(d.teamName);
@@ -150,7 +161,12 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
   }, [telemetry]);
 
   const leader = drivers?.[0];
-  const leaderDuration = leader ? leader.points[leader.points.length - 1].t : 0;
+  // Durée totale du réplay = temps officiel du leader plutôt que son
+  // dernier point t_s (même sous-comptage qu'expliqué ci-dessus) —
+  // pointAtTime() se cale sur le dernier échantillon connu au-delà, la
+  // voiture "s'immobilise" sur sa dernière position réelle pendant que
+  // l'horloge finit de s'écouler jusqu'au temps officiel.
+  const leaderDuration = leader ? officialDuration(leader) : 0;
 
   // Boucle d'animation : avance virtualT en temps réel * PLAYBACK_RATE,
   // s'arrête (pause) à la fin du tour du leader plutôt que de boucler —
