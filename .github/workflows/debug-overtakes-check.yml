@@ -1,0 +1,30 @@
+name: Debug dépassements (contournement sandbox — lecture DB)
+
+# Valide scripts/debug_overtakes_check.py contre la vraie base : cherche des
+# lignes quasi-identiques dans la table overtakes (même paire de pilotes,
+# horodatage très proche), signalées comme redondance dans Raw data.
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2026"
+      round:
+        description: "Round"
+        required: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+      - run: >
+          python scripts/debug_overtakes_check.py
+          --season "${{ inputs.season }}"
+          --round "${{ inputs.round }}"
