@@ -1,0 +1,54 @@
+name: Debug GhostLapReplay (contournement sandbox — lecture DB)
+
+# Valide scripts/debug_ghostlap_check.py contre la vraie base : reproduit
+# en Python la requête SQL (getRaceLapReplay/getQualiDuelReplay) et les
+# fonctions d'interpolation/écart de GhostLapReplay.jsx. Le sandbox
+# interactif n'a pas d'accès réseau à la base — ce job tourne à la place.
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2026"
+      round:
+        description: "Round"
+        required: true
+      source:
+        default: "race"
+        type: choice
+        options:
+          - "race"
+          - "quali"
+      lap:
+        description: "[source=race] numéro de tour"
+        default: "10"
+      drivers:
+        description: "[source=race] family_name séparés par des virgules"
+        default: "Norris,Antonelli,Verstappen"
+      session:
+        description: "[source=quali] nom de séance OpenF1"
+        default: "Qualifying"
+      cars:
+        description: "[source=quali] numéros de voiture séparés par des virgules"
+        default: ""
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+      - run: >
+          python scripts/debug_ghostlap_check.py
+          --season "${{ inputs.season }}"
+          --round "${{ inputs.round }}"
+          --source "${{ inputs.source }}"
+          --lap "${{ inputs.lap }}"
+          --drivers "${{ inputs.drivers }}"
+          --session "${{ inputs.session }}"
+          ${{ inputs.cars != '' && format('--cars {0}', inputs.cars) || '' }}

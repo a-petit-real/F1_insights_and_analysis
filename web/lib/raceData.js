@@ -264,6 +264,45 @@ export async function getQualiDuelReplay(raceId, sessionName, carNumbers) {
   return telemetry;
 }
 
+// Variante course de getQualiDuelReplay, même forme de retour (clé courte,
+// teamName/carNumber/points) — pour GhostLapReplay quand aucune séance
+// d'essais/qualification n'a encore de télémétrie ingérée (ex. panne
+// ponctuelle de l'API OpenF1) mais qu'un tour de course existe déjà en
+// base. family_name sert de clé plutôt que name_acronym : lap_telemetry
+// (course) n'a pas de lien vers practice_drivers, seulement vers
+// results/drivers.
+export async function getRaceLapReplay(raceId, lapNumber, familyNames) {
+  const rows = await query(
+    `SELECT d.family_name, c.name AS team_name, lt.car_number, lt.distance_m, lt.speed_kmh, lt.x_m, lt.y_m, lt.t_s
+     FROM lap_telemetry lt
+     JOIN results res ON res.race_id = lt.race_id AND res.car_number = lt.car_number
+     JOIN drivers d ON d.driver_id = res.driver_id
+     JOIN constructors c ON c.constructor_id = res.constructor_id
+     WHERE lt.race_id = $1 AND lt.lap_number = $2 AND d.family_name = ANY($3::text[])`,
+    [raceId, lapNumber, familyNames]
+  );
+  const byDriver = {};
+  for (const row of rows) {
+    const distances = row.distance_m || [];
+    const speeds = row.speed_kmh || [];
+    const xs = row.x_m || [];
+    const ys = row.y_m || [];
+    const ts = row.t_s || [];
+    byDriver[row.family_name] = {
+      teamName: row.team_name,
+      carNumber: row.car_number,
+      points: distances.map((d, i) => ({
+        distance: Number(d),
+        speed: speeds[i] != null ? Number(speeds[i]) : null,
+        x: xs[i] != null ? Number(xs[i]) : null,
+        y: ys[i] != null ? Number(ys[i]) : null,
+        t: ts[i] != null ? Number(ts[i]) : null,
+      })),
+    };
+  }
+  return byDriver;
+}
+
 export async function getTyreStints(raceId) {
   return query(
     `SELECT d.family_name, res.car_number, ts.stint_number, ts.compound, ts.is_new,

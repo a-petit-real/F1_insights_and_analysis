@@ -13,7 +13,7 @@
 // docs/ARCHITECTURE.md : la donnée est une position 2D sur un tracé, pas un
 // besoin de moteur 3D.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchQualiDuelReplay } from "./telemetryActions";
+import { fetchQualiDuelReplay, fetchRaceLapReplay } from "./telemetryActions";
 
 const TEAM_COLORS = [
   [/red bull/i, "#1B3A93"],
@@ -88,29 +88,43 @@ function formatLapClock(seconds) {
 
 const PLAYBACK_RATE = 3; // accéléré x3 — un tour de ~1min30 tient en ~30s, sans dénaturer les écarts (tous les temps restent calculés sur les données réelles, seule la vitesse de lecture est compressée)
 
-export default function GhostLapReplay({ raceId, sessionName, carNumbers, title }) {
+// source="quali" : sessionName + carNumbers (numéro de voiture), résout la
+// séance et le meilleur tour de chacun (cf. getQualiDuelReplay).
+// source="race" : lapNumber + driverNames (family_name), lit directement
+// lap_telemetry — utilisé quand la télémétrie d'une séance de
+// qualification/essais n'est pas encore disponible (ex. panne ponctuelle
+// de l'API OpenF1) mais qu'un tour de course existe déjà en base.
+export default function GhostLapReplay({ raceId, source = "quali", sessionName, carNumbers, lapNumber, driverNames, title }) {
   const [telemetry, setTelemetry] = useState(null); // undefined tant que non chargé, null si indisponible
   const [playing, setPlaying] = useState(false);
   const [virtualT, setVirtualT] = useState(0);
   const rafRef = useRef(null);
   const lastNowRef = useRef(null);
 
-  const carNumbersKey = carNumbers.join(",");
+  const carNumbersKey = (carNumbers || []).join(",");
+  const driverNamesKey = (driverNames || []).join(",");
   useEffect(() => {
     let cancelled = false;
-    fetchQualiDuelReplay(raceId, sessionName, carNumbers).then((data) => {
+    const promise = source === "race"
+      ? fetchRaceLapReplay(raceId, lapNumber, driverNames)
+      : fetchQualiDuelReplay(raceId, sessionName, carNumbers);
+    promise.then((data) => {
       if (!cancelled) setTelemetry(data);
     });
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- carNumbersKey (string stable) remplace carNumbers (référence de tableau instable d'un rendu à l'autre)
-  }, [raceId, sessionName, carNumbersKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- *Key (chaînes stables) remplacent les tableaux carNumbers/driverNames (référence instable d'un rendu à l'autre)
+  }, [raceId, source, sessionName, carNumbersKey, lapNumber, driverNamesKey]);
 
+  // Tri par durée de tour réelle (dernier point t_s) plutôt qu'un champ
+  // séparé "meilleur temps" — vrai aussi bien pour un tour de qualification
+  // (bornes du tour = date_start/lap_duration de l'endpoint laps, donc
+  // t_s final == lap_duration exactement) que pour un tour de course.
   const drivers = useMemo(() => {
     if (!telemetry) return null;
     const list = Object.entries(telemetry)
-      .filter(([, d]) => d.points && d.points.length >= 2 && d.bestLapTime != null)
-      .map(([acronym, d]) => ({ acronym, ...d, color: teamColorFor(d.teamName) }))
-      .sort((a, b) => a.bestLapTime - b.bestLapTime);
+      .filter(([, d]) => d.points && d.points.length >= 2)
+      .map(([label, d]) => ({ label, ...d, color: teamColorFor(d.teamName) }))
+      .sort((a, b) => a.points[a.points.length - 1].t - b.points[b.points.length - 1].t);
     return list.length >= 2 ? list : null;
   }, [telemetry]);
 
@@ -195,8 +209,8 @@ export default function GhostLapReplay({ raceId, sessionName, carNumbers, title 
       <div className="ghostlap-stage">
         <div className="ghostlap-cards">
           {rows.map((d) => (
-            <div key={d.acronym} className="ghostlap-card" style={{ borderColor: d.color }}>
-              <span className="ghostlap-drv"><span className="dot" style={{ background: d.color }} />{d.acronym}</span>
+            <div key={d.label} className="ghostlap-card" style={{ borderColor: d.color }}>
+              <span className="ghostlap-drv"><span className="dot" style={{ background: d.color }} />{d.label}</span>
               <span className="ghostlap-gap">{d.gap == null ? "LEADER" : `+${d.gap.toFixed(3)}`}</span>
               <span className="ghostlap-speed">{Math.round(d.speed)} <small>km/h</small></span>
             </div>
@@ -207,7 +221,7 @@ export default function GhostLapReplay({ raceId, sessionName, carNumbers, title 
           {rows.map((d) => {
             const p = pointAtTime(d.points, virtualT);
             return (
-              <circle key={d.acronym} cx={p.x} cy={p.y} r={dotRadius} fill={d.color}
+              <circle key={d.label} cx={p.x} cy={p.y} r={dotRadius} fill={d.color}
                       stroke="var(--surface)" strokeWidth={dotRadius * 0.25} />
             );
           })}

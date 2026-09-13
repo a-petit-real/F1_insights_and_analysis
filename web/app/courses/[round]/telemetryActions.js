@@ -8,7 +8,7 @@
 // à comparer : lap_telemetry peut représenter plusieurs dizaines de Ko par
 // tour (tous pilotes confondus), pas question de tout envoyer au chargement
 // de la page pour chaque tour de la course.
-import { getLapTelemetry, getQualiDuelReplay } from "../../../lib/raceData";
+import { getLapTelemetry, getQualiDuelReplay, getRaceLapReplay } from "../../../lib/raceData";
 
 export async function fetchLapTelemetry(raceId, lapNumber) {
   return getLapTelemetry(raceId, lapNumber);
@@ -20,4 +20,9 @@ export async function fetchLapTelemetry(raceId, lapNumber) {
 // qualification pesant déjà plusieurs Ko par pilote.
 export async function fetchQualiDuelReplay(raceId, sessionName, carNumbers) {
   return getQualiDuelReplay(raceId, sessionName, carNumbers);
+}
+
+// Variante course (GhostLapReplay source="race") — cf. getRaceLapReplay.
+export async function fetchRaceLapReplay(raceId, lapNumber, driverNames) {
+  return getRaceLapReplay(raceId, lapNumber, driverNames);
 }
