@@ -107,7 +107,18 @@ const PLAYBACK_RATE = 3; // accéléré x3 — un tour de ~1min30 tient en ~30s,
 // qualification/essais n'est pas encore disponible (ex. panne ponctuelle
 // de l'API OpenF1) mais qu'un tour de course existe déjà en base.
 export default function GhostLapReplay({ raceId, source = "quali", sessionName, carNumbers, lapNumber, driverNames, title }) {
-  const [telemetry, setTelemetry] = useState(null); // undefined tant que non chargé, null si indisponible
+  // undefined tant que non chargé (état initial réel, pas confondu avec
+  // "indisponible" côté serveur), null si le Server Action répond
+  // explicitement qu'il n'y a pas de télémétrie pour ce duel.
+  const [telemetry, setTelemetry] = useState(undefined);
+  // Un Server Action qui rejette (erreur DB, timeout serverless...) sans
+  // .catch() laisserait `telemetry` indéfiniment à `undefined` — le
+  // composant resterait bloqué sur "Chargement du réplay…" pour
+  // toujours, sans la moindre trace d'erreur visible ni loguée. Repéré en
+  // creusant un signalement utilisateur ("aucune vidéo") qu'aucun test
+  // avec des données mockées ne pouvait reproduire : seul un vrai rejet
+  // réseau/serveur, invisible en local, produit ce symptôme précis.
+  const [fetchError, setFetchError] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [virtualT, setVirtualT] = useState(0);
   const rafRef = useRef(null);
@@ -122,6 +133,9 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
       : fetchQualiDuelReplay(raceId, sessionName, carNumbers);
     promise.then((data) => {
       if (!cancelled) setTelemetry(data);
+    }).catch((err) => {
+      console.error("GhostLapReplay: échec du chargement de la télémétrie", err);
+      if (!cancelled) setFetchError(true);
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- *Key (chaînes stables) remplacent les tableaux carNumbers/driverNames (référence instable d'un rendu à l'autre)
@@ -232,6 +246,16 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
     return { pathD: d, viewBox: vb, dotRadius: span * 0.012 };
   }, [drivers, leader]);
 
+  // Rejet réseau/serveur — distinct du cas "pas de télémétrie ingérée"
+  // (silencieux, ci-dessous) : ici quelque chose a concrètement échoué,
+  // affiché plutôt que masqué pour rester diagnosticable en production.
+  if (fetchError) {
+    return (
+      <div className="ghostlap-loading prose">
+        <p className="scrollhint">Réplay indisponible pour le moment.</p>
+      </div>
+    );
+  }
   if (telemetry === null) return null; // pas de télémétrie ingérée pour ce duel — silencieux, pas une erreur affichée
   if (!drivers) {
     return (

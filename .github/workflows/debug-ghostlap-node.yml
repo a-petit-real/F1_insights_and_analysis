@@ -1,0 +1,40 @@
+name: Debug GhostLapReplay — vrai driver Node (contournement sandbox)
+
+# Comme debug-ghostlap-check.yml, mais avec le VRAI driver `pg` (Node) au
+# lieu de psycopg (Python) — capture une exception spécifique au driver
+# utilisé en production (Vercel) qu'un test Python ne peut pas révéler.
+# GhostLapReplay.jsx n'a pas de .catch() sur son appel Server Action :
+# une rejection y laisserait le composant bloqué à "rien affiché" sans
+# aucune erreur visible, d'où l'intérêt de ce garde-fou séparé.
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2026"
+      round:
+        description: "Round"
+        required: true
+      session:
+        default: "Qualifying"
+      cars:
+        description: "Numéros de voiture séparés par des virgules"
+        required: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install pg@^8.23.0
+      - run: >
+          node scripts/debug_ghostlap_node.mjs
+          --season "${{ inputs.season }}"
+          --round "${{ inputs.round }}"
+          --session "${{ inputs.session }}"
+          --cars "${{ inputs.cars }}"
