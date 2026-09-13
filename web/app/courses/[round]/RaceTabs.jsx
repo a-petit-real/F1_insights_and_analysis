@@ -1437,7 +1437,18 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
               <tbody>
                 {overtakes.map((o, i) => (
                   <tr key={i}>
-                    <td>{new Date(o.overtake_time).toLocaleTimeString("fr-FR")}</td>
+                    {/* toLocaleTimeString sans fractionalSecondDigits arrondit
+                        à la seconde — plusieurs dépassements distincts (des
+                        adversaires différents dépassés à quelques centaines
+                        de ms d'écart, ex. un pilote qui double 3 retardataires
+                        d'affilée) affichaient alors la MÊME heure, ce qui les
+                        faisait passer pour des doublons alors que les données
+                        (pilotes, position) diffèrent bien — signalé par
+                        l'utilisateur ("doublon" perçu dans Raw data) alors
+                        que dedupeOvertakeFlaps (raceData.js) filtre déjà
+                        correctement les vrais doublons de mesure. Millisecondes
+                        affichées pour lever l'ambiguïté visuelle. */}
+                    <td>{new Date(o.overtake_time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit", fractionalSecondDigits: 3 })}</td>
                     <td>{o.overtaking_driver}</td>
                     <td>{o.overtaken_driver}</td>
                     <td>{o.position ?? ""}</td>
