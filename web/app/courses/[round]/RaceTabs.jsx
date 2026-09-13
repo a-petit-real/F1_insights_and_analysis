@@ -19,6 +19,7 @@ import { ROUND13_EL1_FR_HTML } from "../13/el1-fr";
 import { ROUND14_EL1_FR_HTML } from "../14/el1-fr";
 import { ROUND14_EL2_FR_HTML } from "../14/el2-fr";
 import { ROUND14_EL3_FR_HTML } from "../14/el3-fr";
+import { ROUND14_QUALI_FR_HTML } from "../14/quali-fr";
 import { ROUND13_EL1_EN_HTML } from "../13/el1-en";
 import { ROUND13_EL2_FR_HTML } from "../13/el2-fr";
 import { ROUND13_EL2_EN_HTML } from "../13/el2-en";
@@ -476,6 +477,7 @@ const PRACTICE_FR_HTML = {
     "Practice 1": ROUND14_EL1_FR_HTML,
     "Practice 2": ROUND14_EL2_FR_HTML,
     "Practice 3": ROUND14_EL3_FR_HTML,
+    "Qualifying": ROUND14_QUALI_FR_HTML,
   },
 };
 
