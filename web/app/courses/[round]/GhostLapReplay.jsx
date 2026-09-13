@@ -34,6 +34,18 @@ function teamColorFor(teamName) {
   return hit ? hit[1] : "#888";
 }
 
+// Éclaircit une couleur hex de `amount` (0-1) vers le blanc — même fonction
+// que RaceTabs.jsx (useDriverColors), pour distinguer deux coéquipiers
+// (Antonelli/Russell, Norris/Piastri...) sans sortir de la couleur de leur
+// écurie. Indispensable ici : deux points de la même couleur exacte sur le
+// tracé seraient impossibles à distinguer pendant l'animation.
+function lighten(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const mix = (c) => Math.round(c + (255 - c) * amount);
+  return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+}
+
 // Recherche par dichotomie de l'intervalle [i, i+1] encadrant `value` dans
 // un tableau croissant `arr` (lu via `key`) — utilisée à la fois pour
 // interpoler par le temps (position d'un pilote à l'instant t) et par la
@@ -123,8 +135,15 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
     if (!telemetry) return null;
     const list = Object.entries(telemetry)
       .filter(([, d]) => d.points && d.points.length >= 2)
-      .map(([label, d]) => ({ label, ...d, color: teamColorFor(d.teamName) }))
+      .map(([label, d]) => ({ label, ...d }))
       .sort((a, b) => a.points[a.points.length - 1].t - b.points[b.points.length - 1].t);
+    const seenPerTeam = {};
+    for (const d of list) {
+      const base = teamColorFor(d.teamName);
+      const seen = seenPerTeam[d.teamName] || 0;
+      seenPerTeam[d.teamName] = seen + 1;
+      d.color = seen === 0 ? base : lighten(base, 0.42);
+    }
     return list.length >= 2 ? list : null;
   }, [telemetry]);
 

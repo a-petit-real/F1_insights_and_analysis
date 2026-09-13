@@ -70,6 +70,9 @@ export const ROUND13_ANALYSE_FR_HTML = `
 
         <h3 class="subtitle">Le sprint final : gravier, pénalité écartée, et la passe décisive</h3>
         <p>« Les tours sont suffisamment rapides en ce moment ? » demande Russell à 15 tours du drapeau. « Kimi est prévu pour vous rattraper juste à la fin de la course », lui répond-on. Le verdict des commissaires — aucune sanction pour l'infraction sous drapeau jaune — confirme un duel loyal jusqu'au bout. À cinq tours de l'arrivée, Antonelli revient dans les échappements de Russell et tente sa chance à la première chicane, mais part large à la sortie et met les quatre roues dans le gravier, perdant du terrain. Il repart aussitôt à l'assaut et fait la décision entre Lesmo 2 et la chicane Ascari au tour 50, avant de s'échapper vers l'arrivée.</p>
+
+        <!--GHOST_LAP_REPLAY-->
+
         <p>Verstappen suit les deux Mercedes jusqu'au drapeau à damier pour un podium mérité. Derrière, Norris arrache la 4<sup>e</sup> place à Piastri dans un ultime freinage à la Curva Grande — l'Australien peu satisfait d'un écart aussi mince. Hamilton sauve la 6<sup>e</sup> place pour Ferrari sur une journée noire, devant Gasly (pole la veille, 7<sup>e</sup> à l'arrivée), Lindblad, Colapinto et Tsunoda, ce dernier convoqué chez les commissaires pour une possible irrégularité de procédure de départ.</p>
       </div>
     </section>
@@ -205,6 +208,7 @@ export const ROUND13_ANALYSE_FR_HTML = `
           <h5>Données de course</h5>
           <ul>
             <li><span class="desc">The Pit Wall — pipeline production (résultats/standings via scripts/ingest_jolpica.py, temps au tour/pneus/météo/RCM via scripts/ingest_openf1.py), primaire.</span></li>
+            <li><span class="desc">The Pit Wall — pipeline OpenF1 (scripts/ingest_openf1_telemetry.py), position/vitesse du tour 50 pour le réplay Antonelli/Russell ci-dessus, primaire.</span></li>
           </ul>
         </div>
         <div class="srcgroup">

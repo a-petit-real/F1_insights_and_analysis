@@ -277,7 +277,7 @@ export default function RaceTabs({ round, raceId, results, lapTimes, tyreStints,
       )}
       {tab === "analyse" && (
         <SpoilerGate spoiler={spoiler} session="Race" label="l'analyse de cette course">
-          <AnalyseTab round={round} lang={lang} langHydrated={langHydrated} />
+          <AnalyseTab raceId={raceId} round={round} lang={lang} langHydrated={langHydrated} />
         </SpoilerGate>
       )}
       {tab === "raw" && (
@@ -444,7 +444,15 @@ const ANALYSE_FR_HTML = {
   13: ROUND13_ANALYSE_FR_HTML,
 };
 
-function AnalyseTab({ round, lang, langHydrated }) {
+// Duel course en dur (cf. GHOST_LAP_REPLAYS pour les qualifications, même
+// principe) : tour 50 du GP d'Italie, la passe décisive d'Antonelli sur
+// Russell entre Lesmo 2 et la chicane Ascari — exactement le moment décrit
+// juste avant le marqueur dans analyse-fr.js, pas un tour choisi au hasard.
+const GHOST_LAP_RACE_REPLAYS = {
+  13: { lapNumber: 50, driverNames: ["Antonelli", "Russell"], title: "Réplay — la passe décisive, tour 50" },
+};
+
+function AnalyseTab({ raceId, round, lang, langHydrated }) {
   const frHtml = ANALYSE_FR_HTML[round];
   if (!frHtml) {
     return (
@@ -455,12 +463,26 @@ function AnalyseTab({ round, lang, langHydrated }) {
   }
   const enHtml = ANALYSE_EN_HTML[round];
   const showEn = lang === "en" && Boolean(enHtml);
+  const html = showEn ? enHtml : frHtml;
+
+  const replay = GHOST_LAP_RACE_REPLAYS[round];
+  const marker = "<!--GHOST_LAP_REPLAY-->";
+  const parts = replay && html.includes(marker) ? html.split(marker) : null;
+
   return (
     <div className="prose">
       {langHydrated && lang === "en" && !showEn && (
         <p className="note" style={{ marginBottom: 16 }}>This article isn't translated to English yet — showing the French version.</p>
       )}
-      <div dangerouslySetInnerHTML={{ __html: showEn ? enHtml : frHtml }} />
+      {parts ? (
+        <>
+          <div dangerouslySetInnerHTML={{ __html: parts[0] }} />
+          <GhostLapReplay raceId={raceId} source="race" lapNumber={replay.lapNumber} driverNames={replay.driverNames} title={replay.title} />
+          <div dangerouslySetInnerHTML={{ __html: parts[1] }} />
+        </>
+      ) : (
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+      )}
     </div>
   );
 }
