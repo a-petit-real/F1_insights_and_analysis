@@ -246,6 +246,27 @@ export default function RaceTabs({ round, raceId, results, lapTimes, tyreStints,
     if (practiceSessions.length) return practiceSessions[practiceSessions.length - 1];
     return hasPreAnalyse ? "preanalyse" : "analyse";
   });
+  // Restaure l'onglet depuis l'URL (?tab=...) au montage — sans ça, un
+  // rechargement de page (ou un lien partagé) renvoyait toujours vers
+  // l'onglet par défaut ("Analyse") même si l'utilisateur était sur Quali
+  // ou Raw data, donnant l'impression que la page "oubliait" où on était
+  // (signalé par l'utilisateur après un F5 pendant qu'il regardait Quali).
+  useEffect(() => {
+    const urlTab = new URLSearchParams(window.location.search).get("tab");
+    const validTabs = new Set(["preanalyse", "analyse", "raw", ...practiceSessions]);
+    if (urlTab && validTabs.has(urlTab)) setTab(urlTab);
+    // Une seule fois au montage : practiceSessions ne change pas après coup
+    // pour un round donné, et on ne veut pas ré-appliquer l'URL sur chaque clic.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // setTab qui garde en plus l'URL synchronisée, pour qu'un rechargement
+  // (ou un lien copié à ce moment-là) rouvre bien sur ce même onglet.
+  const changeTab = (next) => {
+    setTab(next);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", next);
+    window.history.replaceState(null, "", url);
+  };
   // Une seule source de vérité pour tout le round, partagée entre les
   // icônes 🔒 des onglets et les panneaux qui bloquent le contenu — cf.
   // le commentaire de useRoundSpoilerState sur le bug de désynchronisation
@@ -256,19 +277,19 @@ export default function RaceTabs({ round, raceId, results, lapTimes, tyreStints,
     <div>
       <div className="tabs" style={{ marginBottom: 24, flexWrap: "wrap" }}>
         {hasPreAnalyse && (
-          <TabButton active={tab === "preanalyse"} onClick={() => setTab("preanalyse")}>
+          <TabButton active={tab === "preanalyse"} onClick={() => changeTab("preanalyse")}>
             Pré-analyse
           </TabButton>
         )}
         {practiceSessions.map((name) => (
-          <GatedTabButton key={name} spoiler={spoiler} session={PRACTICE_LABELS[name]} active={tab === name} onClick={() => setTab(name)}>
+          <GatedTabButton key={name} spoiler={spoiler} session={PRACTICE_LABELS[name]} active={tab === name} onClick={() => changeTab(name)}>
             {PRACTICE_LABELS[name]}
           </GatedTabButton>
         ))}
-        <GatedTabButton spoiler={spoiler} session="Race" active={tab === "analyse"} onClick={() => setTab("analyse")}>
+        <GatedTabButton spoiler={spoiler} session="Race" active={tab === "analyse"} onClick={() => changeTab("analyse")}>
           Analyse
         </GatedTabButton>
-        <GatedTabButton spoiler={spoiler} session="Race" active={tab === "raw"} onClick={() => setTab("raw")}>
+        <GatedTabButton spoiler={spoiler} session="Race" active={tab === "raw"} onClick={() => changeTab("raw")}>
           Raw data
         </GatedTabButton>
       </div>
@@ -451,7 +472,7 @@ const ANALYSE_FR_HTML = {
 // Russell entre Lesmo 2 et la chicane Ascari — exactement le moment décrit
 // juste avant le marqueur dans analyse-fr.js, pas un tour choisi au hasard.
 const GHOST_LAP_RACE_REPLAYS = {
-  13: { lapNumber: 50, driverNames: ["Antonelli", "Russell"], title: "Réplay — la passe décisive, tour 50" },
+  13: { lapNumber: 50, driverNames: ["Antonelli", "Russell"], title: "Replay — la passe décisive, tour 50" },
 };
 
 function AnalyseTab({ raceId, round, lang, langHydrated }) {
@@ -513,7 +534,7 @@ const PRACTICE_FR_HTML = {
 // utilisateur sur l'angle "choix des pilotes comparés" plutôt qu'un réplay
 // générique. À dupliquer/paramétrer le jour où un autre duel le justifie.
 const GHOST_LAP_REPLAYS = {
-  "14|Qualifying": { carNumbers: [1, 12, 3], title: "Réplay — le tour de pole, seconde par seconde" },
+  "14|Qualifying": { carNumbers: [1, 12, 3], title: "Replay — le tour de pole, seconde par seconde" },
 };
 
 function PracticeAnalysis({ raceId, round, sessionName, lang, langHydrated }) {

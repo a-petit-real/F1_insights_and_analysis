@@ -133,7 +133,7 @@ export const ROUND14_QUALI_FR_HTML = `
       <h5>Données de séance</h5>
       <ul>
         <li><span class="desc">The Pit Wall — pipeline OpenF1 (scripts/ingest_openf1_practice.py --session "Qualifying"), classement/secteurs/relais/météo, primaire.</span></li>
-        <li><span class="desc">The Pit Wall — pipeline OpenF1 (scripts/ingest_openf1_telemetry.py --session "Qualifying"), position/vitesse par tour du réplay Norris/Antonelli/Verstappen ci-dessus, primaire.</span></li>
+        <li><span class="desc">The Pit Wall — pipeline OpenF1 (scripts/ingest_openf1_telemetry.py --session "Qualifying"), position/vitesse par tour du replay Norris/Antonelli/Verstappen ci-dessus, primaire.</span></li>
       </ul>
     </div>
     <div class="srcgroup">

@@ -208,7 +208,7 @@ export const ROUND13_ANALYSE_FR_HTML = `
           <h5>Données de course</h5>
           <ul>
             <li><span class="desc">The Pit Wall — pipeline production (résultats/standings via scripts/ingest_jolpica.py, temps au tour/pneus/météo/RCM via scripts/ingest_openf1.py), primaire.</span></li>
-            <li><span class="desc">The Pit Wall — pipeline OpenF1 (scripts/ingest_openf1_telemetry.py), position/vitesse du tour 50 pour le réplay Antonelli/Russell ci-dessus, primaire.</span></li>
+            <li><span class="desc">The Pit Wall — pipeline OpenF1 (scripts/ingest_openf1_telemetry.py), position/vitesse du tour 50 pour le replay Antonelli/Russell ci-dessus, primaire.</span></li>
           </ul>
         </div>
         <div class="srcgroup">

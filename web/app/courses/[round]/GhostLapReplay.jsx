@@ -252,7 +252,7 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
   if (fetchError) {
     return (
       <div className="ghostlap-loading prose">
-        <p className="scrollhint">Réplay indisponible pour le moment.</p>
+        <p className="scrollhint">Replay indisponible pour le moment.</p>
       </div>
     );
   }
@@ -260,7 +260,7 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
   if (!drivers) {
     return (
       <div className="ghostlap-loading prose">
-        <p className="scrollhint">Chargement du réplay…</p>
+        <p className="scrollhint">Chargement du replay…</p>
       </div>
     );
   }
@@ -312,7 +312,7 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
         <span className="ghostlap-clock">{formatLapClock(virtualT)} / {formatLapClock(leaderDuration)}</span>
       </div>
       <p className="scrollhint" style={{ textAlign: "center" }}>
-        Réplay animé (×{PLAYBACK_RATE}) à partir de la télémétrie réelle OpenF1 — écart en temps calculé au même point du tracé, pas un écart de distance.
+        Replay animé (×{PLAYBACK_RATE}) à partir de la télémétrie réelle OpenF1 — écart en temps calculé au même point du tracé, pas un écart de distance.
       </p>
     </div>
   );
