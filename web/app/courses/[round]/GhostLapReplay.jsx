@@ -185,19 +185,29 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
   // normalisés dans un viewBox couvrant TOUS les pilotes (pas seulement le
   // leader) pour que personne ne sorte du cadre sur les portions où les
   // lignes divergent (freinage, sortie de virage).
+  //
+  // Y INVERSÉ (-p.y partout ci-dessous) : OpenF1 donne x/y dans un repère où
+  // Y croît "vers le haut" au sens cartésien standard (confirmé en traçant
+  // le tour réel d'un pilote à Monza hors du site : les virages connus pour
+  // être des courbes à droite — Curva Grande, Lesmo 1 et 2 — ne ressortent
+  // dans le bon sens qu'avec Y non inversé dans ce repère-là). Le SVG, lui,
+  // a un axe Y qui croît vers le BAS — sans cette inversion, le tracé
+  // rendu est le miroir vertical du circuit réel (signalé par l'utilisateur
+  // : "le circuit est inversé").
   const { pathD, viewBox, dotRadius } = useMemo(() => {
     if (!drivers) return { pathD: "", viewBox: "0 0 100 100", dotRadius: 1 };
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const d of drivers) {
       for (const p of d.points) {
+        const y = -p.y;
         if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
-        if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
       }
     }
     const span = Math.max(maxX - minX, maxY - minY);
     const pad = span * 0.06;
     const vb = `${minX - pad} ${minY - pad} ${maxX - minX + 2 * pad} ${maxY - minY + 2 * pad}`;
-    const d = leader.points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const d = leader.points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${(-p.y).toFixed(1)}`).join(" ");
     // Rayon des points en unités du viewBox (mètres) — proportionnel à
     // l'étendue du tracé plutôt qu'une valeur fixe, pour rester visible
     // aussi bien sur un petit circuit urbain que sur un tracé étendu.
@@ -225,27 +235,25 @@ export default function GhostLapReplay({ raceId, source = "quali", sessionName, 
   return (
     <div className="ghostlap">
       {title && <p className="ghostlap-title">{title}</p>}
-      <div className="ghostlap-stage">
-        <div className="ghostlap-cards">
-          {rows.map((d) => (
-            <div key={d.label} className="ghostlap-card" style={{ borderColor: d.color }}>
-              <span className="ghostlap-drv"><span className="dot" style={{ background: d.color }} />{d.label}</span>
-              <span className="ghostlap-gap">{d.gap == null ? "LEADER" : `+${d.gap.toFixed(3)}`}</span>
-              <span className="ghostlap-speed">{Math.round(d.speed)} <small>km/h</small></span>
-            </div>
-          ))}
-        </div>
-        <svg viewBox={viewBox} className="ghostlap-track" preserveAspectRatio="xMidYMid meet">
-          <path d={pathD} className="ghostlap-line" />
-          {rows.map((d) => {
-            const p = pointAtTime(d.points, virtualT);
-            return (
-              <circle key={d.label} cx={p.x} cy={p.y} r={dotRadius} fill={d.color}
-                      stroke="var(--surface)" strokeWidth={dotRadius * 0.25} />
-            );
-          })}
-        </svg>
+      <div className="ghostlap-cards">
+        {rows.map((d) => (
+          <div key={d.label} className="ghostlap-card" style={{ borderColor: d.color }}>
+            <span className="ghostlap-drv"><span className="dot" style={{ background: d.color }} />{d.label}</span>
+            <span className="ghostlap-gap">{d.gap == null ? "LEADER" : `+${d.gap.toFixed(3)}`}</span>
+            <span className="ghostlap-speed">{Math.round(d.speed)} <small>km/h</small></span>
+          </div>
+        ))}
       </div>
+      <svg viewBox={viewBox} className="ghostlap-track" preserveAspectRatio="xMidYMid meet">
+        <path d={pathD} className="ghostlap-line" />
+        {rows.map((d) => {
+          const p = pointAtTime(d.points, virtualT);
+          return (
+            <circle key={d.label} cx={p.x} cy={-p.y} r={dotRadius} fill={d.color}
+                    stroke="var(--surface)" strokeWidth={dotRadius * 0.25} />
+          );
+        })}
+      </svg>
       <div className="ghostlap-controls">
         <button type="button" onClick={togglePlay} className="ghostlap-playbtn" aria-label={playing ? "Pause" : "Lecture"}>
           {playing ? "⏸" : "▶"}

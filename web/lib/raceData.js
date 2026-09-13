@@ -468,10 +468,40 @@ export async function getConstructorStandingsAllRounds(season) {
   return byRound;
 }
 
+// Donnée dérivée (voir docs/DATA_SOURCES.md, "Données dérivées côté web") :
+// l'endpoint overtakes d'OpenF1 émet parfois, pour deux voitures quasi à
+// égalité (bruit GPS/calcul de position), une paire réciproque en moins
+// d'une seconde (A dépasse B, puis B dépasse A) — physiquement impossible
+// pour un vrai dépassement suivi d'un contre (constaté sur les vraies
+// données Monza : Verstappen/Russell 0.179s, Gasly/Hamilton 0.082s,
+// Norris/Hamilton 0.036s, Bortoleto/Albon 0.111s d'écart). Une vraie passe
+// et contre-passe lors d'une bagarre serrée prend plusieurs secondes
+// (ex. 3.318s observé, conservé). On retire donc les deux lignes de toute
+// paire réciproque (mêmes pilotes, sens inversé) à moins de 500ms d'écart —
+// aucune des deux directions n'étant vérifiable comme "la vraie", on ne
+// garde ni l'une ni l'autre plutôt que de deviner.
+function dedupeOvertakeFlaps(rows, thresholdMs = 500) {
+  const toDrop = new Set();
+  for (let i = 0; i < rows.length; i++) {
+    for (let j = i + 1; j < rows.length; j++) {
+      const dt = Math.abs(new Date(rows[j].overtake_time) - new Date(rows[i].overtake_time));
+      if (dt > thresholdMs) break; // rows déjà triées par overtake_time
+      const reciprocal =
+        rows[i].overtaking_driver === rows[j].overtaken_driver &&
+        rows[i].overtaken_driver === rows[j].overtaking_driver;
+      if (reciprocal) {
+        toDrop.add(i);
+        toDrop.add(j);
+      }
+    }
+  }
+  return rows.filter((_, idx) => !toDrop.has(idx));
+}
+
 export async function getOvertakes(raceId) {
   // Jointure sur results deux fois (voiture dépassante / dépassée) pour
   // afficher des noms de pilotes plutôt que des numéros de voiture bruts.
-  return query(
+  const rows = await query(
     `SELECT o.overtake_time, o.position,
             d1.family_name AS overtaking_driver, d2.family_name AS overtaken_driver
      FROM overtakes o
@@ -483,4 +513,5 @@ export async function getOvertakes(raceId) {
      ORDER BY o.overtake_time`,
     [raceId]
   );
+  return dedupeOvertakeFlaps(rows);
 }

@@ -268,20 +268,18 @@
   }
 
   /* ---------- Réplay comparatif (GhostLapReplay) ---------- */
-  /* Cartes vitesse/écart en superposition sur le tracé plutôt qu'à côté :
-     le duel se lit en gardant l'œil sur les points ET les chiffres en même
-     temps, comme un HUD de retransmission — même esprit que .chip/.dot déjà
-     utilisés ailleurs (mêmes tokens de couleur par écurie), pas un nouveau
-     système de couleurs. */
+  /* Cartes vitesse/écart EN LIGNE au-dessus du tracé, pas en superposition
+     dessus : une position fixe (ex. coin haut-gauche) ne peut pas garantir
+     l'absence de recouvrement pour n'importe quel circuit — la forme réelle
+     d'un tracé (ex. la ligne droite qui longe justement ce coin à Monza)
+     peut passer exactement sous les cartes (signalé par l'utilisateur :
+     "les noms des pilotes empiètent le circuit"). Même tokens de couleur
+     par écurie que .chip/.dot ailleurs sur le site, pas un nouveau système. */
   .ghostlap{border:1px solid var(--border); border-radius:10px; background:var(--surface-raised); padding:16px; margin:20px 0;}
   .ghostlap-title{font-family:"IBM Plex Mono", monospace; font-size:0.78rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin:0 0 12px;}
-  .ghostlap-stage{position:relative;}
   .ghostlap-track{width:100%; aspect-ratio:4/3; display:block;}
   .ghostlap-line{fill:none; stroke:var(--border-strong); stroke-width:22; stroke-linecap:round; stroke-linejoin:round;}
-  .ghostlap-cards{
-    position:absolute; top:8px; left:8px; z-index:1;
-    display:flex; flex-direction:column; gap:6px; max-width:46%;
-  }
+  .ghostlap-cards{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
   .ghostlap-card{
     display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border);
     border-left-width:3px; border-radius:6px; padding:6px 10px;
