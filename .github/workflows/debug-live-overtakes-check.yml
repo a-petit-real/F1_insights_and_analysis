@@ -1,0 +1,27 @@
+name: Debug tableau Dépassements — vrai navigateur sur le site déployé
+
+# Vérifie ce que l'utilisateur voit RÉELLEMENT dans le tableau
+# "Dépassements" (Raw data) sur le site en production, après le fix
+# d'affichage des millisecondes (commit 3834604) — doublons signalés
+# encore présents. Runner GitHub Actions car le sandbox interactif ne
+# peut pas atteindre vercel.app.
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL complète à charger"
+        required: true
+        default: "https://f1platform.vercel.app/courses/14"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install playwright@^1.55.0
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/debug_live_overtakes_check.mjs --url "${{ inputs.url }}"
