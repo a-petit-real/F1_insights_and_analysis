@@ -1,0 +1,28 @@
+name: Debug doublons overtakes — cause racine (contournement sandbox)
+
+# dedupeOvertakeFlaps (raceData.js) ne retire que les paires RÉCIPROQUES
+# (A dépasse B puis B dépasse A) à moins de 500ms — il ne retire PAS deux
+# lignes identiques (même sens, même paire, même horodatage). Ce workflow
+# cherche la vraie cause d'un doublon persistant signalé par l'utilisateur
+# dans le tableau "Qui dépasse qui" après le fix d'affichage des ms :
+# doublons dans overtakes elle-même, dans results (qui multiplierait via
+# le JOIN de getOvertakes), ou après le JOIN complet.
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2026"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+      - run: python scripts/debug_overtakes_dupes.py --season "${{ inputs.season }}"
