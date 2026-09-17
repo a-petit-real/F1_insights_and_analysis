@@ -883,6 +883,41 @@ function DeltaMatrix({ names, valueByName, colors }) {
   );
 }
 
+// Repère les "rafales" de dépassements : même pilote dépassant, même
+// horodatage à la milliseconde près, plusieurs adversaires différents
+// d'affilée (ex. un pilote qui double 3-4 retardataires groupés). Ce n'est
+// PAS un doublon — chaque ligne a un adversaire et une position résultante
+// différents (donc dedupeOvertakeFlaps ne les touche pas, à raison) — mais
+// la granularité d'échantillonnage de position d'OpenF1 (~4 Hz) horodate
+// ces passes successives au même instant, ce qui les fait ressembler à des
+// lignes répétées si on ne regarde que l'heure. Constaté sur les vraies
+// données Madrid (round 14) : Gasly dépasse 4 pilotes différents à
+// 13:28:40,895 pile, Bortoleto pareil 4 fois à 13:28:42,190 — signalé par
+// l'utilisateur comme "doublon" dans Raw data alors que les 4 lignes sont
+// bien 4 dépassements réels distincts. On annote juste "i/N" pour lever
+// l'ambiguïté visuelle sans rien masquer ni fusionner (fusionner perdrait
+// l'ordre réel des passes, que la position résultante croissante révèle).
+function computeOvertakeBursts(overtakes) {
+  const bursts = new Array(overtakes.length);
+  let i = 0;
+  while (i < overtakes.length) {
+    const t = new Date(overtakes[i].overtake_time).getTime();
+    const driver = overtakes[i].overtaking_driver;
+    let j = i + 1;
+    while (
+      j < overtakes.length &&
+      new Date(overtakes[j].overtake_time).getTime() === t &&
+      overtakes[j].overtaking_driver === driver
+    ) {
+      j++;
+    }
+    const size = j - i;
+    for (let k = i; k < j; k++) bursts[k] = { index: k - i + 1, size };
+    i = j;
+  }
+  return bursts;
+}
+
 function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overtakes, hasTelemetry, qualiClassification, round, raceWinners }) {
   const driverNames = Object.keys(lapTimes).sort();
   // Vainqueur DE CE round, dérivé de `results` (déjà chargé pour le tableau
@@ -1444,42 +1479,64 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
         </div>
       </Section>
 
-      {overtakes && overtakes.length > 0 && (
-        <Section title={`Dépassements (${overtakes.length})`}>
-          <div className="tablewrap" style={{ maxHeight: 320, overflowY: "auto" }}>
-            <table>
-              <thead>
-                <tr>
-                  {["Heure", "Dépasse", "Dépassé", "Position résultante"].map((h) => (
-                    <th key={h}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {overtakes.map((o, i) => (
-                  <tr key={i}>
-                    {/* toLocaleTimeString sans fractionalSecondDigits arrondit
-                        à la seconde — plusieurs dépassements distincts (des
-                        adversaires différents dépassés à quelques centaines
-                        de ms d'écart, ex. un pilote qui double 3 retardataires
-                        d'affilée) affichaient alors la MÊME heure, ce qui les
-                        faisait passer pour des doublons alors que les données
-                        (pilotes, position) diffèrent bien — signalé par
-                        l'utilisateur ("doublon" perçu dans Raw data) alors
-                        que dedupeOvertakeFlaps (raceData.js) filtre déjà
-                        correctement les vrais doublons de mesure. Millisecondes
-                        affichées pour lever l'ambiguïté visuelle. */}
-                    <td>{new Date(o.overtake_time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit", fractionalSecondDigits: 3 })}</td>
-                    <td>{o.overtaking_driver}</td>
-                    <td>{o.overtaken_driver}</td>
-                    <td>{o.position ?? ""}</td>
+      {overtakes && overtakes.length > 0 && (() => {
+        const bursts = computeOvertakeBursts(overtakes);
+        const hasBurst = bursts.some((b) => b.size > 1);
+        return (
+          <Section title={`Dépassements (${overtakes.length})`}>
+            <div className="tablewrap" style={{ maxHeight: 320, overflowY: "auto" }}>
+              <table>
+                <thead>
+                  <tr>
+                    {["Heure", "Dépasse", "Dépassé", "Position résultante"].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Section>
-      )}
+                </thead>
+                <tbody>
+                  {overtakes.map((o, i) => {
+                    const burst = bursts[i];
+                    return (
+                      <tr key={i}>
+                        {/* toLocaleTimeString sans fractionalSecondDigits arrondit
+                            à la seconde — plusieurs dépassements distincts (des
+                            adversaires différents dépassés à quelques centaines
+                            de ms d'écart, ex. un pilote qui double 3 retardataires
+                            d'affilée) affichaient alors la MÊME heure, ce qui les
+                            faisait passer pour des doublons alors que les données
+                            (pilotes, position) diffèrent bien — signalé par
+                            l'utilisateur ("doublon" perçu dans Raw data) alors
+                            que dedupeOvertakeFlaps (raceData.js) filtre déjà
+                            correctement les vrais doublons de mesure. Millisecondes
+                            affichées pour lever l'ambiguïté visuelle. */}
+                        <td>
+                          {new Date(o.overtake_time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit", fractionalSecondDigits: 3 })}
+                          {burst.size > 1 && (
+                            <span className="note" style={{ marginLeft: 6, fontSize: 11 }}>
+                              {burst.index}/{burst.size}
+                            </span>
+                          )}
+                        </td>
+                        <td>{o.overtaking_driver}</td>
+                        <td>{o.overtaken_driver}</td>
+                        <td>{o.position ?? ""}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {hasBurst && (
+              <p className="note" style={{ marginTop: 6 }}>
+                Le repère « i/N » signale une rafale : un même pilote a doublé N adversaires
+                différents à l&apos;instant exact (même horodatage à la milliseconde, limite
+                d&apos;échantillonnage de la position par OpenF1) — ce ne sont pas des doublons,
+                chaque ligne reste un dépassement distinct.
+              </p>
+            )}
+          </Section>
+        );
+      })()}
     </div>
   );
 }
