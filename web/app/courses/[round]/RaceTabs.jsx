@@ -1231,20 +1231,22 @@ function RawDataTab({ raceId, results, lapTimes, tyreStints, weather, rcm, overt
               </BarChart>
             </ResponsiveContainer>
 
-            <p style={{ fontSize: 13, fontWeight: 600, margin: "24px 0 10px" }}>Qui bat qui</p>
+            {/* Uniquement la matrice Qualif ici — la matrice "Course" (meilleur
+                tour de course) était calculée une seconde fois à partir des
+                MÊMES lap times et affichée une seconde fois plus bas sous
+                "Temps au tour" > "Qui bat qui (toutes gommes)". Quand la
+                sélection de pilotes est la même des deux côtés (cas courant,
+                ex. le top 5 par défaut), les deux tableaux affichaient donc
+                des chiffres identiques sous deux titres différents — signalé
+                par l'utilisateur comme "doublon" (captures d'écran des deux
+                tableaux Antonelli/Verstappen/Russell/Norris/Piastri,
+                strictement identiques). On garde une seule matrice "Course"
+                pour toute la page, avec un renvoi plutôt qu'une copie. */}
+            <p style={{ fontSize: 13, fontWeight: 600, margin: "24px 0 10px" }}>Qui bat qui — Qualif</p>
             <p className="note" style={{ marginBottom: 12 }}>
-              Case (ligne, colonne) = temps de la ligne moins temps de la colonne — négatif : la ligne est plus rapide que la colonne. Permet de comparer n'importe quelle paire de pilotes, pas seulement chacun contre le meilleur du groupe.
+              Case (ligne, colonne) = temps de la ligne moins temps de la colonne — négatif : la ligne est plus rapide que la colonne. Permet de comparer n'importe quelle paire de pilotes, pas seulement chacun contre le meilleur du groupe. Le même tableau côté course est dans "Temps au tour" plus bas ("Qui bat qui (toutes gommes)"), pour éviter de l'afficher deux fois.
             </p>
-            <div style={{ display: "grid", gap: 20, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
-              <div>
-                <p className="note" style={{ marginBottom: 6, fontWeight: 600 }}>Qualif</p>
-                <DeltaMatrix names={[...selectedQualiRace]} valueByName={qualiVsRaceRows.qualiBest} colors={driverColors} />
-              </div>
-              <div>
-                <p className="note" style={{ marginBottom: 6, fontWeight: 600 }}>Course</p>
-                <DeltaMatrix names={[...selectedQualiRace]} valueByName={qualiVsRaceRows.raceBest} colors={driverColors} />
-              </div>
-            </div>
+            <DeltaMatrix names={[...selectedQualiRace]} valueByName={qualiVsRaceRows.qualiBest} colors={driverColors} />
           </>
         )}
       </Section>
