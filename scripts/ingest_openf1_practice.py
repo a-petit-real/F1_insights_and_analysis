@@ -34,13 +34,15 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ThePitWall/1.0)"}
 
 
 def api_get(path, **params):
-    # Même logique de retry/429/404 qu'ingest_openf1.py — cf. sa docstring
-    # pour le détail (404 = pas encore de données, pas une erreur).
+    # Même logique de retry/429/404/401 qu'ingest_openf1.py — cf. sa
+    # docstring pour le détail (404 et 401 = pas encore de données pour
+    # une séance qui n'a pas eu lieu, pas une vraie erreur d'auth : l'API
+    # GET historique d'OpenF1 est publique sans clé, cf. openf1.org/auth.html).
     max_attempts = 8
     for attempt in range(max_attempts):
         try:
             resp = requests.get(f"{BASE}/{path}", params=params, headers=HEADERS, timeout=30)
-            if resp.status_code == 404:
+            if resp.status_code in (404, 401):
                 return []
             if resp.status_code == 429 and attempt < max_attempts - 1:
                 wait = float(resp.headers.get("Retry-After", min(2 ** attempt, 60)))

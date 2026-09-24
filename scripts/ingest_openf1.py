@@ -73,11 +73,21 @@ def api_get(path, **params):
     # pas eu lieu : on traite ce cas comme "pas encore de données" (liste
     # vide) plutôt que comme une erreur, pour ne pas perdre plusieurs
     # minutes en retries voués à l'échec avant de planter quand même.
+    #
+    # Un 401 rencontré en pratique (round 15, Bakou) se comporte pareil :
+    # OpenF1 documente son API GET historique comme publique et sans clé
+    # (openf1.org/auth.html — l'auth ne concerne que le streaming
+    # temps réel), donc ce 401 n'est pas un vrai problème d'identifiants
+    # côté script. Constaté seulement sur une séance qui n'a pas encore eu
+    # lieu, jamais sur une séance avec données réelles : traité comme 404,
+    # sans quoi chaque passage de la veille automatique épuise 8 tentatives
+    # (~2 min) puis fait échouer tout le run — et spamme des emails
+    # d'échec GitHub Actions pour un cas qui n'est pas une erreur.
     max_attempts = 8
     for attempt in range(max_attempts):
         try:
             resp = requests.get(f"{BASE}/{path}", params=params, headers=HEADERS, timeout=30)
-            if resp.status_code == 404:
+            if resp.status_code in (404, 401):
                 return []
             if resp.status_code == 429 and attempt < max_attempts - 1:
                 wait = float(resp.headers.get("Retry-After", min(2 ** attempt, 60)))
