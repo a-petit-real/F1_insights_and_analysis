@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLangPref } from "../../lib/langPref";
+import FeedbackButton from "./FeedbackButton";
 
 // En-tête partagé par toutes les pages (accueil, courses, classement) —
 // remplace le bandeau qui n'existait jusqu'ici qu'à l'intérieur du HTML
@@ -47,6 +48,7 @@ export default function SiteHeader() {
             );
           })}
         </nav>
+        <FeedbackButton />
         <button
           type="button"
           className="langtoggle"

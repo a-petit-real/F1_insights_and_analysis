@@ -21,7 +21,9 @@ jobs:
           python-version: "3.11"
       - run: pip install -r scripts/requirements.txt
       - name: Apply schema (idempotent)
-        run: psql "$DATABASE_URL" -f db/schema_fastf1.sql
+        run: |
+          psql "$DATABASE_URL" -f db/schema_fastf1.sql
+          psql "$DATABASE_URL" -f db/schema_app.sql
       - run: >
           python scripts/ingest_openf1.py
           --season "${{ inputs.season }}"

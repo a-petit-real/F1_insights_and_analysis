@@ -1,0 +1,22 @@
+name: Apply DB schema (idempotent)
+
+# Applique les fichiers de schéma à la base de production, à la demande —
+# utile après un changement de schéma (ex. nouvelle table) sans avoir à
+# déclencher une ingestion complète juste pour ça. Les trois workflows
+# d'ingestion OpenF1 appliquent aussi ces mêmes fichiers avant chaque run,
+# ce workflow est donc redondant avec eux mais permet une application
+# immédiate et isolée.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: psql "$DATABASE_URL" -f db/schema.sql
+      - run: psql "$DATABASE_URL" -f db/schema_fastf1.sql
+      - run: psql "$DATABASE_URL" -f db/schema_app.sql
