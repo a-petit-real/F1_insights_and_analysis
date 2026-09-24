@@ -1,0 +1,32 @@
+name: Debug feature feedback — vrai navigateur sur le site déployé
+
+# Vérifie ce que l'utilisateur voit et peut faire RÉELLEMENT avec le
+# nouveau bouton "Feedback" du header + sa modale, sur le site en
+# production, après son ajout. Runner GitHub Actions car le sandbox
+# interactif ne peut pas atteindre vercel.app.
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL complète à charger"
+        required: true
+        default: "https://f1platform.vercel.app/"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install playwright@^1.55.0
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/debug_feedback_check.mjs --url "${{ inputs.url }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: feedback-modal-screenshot
+          path: /tmp/feedback-modal-open.png
+          if-no-files-found: ignore

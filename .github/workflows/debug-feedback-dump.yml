@@ -1,0 +1,20 @@
+name: Debug feedback — dump des dernières lignes (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        default: "5"
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+      - run: python scripts/debug_feedback_dump.py --limit "${{ inputs.limit }}"
