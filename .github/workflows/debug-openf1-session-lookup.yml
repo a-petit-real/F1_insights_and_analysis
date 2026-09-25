@@ -1,0 +1,27 @@
+name: Debug OpenF1 — pourquoi une séance devient introuvable (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2026"
+      round:
+        default: "15"
+      session:
+        default: "Practice 3"
+      session_key:
+        default: "11372"
+
+jobs:
+  lookup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - run: >
+          python scripts/debug_openf1_session_lookup.py
+          --season "${{ inputs.season }}" --round "${{ inputs.round }}"
+          --session "${{ inputs.session }}" --session-key "${{ inputs.session_key }}"
