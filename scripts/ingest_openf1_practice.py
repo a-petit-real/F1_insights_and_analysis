@@ -218,9 +218,16 @@ def main():
             None,
         )
         if session is None:
+            # Pas une vraie erreur : ni un 404/401 HTTP (déjà traité dans api_get) ni un bug —
+            # OpenF1 omet parfois une séance de la liste "sessions?session_name=" tant qu'elle
+            # n'a pas eu lieu ou est en cours (observé en pratique sur une séance déjà ingérée
+            # avec succès quelques heures plus tôt, puis introuvable pendant qu'elle se
+            # déroulait). Symétrique avec ingest_openf1.py, qui `continue` plutôt que d'échouer
+            # dans le même cas — un sys.exit(1) ici déclencherait un email d'échec GitHub Actions
+            # à chaque passage de la routine de veille tant que la séance n'est pas terminée.
             print(f"Aucune session '{args.session}' OpenF1 trouvée à proximité du {race_date} "
-                  f"(round {args.round}). La séance n'a peut-être pas encore eu lieu.", file=sys.stderr)
-            sys.exit(1)
+                  f"(round {args.round}). La séance n'a peut-être pas encore eu lieu ou est en cours.")
+            sys.exit(0)
 
         session_start = iso(session["date_start"])
         print(f"=== Round {args.round} — {session.get('circuit_short_name')} — {args.session} "
