@@ -74,15 +74,20 @@ def api_get(path, **params):
     # vide) plutôt que comme une erreur, pour ne pas perdre plusieurs
     # minutes en retries voués à l'échec avant de planter quand même.
     #
-    # Un 401 rencontré en pratique (round 15, Bakou) se comporte pareil :
-    # OpenF1 documente son API GET historique comme publique et sans clé
-    # (openf1.org/auth.html — l'auth ne concerne que le streaming
-    # temps réel), donc ce 401 n'est pas un vrai problème d'identifiants
-    # côté script. Constaté seulement sur une séance qui n'a pas encore eu
-    # lieu, jamais sur une séance avec données réelles : traité comme 404,
-    # sans quoi chaque passage de la veille automatique épuise 8 tentatives
-    # (~2 min) puis fait échouer tout le run — et spamme des emails
-    # d'échec GitHub Actions pour un cas qui n'est pas une erreur.
+    # Un 401 rencontré en pratique (round 15, Bakou) a une cause précise,
+    # confirmée par le corps de la réponse OpenF1 : "Live F1 session in
+    # progress. Global API access (including past sessions) is restricted
+    # to authenticated users until the session ends." — dès qu'une séance
+    # F1 est en direct QUELQUE PART (pas forcément celle qu'on interroge),
+    # OpenF1 coupe l'accès anonyme à TOUTE l'API, y compris l'historique.
+    # Rien à voir avec des identifiants invalides côté script, et retenter
+    # dans les 8 tentatives ne sert à rien (le direct dure largement plus
+    # longtemps que le backoff) : on traite ce cas comme "pas encore de
+    # données" (liste vide), la veille automatique retentera au passage
+    # suivant une fois la séance en direct terminée. Sans ce traitement,
+    # chaque passage épuise 8 tentatives (~2 min) puis fait échouer tout
+    # le run — et spamme des emails d'échec GitHub Actions pour un cas qui
+    # n'est pas une erreur.
     max_attempts = 8
     for attempt in range(max_attempts):
         try:

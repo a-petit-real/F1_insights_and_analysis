@@ -35,9 +35,12 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ThePitWall/1.0)"}
 
 def api_get(path, **params):
     # Même logique de retry/429/404/401 qu'ingest_openf1.py — cf. sa
-    # docstring pour le détail (404 et 401 = pas encore de données pour
-    # une séance qui n'a pas eu lieu, pas une vraie erreur d'auth : l'API
-    # GET historique d'OpenF1 est publique sans clé, cf. openf1.org/auth.html).
+    # docstring pour le détail. En bref : 404 = séance pas encore disputée ;
+    # 401 = accès anonyme à TOUTE l'API OpenF1 (pas seulement la séance
+    # visée) coupé tant qu'une séance F1 est en direct quelque part (corps
+    # de la réponse OpenF1 : "Live F1 session in progress. Global API
+    # access ... is restricted"). Les deux sont traités comme "pas encore
+    # de données" plutôt que comme une erreur.
     max_attempts = 8
     for attempt in range(max_attempts):
         try:
