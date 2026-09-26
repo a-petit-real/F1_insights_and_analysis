@@ -27,7 +27,7 @@ export const ROUND15_QUALI_FR_HTML = `
 <section class="block">
   <div class="prose">
     <p class="eyebrow">Grand Prix d'Azerbaïdjan · Bakou · Qualifications — vendredi 25 septembre</p>
-    <p class="verdict">George Russell signe la pole la plus dominante de sa carrière — 0,837s d'avance sur Leclerc, une marge colossale sur un circuit où le dixième se joue d'habitude à l'usure. La séance restera aussi celle du choc Antonelli : le leader du championnat tape le mur au virage 1 dès la Q1 et ne prend plus part aux qualifications, une porte ouverte sur son avance au championnat, réduite à seulement 4 points avant ce week-end.</p>
+    <p class="verdict">George Russell signe la pole la plus dominante de sa carrière — 0,837s d'avance sur Leclerc, une marge colossale sur un circuit où le dixième se joue d'habitude à l'usure. La séance restera aussi celle du choc Antonelli : le leader du championnat, large de 81 points d'avance avant ce week-end, tape le mur au virage 1 dès la Q1 et ne prend plus part aux qualifications.</p>
     <div class="resultstrip">
       <div class="chip"><span class="pos">Pole</span> <span class="dot" style="background:#00A19B"></span><span class="drv">Russell</span> <span class="gap">1:42,526</span></div>
       <div class="chip"><span class="pos">2</span> <span class="dot" style="background:#E8002D"></span><span class="drv">Leclerc</span> <span class="gap">+0,837s</span></div>
@@ -85,7 +85,7 @@ export const ROUND15_QUALI_FR_HTML = `
   <div class="prose">
     <h2 class="sectitle"><span class="num">05</span> Pénalités et grille de départ</h2>
     <p>Alonso écope d'une pénalité supplémentaire pour changement de composants du groupe propulseur, qui renvoie sa Aston Martin — et celle de son coéquipier Stroll, également concerné — en fond de grille. Cette double relégation promeut les deux Cadillac : Sergio Pérez récupère la P19 et Valtteri Bottas la P20 sur la grille de départ définitive, à la place d'Alonso et Stroll qui ferment le peloton dimanche.</p>
-    <p>Kimi Antonelli, non classé après son accident de Q1, s'élance 16<sup>e</sup> — sa pire position de qualification de la saison, sur un week-end où l'écart au championnat avec Russell n'était déjà que de 4 points avant Bakou (51 points contre 47). Sainz et Lindblad, réprimandés plus tôt dans la journée pour des incidents en EL3 (cf. article précédent), ne sont pas concernés par une sanction de grille : leurs réprimandes restent des avertissements administratifs, sans effet sur leur position de départ.</p>
+    <p>Kimi Antonelli, non classé après son accident de Q1, s'élance 16<sup>e</sup> — sa pire position de qualification de la saison, mais sur une avance au championnat suffisamment large (292 points contre 211 pour Russell avant Bakou, soit 81 points) pour absorber un accroc ponctuel. Sainz et Lindblad, réprimandés plus tôt dans la journée pour des incidents en EL3 (cf. article précédent), ne sont pas concernés par une sanction de grille : leurs réprimandes restent des avertissements administratifs, sans effet sur leur position de départ.</p>
   </div>
 </section>
 
@@ -130,7 +130,7 @@ export const ROUND15_QUALI_FR_HTML = `
 <section class="block" id="sec-q-7">
   <div class="prose">
     <h2 class="sectitle">Ce qu'il faut surveiller en course</h2>
-    <p>Russell peut-il convertir la plus grosse marge de sa carrière en victoire, sur un circuit où l'aspiration dans la ligne droite principale (2,2 km, la plus longue du calendrier) peut réduire les écarts dès le premier tour ? Leclerc et Piastri, séparés d'un millième pour la P2, partagent la deuxième ligne — un dépassement pour la 2<sup>e</sup> place dès le départ n'est pas à exclure. Et surtout : Antonelli, relégué en P16 après son accident, doit désormais remonter tout un peloton pour limiter la casse — avec seulement 4 points d'avance au championnat avant ce Grand Prix, chaque position comptera double, pour lui comme pour Russell.</p>
+    <p>Russell peut-il convertir la plus grosse marge de sa carrière en victoire, sur un circuit où l'aspiration dans la ligne droite principale (2,2 km, la plus longue du calendrier) peut réduire les écarts dès le premier tour ? Leclerc et Piastri, séparés d'un millième pour la P2, partagent la deuxième ligne — un dépassement pour la 2<sup>e</sup> place dès le départ n'est pas à exclure. Et surtout : Antonelli, relégué en P16 après son accident, doit désormais remonter tout un peloton pour limiter la casse — avec 81 points d'avance au championnat avant ce Grand Prix, la marge est confortable, mais une course blanche pendant que Russell gagne referme vite l'écart.</p>
     <div class="callout">Rappel de méthode : le classement par meilleur tour de cette page couvre l'ensemble de la séance et recolle exactement aux temps officiels du Top 5, mais la grille réelle diffère à trois positions (6<sup>e</sup>-8<sup>e</sup>, voir section 06) et a été remaniée par la pénalité d'Alonso/Stroll — reconstituée ici uniquement à partir des éléments explicitement confirmés par Formula1.com et PlanetF1.</div>
   </div>
 </section>
@@ -156,7 +156,7 @@ export const ROUND15_QUALI_FR_HTML = `
       <h5>Pénalités et championnat</h5>
       <ul>
         <li><a href="https://www.planetf1.com/news/fia-aston-martin-azerbaijan-grand-prix-2026-penalty" data-desc="Pénalité de groupe propulseur d'Alonso et Stroll, promotion de Pérez et Bottas.">PlanetF1 — pénalité Aston Martin</a><span class="desc">PlanetF1</span></li>
-        <li><span class="desc">Motorsport Week — classement pilotes avant le Grand Prix d'Azerbaïdjan (Russell 51 pts, Antonelli 47 pts), consulté pour le contexte championnat.</span></li>
+        <li><span class="desc">The Pit Wall — scripts/standings_briefing.py (round 14), classement pilotes avant le Grand Prix d'Azerbaïdjan (Antonelli 292 pts, Russell 211 pts), primaire.</span></li>
       </ul>
     </div>
   </details>
