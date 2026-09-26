@@ -8,7 +8,7 @@ Un seul secret pour tout le projet : **`DATABASE_URL`** (chaîne de connexion Po
 - dans les secrets du dépôt GitHub (`Settings → Secrets and variables → Actions`) pour les workflows d'ingestion,
 - dans les variables d'environnement du projet Vercel pour le site en production.
 
-Il n'y a pas d'autre secret : pas de clé API pour Jolpica ou OpenF1 (les deux sont des API publiques sans authentification), pas de service tiers configuré (pas de Sentry, pas d'analytics).
+Il n'y a pas d'autre secret : pas de clé API pour Jolpica ou OpenF1 (les deux sont des API publiques sans authentification), pas de service tiers configuré (pas de Sentry). Le suivi de fréquentation (voir plus bas) est maison, stocké dans la même base — pas de Google Analytics ni autre traceur tiers.
 
 ## Ingérer des données
 
@@ -97,6 +97,27 @@ DATABASE_URL="postgres://..." npm run dev   # la plupart des pages nécessitent 
 Sans `DATABASE_URL`, les Server Components qui appellent `web/lib/raceData.js` lèvent une erreur explicite (`db.js` refuse de créer un pool sans cette variable) — il n'y a pas de mode dégradé/mock pour le dev local sans base.
 
 `npm run build` avant tout push (aucune CI ne le fait). `npm run lint` existe (`next lint`) mais n'est pas branché sur un hook ni une CI.
+
+## Suivi de fréquentation (visiteurs uniques, IP, géolocalisation)
+
+Demandé par l'utilisateur : voir si les quelques personnes à qui l'accès au site a été donné l'utilisent réellement. Le site n'a pas de compte utilisateur, donc pas d'autre moyen de les distinguer qu'IP + géolocalisation.
+
+**Instrumentation** : `web/proxy.js` (ex-"middleware", renommé en Next.js 16 — tourne toujours en runtime Node.js, ce qui permet à `lib/db.js` d'utiliser `pg` en TCP, indisponible sur Edge) journalise chaque requête (hors assets statiques via le matcher) dans la table `site_visits` (`db/schema_app.sql`), via `web/lib/visitLog.js`. L'écriture passe par `event.waitUntil()` : elle se termine après l'envoi de la réponse, donc aucune latence ajoutée pour le visiteur, et une panne d'écriture n'affecte jamais le rendu de la page (erreur avalée).
+
+Géolocalisation lue depuis les en-têtes `x-vercel-ip-*` que Vercel ajoute automatiquement à chaque requête en production — aucune dépendance externe, aucune clé API. En dev local (hors Vercel), ces en-têtes sont absents et pays/région/ville restent `NULL`.
+
+« Visiteur unique » = `hash(IP + user-agent)`, calculé côté application (colonne `visitor_id`), pas de cookie ni de tracker tiers.
+
+**Lecture** : `scripts/visits_briefing.py` regroupe les lignes par visiteur unique sur une fenêtre de temps (24h par défaut) et affiche pour chacun IP, localisation, pages vues, provenance, user-agent — en écartant les user-agents de bots/crawlers connus. Équivalent GitHub Actions : `visits-briefing.yml` (`hours` ou `since` en entrée).
+
+```bash
+python scripts/visits_briefing.py --hours 24
+python scripts/visits_briefing.py --since 2026-09-27
+```
+
+**Récap quotidien** : une Routine planifiée (même mécanisme que "Veille séances F1") lance ce script chaque matin et poste le résultat dans la conversation — pas d'email, pas de dashboard séparé.
+
+**Donnée personnelle** : IP et géolocalisation ne sont jamais exposées sur le site lui-même, uniquement accessibles via la base de production et le workflow `visits-briefing.yml` en lecture seule.
 
 ## Suivi du backlog produit
 
