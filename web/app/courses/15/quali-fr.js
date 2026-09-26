@@ -14,7 +14,10 @@
 // Le déroulé Q1/Q2/Q3, les éliminations et la citation de Russell sont sourcés
 // depuis le rapport officiel Formula1.com (fetch-url.yml, primaire). Pénalité de
 // grille d'Alonso/Stroll et clôture de l'enquête Hamilton/EL2 confirmées par
-// PlanetF1 (deux articles séparés). Analyse par secteur (temps théorique optimal
+// PlanetF1 (deux articles séparés). Pénalité de grille de Sainz (5 places, P9→P14,
+// non-ralentissement sous drapeaux jaunes — distincte de sa réprimande EL3) ajoutée
+// après coup, confirmée par RaceFans (fetch-url.yml, primaire) et le rapport de
+// course Formula1.com. Analyse par secteur (temps théorique optimal
 // vs tour réel) calculée à partir des temps de secteur individuels déjà en base,
 // non reprise d'une source externe — elle révèle que le tour de pole de Russell
 // EST le temps théorique optimal du plateau, à la milliseconde près. Aucune
@@ -85,7 +88,7 @@ export const ROUND15_QUALI_FR_HTML = `
   <div class="prose">
     <h2 class="sectitle"><span class="num">05</span> Pénalités et grille de départ</h2>
     <p>Alonso écope d'une pénalité supplémentaire pour changement de composants du groupe propulseur, qui renvoie sa Aston Martin — et celle de son coéquipier Stroll, également concerné — en fond de grille. Cette double relégation promeut les deux Cadillac : Sergio Pérez récupère la P19 et Valtteri Bottas la P20 sur la grille de départ définitive, à la place d'Alonso et Stroll qui ferment le peloton dimanche.</p>
-    <p>Kimi Antonelli, non classé après son accident de Q1, s'élance 16<sup>e</sup> — sa pire position de qualification de la saison, mais sur une avance au championnat suffisamment large (292 points contre 211 pour Russell avant Bakou, soit 81 points) pour absorber un accroc ponctuel. Sainz et Lindblad, réprimandés plus tôt dans la journée pour des incidents en EL3 (cf. article précédent), ne sont pas concernés par une sanction de grille : leurs réprimandes restent des avertissements administratifs, sans effet sur leur position de départ.</p>
+    <p>Kimi Antonelli, non classé après son accident de Q1, s'élance 16<sup>e</sup> — sa pire position de qualification de la saison, mais sur une avance au championnat suffisamment large (292 points contre 211 pour Russell avant Bakou, soit 81 points) pour absorber un accroc ponctuel. Sainz écope en plus d'une pénalité de cinq places sur la grille pour ne pas avoir suffisamment ralenti sous drapeaux jaunes en qualifications, ce qui le renvoie de la P9 brute à la P14 définitive — une sanction distincte de sa réprimande pour l'incident d'EL3. Lindblad, réprimandé pour un incident séparé en EL3 (cf. article précédent), n'est en revanche concerné par aucune sanction de grille : sa réprimande reste un avertissement administratif, sans effet sur sa position de départ.</p>
   </div>
 </section>
 
@@ -107,7 +110,7 @@ export const ROUND15_QUALI_FR_HTML = `
         <tr><td>6</td><td class="driver"><span class="dot" style="background:#1B3A93"></span> Verstappen</td><td>Red Bull Racing</td><td>1:43,706</td><td>+1,180s (8<sup>e</sup> sur la grille officielle Q3)</td></tr>
         <tr><td>7</td><td class="driver"><span class="dot" style="background:#E8002D"></span> Hamilton</td><td>Ferrari</td><td>1:43,858</td><td>+1,332s (6<sup>e</sup> sur la grille officielle Q3)</td></tr>
         <tr><td>8</td><td class="driver"><span class="dot" style="background:#FF87BC"></span> Gasly</td><td>Alpine</td><td>1:44,047</td><td>+1,521s (7<sup>e</sup> sur la grille officielle Q3)</td></tr>
-        <tr><td>9</td><td class="driver"><span class="dot" style="background:#6C98FF"></span> Sainz</td><td>Williams</td><td>1:44,566</td><td>+2,040s</td></tr>
+        <tr><td>9</td><td class="driver"><span class="dot" style="background:#6C98FF"></span> Sainz</td><td>Williams</td><td>1:44,566</td><td>+2,040s (14<sup>e</sup> sur la grille, pénalité 5 places pour drapeaux jaunes)</td></tr>
         <tr><td>10</td><td class="driver"><span class="dot" style="background:#FF87BC"></span> Colapinto</td><td>Alpine</td><td>1:44,683</td><td>+2,157s</td></tr>
         <tr><td>11</td><td class="driver"><span class="dot" style="background:#B6BABD"></span> Bearman</td><td>Haas F1 Team</td><td>1:44,775</td><td>+2,249s</td></tr>
         <tr><td>12</td><td class="driver"><span class="dot" style="background:#2B4562"></span> Lawson</td><td>Racing Bulls</td><td>1:44,860</td><td>+2,334s</td></tr>
@@ -131,13 +134,13 @@ export const ROUND15_QUALI_FR_HTML = `
   <div class="prose">
     <h2 class="sectitle">Ce qu'il faut surveiller en course</h2>
     <p>Russell peut-il convertir la plus grosse marge de sa carrière en victoire, sur un circuit où l'aspiration dans la ligne droite principale (2,2 km, la plus longue du calendrier) peut réduire les écarts dès le premier tour ? Leclerc et Piastri, séparés d'un millième pour la P2, partagent la deuxième ligne — un dépassement pour la 2<sup>e</sup> place dès le départ n'est pas à exclure. Et surtout : Antonelli, relégué en P16 après son accident, doit désormais remonter tout un peloton pour limiter la casse — avec 81 points d'avance au championnat avant ce Grand Prix, la marge est confortable, mais une course blanche pendant que Russell gagne referme vite l'écart.</p>
-    <div class="callout">Rappel de méthode : le classement par meilleur tour de cette page couvre l'ensemble de la séance et recolle exactement aux temps officiels du Top 5, mais la grille réelle diffère à trois positions (6<sup>e</sup>-8<sup>e</sup>, voir section 06) et a été remaniée par la pénalité d'Alonso/Stroll — reconstituée ici uniquement à partir des éléments explicitement confirmés par Formula1.com et PlanetF1.</div>
+    <div class="callout">Rappel de méthode : le classement par meilleur tour de cette page couvre l'ensemble de la séance et recolle exactement aux temps officiels du Top 5, mais la grille réelle diffère à trois positions (6<sup>e</sup>-8<sup>e</sup>, voir section 06) et a été remaniée par les pénalités de Sainz (drapeaux jaunes) et d'Alonso/Stroll (groupe propulseur) — reconstituée ici uniquement à partir des éléments explicitement confirmés par Formula1.com et PlanetF1.</div>
   </div>
 </section>
 
 <section class="block" id="sec-q-8">
   <details class="sources">
-    <summary>Sources utilisées — Qualifications Bakou (4 liens externes)</summary>
+    <summary>Sources utilisées — Qualifications Bakou (5 liens externes)</summary>
     <div class="srcgroup">
       <h5>Données de séance</h5>
       <ul>
@@ -156,6 +159,7 @@ export const ROUND15_QUALI_FR_HTML = `
       <h5>Pénalités et championnat</h5>
       <ul>
         <li><a href="https://www.planetf1.com/news/fia-aston-martin-azerbaijan-grand-prix-2026-penalty" data-desc="Pénalité de groupe propulseur d'Alonso et Stroll, promotion de Pérez et Bottas.">PlanetF1 — pénalité Aston Martin</a><span class="desc">PlanetF1</span></li>
+        <li><a href="https://www.racefans.net/2026/09/25/2026-azerbaijan-grand-prix-grid/" data-desc="Liste des pénalités de grille de la session, dont celle de Sainz pour non-ralentissement sous drapeaux jaunes.">RaceFans — grille et pénalités</a><span class="desc">RaceFans — primaire</span></li>
         <li><span class="desc">The Pit Wall — scripts/standings_briefing.py (round 14), classement pilotes avant le Grand Prix d'Azerbaïdjan (Antonelli 292 pts, Russell 211 pts), primaire.</span></li>
       </ul>
     </div>
