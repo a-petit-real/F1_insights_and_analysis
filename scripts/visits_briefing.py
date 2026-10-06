@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 import psycopg
 
 BOT_PATTERN = re.compile(
-    r"bot|crawler|spider|slurp|pingdom|uptimerobot|facebookexternalhit|bingpreview|headlesschrome",
+    r"bot|crawler|spider|slurp|pingdom|uptimerobot|facebookexternalhit|bingpreview|headlesschrome|nomorevibe",
     re.IGNORECASE,
 )
 
