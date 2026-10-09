@@ -45,6 +45,7 @@ import { ROUND16_EL2_FR_HTML } from "../16/el2-fr";
 import { ROUND16_EL3_FR_HTML } from "../16/el3-fr";
 import { ROUND16_QUALI_FR_HTML } from "../16/quali-fr";
 import { ROUND16_ANALYSE_FR_HTML } from "../16/analyse-fr";
+import { ROUND17_EL1_FR_HTML } from "../17/el1-fr";
 import { useRoundSpoilerState } from "../../../lib/spoilerGuard";
 import { useLangPref } from "../../../lib/langPref";
 import { PTW_PICKS } from "../../../lib/ptwPicks";
@@ -548,6 +549,9 @@ const PRACTICE_FR_HTML = {
     "Practice 2": ROUND16_EL2_FR_HTML,
     "Practice 3": ROUND16_EL3_FR_HTML,
     "Qualifying": ROUND16_QUALI_FR_HTML,
+  },
+  17: {
+    "Practice 1": ROUND17_EL1_FR_HTML,
   },
 };
 
