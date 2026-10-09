@@ -46,6 +46,7 @@ import { ROUND16_EL3_FR_HTML } from "../16/el3-fr";
 import { ROUND16_QUALI_FR_HTML } from "../16/quali-fr";
 import { ROUND16_ANALYSE_FR_HTML } from "../16/analyse-fr";
 import { ROUND17_EL1_FR_HTML } from "../17/el1-fr";
+import { ROUND17_SPRINTQUALI_FR_HTML } from "../17/sprint-quali-fr";
 import { useRoundSpoilerState } from "../../../lib/spoilerGuard";
 import { useLangPref } from "../../../lib/langPref";
 import { PTW_PICKS } from "../../../lib/ptwPicks";
@@ -219,8 +220,8 @@ function formatLap(seconds) {
 // practice_* (cf. commentaire d'ingest_openf1_practice.py) et réutilise donc
 // le même composant PracticeTab — seul le libellé "Quali" et son ordre
 // d'affichage (après l'EL3, avant l'Analyse) sont spécifiques.
-const PRACTICE_LABELS = { "Practice 1": "EL1", "Practice 2": "EL2", "Practice 3": "EL3", "Qualifying": "Quali" };
-const PRACTICE_ORDER = ["Practice 1", "Practice 2", "Practice 3", "Qualifying"];
+const PRACTICE_LABELS = { "Practice 1": "EL1", "Practice 2": "EL2", "Practice 3": "EL3", "Sprint Qualifying": "SQ", "Sprint": "Sprint", "Qualifying": "Quali" };
+const PRACTICE_ORDER = ["Practice 1", "Practice 2", "Practice 3", "Sprint Qualifying", "Sprint", "Qualifying"];
 
 // Pré-analyses disponibles par round — écrites avant le week-end, donc
 // jamais gatées par l'anti-spoiler (rien à spoiler dans un pronostic).
@@ -552,6 +553,7 @@ const PRACTICE_FR_HTML = {
   },
   17: {
     "Practice 1": ROUND17_EL1_FR_HTML,
+    "Sprint Qualifying": ROUND17_SPRINTQUALI_FR_HTML,
   },
 };
 
