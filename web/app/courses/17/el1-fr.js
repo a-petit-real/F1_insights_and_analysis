@@ -9,10 +9,14 @@
 // ci-dessous) : les temps du top 5 concordent exactement à la milliseconde avec
 // la base (Russell 1:32,274, Leclerc +0,198s, Norris +0,273s, Hamilton +0,499s,
 // Piastri +0,564s), de même que l'ordre complet du classement jusqu'à la 22e
-// position. Citations de Russell ("the car feels very stiff") et de Hülkenberg
-// ("something bad happened on the gearbox") reprises telles quelles de cet
-// article, seule source où elles apparaissent. Aucune pré-analyse n'existe pour
-// ce round. Aucune donnée inventée.
+// position. Deuxième source indépendante, PlanetF1 (fetché en primaire via
+// fetch-url.yml), publie le même classement chiffré des 22 pilotes à la
+// milliseconde près, sans aucun écart — contrairement à la Sprint Qualifying de
+// ce même round, où le recoupement à deux sources a révélé une correction
+// nécessaire (cf. sprint-quali-fr.js). Citations de Russell ("the car feels very
+// stiff") et de Hülkenberg ("something bad happened on the gearbox") reprises
+// telles quelles de Formula1.com, seule source où elles apparaissent. Aucune
+// pré-analyse n'existe pour ce round. Aucune donnée inventée.
 export const ROUND17_EL1_FR_HTML = `
 <section class="block">
   <div class="prose">
@@ -100,7 +104,7 @@ export const ROUND17_EL1_FR_HTML = `
 
 <section class="block" id="sec-el1-6">
   <details class="sources">
-    <summary>Sources utilisées — EL1 Singapour (1 lien externe)</summary>
+    <summary>Sources utilisées — EL1 Singapour (2 liens externes)</summary>
     <div class="srcgroup">
       <h5>Données de séance</h5>
       <ul>
@@ -110,7 +114,8 @@ export const ROUND17_EL1_FR_HTML = `
     <div class="srcgroup">
       <h5>Recoupement et contexte narratif</h5>
       <ul>
-        <li><a href="https://www.formula1.com/en/latest/article/fp1-russell-beats-leclerc-and-norris-to-top-spot-in-sole-practice-ahead-of-singapore-gp.6gZxy1UbfI5R8VLWXUBwZu" data-desc="Rapport officiel EL1 : déroulé complet, citations de Russell et Hülkenberg, classement — concorde exactement avec la base à la milliseconde près.">Formula1.com — rapport EL1</a><span class="desc">Formula1.com</span></li>
+        <li><a href="https://www.formula1.com/en/latest/article/fp1-russell-beats-leclerc-and-norris-to-top-spot-in-sole-practice-ahead-of-singapore-gp.6gZxy1UbfI5R8VLWXUBwZu" data-desc="Rapport officiel EL1 : déroulé complet, citations de Russell et Hülkenberg, classement — concorde exactement avec la base à la milliseconde près.">Formula1.com — rapport EL1</a><span class="desc">Formula1.com — primaire</span></li>
+        <li><a href="https://www.planetf1.com/news/f1-results-singapore-grand-prix-2026-fp1" data-desc="Classement chiffré des 22 pilotes, fetché en primaire — confirme sans le moindre écart le classement de Formula1.com et de la base.">PlanetF1 — résultats détaillés</a><span class="desc">PlanetF1 — primaire</span></li>
       </ul>
     </div>
   </details>

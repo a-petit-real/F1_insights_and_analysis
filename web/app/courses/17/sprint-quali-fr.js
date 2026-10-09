@@ -4,15 +4,39 @@
 // --session "Sprint Qualifying"), classement/secteurs/relais/météo vérifiés
 // directement depuis la base via scripts/practice_briefing.py (session_key 11379,
 // 2026-10-09 12:30->13:14 UTC, soit 20:30->21:14 heure locale de Singapour, sous
-// les projecteurs). Classement et écarts du top 5 concordent exactement à la
+// les projecteurs). Classement et écarts du top 7 concordent exactement à la
 // milliseconde avec le rapport officiel Formula1.com (fetché en primaire via
 // fetch-url.yml) : Verstappen 1:31,156, Russell +0,120s, Leclerc +0,243s, Piastri
-// +0,298s, Norris +0,431s — tout comme le reste du classement jusqu'à la 22e
-// position et les éliminations SQ1/SQ2. Citation de Verstappen reprise telle
-// quelle de cet article, seule source où elle apparaît. Pas de pénalité de grille
-// annoncée pour ce Sprint à l'heure de la rédaction — l'enquête pour drapeaux
-// jaunes en SQ1 s'est conclue sans sanction, décision également confirmée par
-// cet article. Aucune donnée inventée.
+// +0,298s, Norris +0,431s, Hamilton +0,546s, Antonelli +0,693s. Citation de
+// Verstappen reprise telle quelle de cet article, seule source où elle apparaît.
+//
+// Recoupement à deux sources (Formula1.com + PlanetF1, fetch-url.yml en primaire
+// pour les deux) qui a révélé une correction nécessaire par rapport au premier
+// jet de cet article : le classement par "meilleur tour toutes phases confondues"
+// issu du pipeline OpenF1 plaçait Hadjar 8e (1:32,048) devant Lawson et Gasly —
+// mais PlanetF1 publie le détail chiffré SQ1/SQ2/SQ3 (table complète par phase)
+// qui montre que ce tour de 1:32,048 a été supprimé pour dépassement des limites
+// de piste au dernier virage (confirmé aussi par la formule de Formula1.com,
+// "Hadjar failing to record a lap in SQ3 after breaching track limits") : Hadjar
+// n'a donc OFFICIELLEMENT aucun temps en SQ3 et se classe 10e, derrière Lawson
+// (8e, 1:32,341) et Gasly (9e, 1:33,319 — son temps de SQ3, plus lent que son
+// propre temps de SQ2 à 1:33,155, mais c'est la phase SQ3 qui fait foi pour le
+// classement, pas le meilleur tour toutes phases confondues). Corrigé ci-dessous
+// par rapport à la version initialement publiée.
+//
+// Un second écart entre les deux sources, cette fois non résolu : PlanetF1 classe
+// Pérez 20e (1:36,760) et Sainz 22e (1:37,376) sur les positions d'élimination en
+// SQ1, alors que Formula1.com affirme explicitement que "Sainz partagera la
+// dernière ligne de la grille avec Pérez" ce week-end (soit 21e/22e) — ce que
+// confirme indépendamment notre propre base (meilleur tour valide de Pérez à
+// 1:37,830, plus lent que celui de Sainz à 1:37,376). Les positions 19/20/21/22
+// ci-dessous suivent donc Formula1.com + la base (Albon 19e, Bottas 20e, Sainz
+// 21e, Pérez 22e) plutôt que le tableau chiffré de PlanetF1 sur ce point précis,
+// qui semble en contradiction avec son propre article Formula1.com et avec notre
+// classement par tour valide — à vérifier au prochain passage si une source
+// tierce permet de trancher. Pas de pénalité de grille annoncée pour ce Sprint à
+// l'heure de la rédaction — l'enquête pour drapeaux jaunes en SQ1 s'est conclue
+// sans sanction, décision confirmée par les deux sources. Aucune donnée inventée.
 export const ROUND17_SPRINTQUALI_FR_HTML = `
 <section class="block">
   <div class="prose">
@@ -55,7 +79,8 @@ export const ROUND17_SPRINTQUALI_FR_HTML = `
   <div class="prose">
     <h2 class="sectitle"><span class="num">03</span> SQ3 — Verstappen rafle la pole dans les dernières secondes</h2>
     <p>Feu vert pour le dernier acte, mais Ferrari, Red Bull et le duo Lawson/Gasly patientent dans leurs garages plutôt que de s'engager immédiatement. L'attente laisse le champ libre à Norris, qui pousse ses pneus tendres jusqu'à leur limite pour s'emparer provisoirement de la tête en 1:31,587, Piastri lui collant aux basques en P2 — aucune des deux Mercedes ne peut alors répondre à l'offensive McLaren.</p>
-    <p>Leclerc vient ensuite devancer Norris de seulement 0,019s, mais malgré ses efforts, Hamilton ne peut faire mieux que la P3 derrière lui, son temps retombant en fin de tour. Il reste alors juste assez de temps pour que Red Bull vienne tout renverser : Verstappen frappe fort dès le premier secteur et conserve cet élan sur l'ensemble du tour pour s'emparer de la pole du Sprint, sans qu'aucun rival ne puisse répondre à son 1:31,156 final. Russell se classe au plus près pour Mercedes, suivi de Leclerc, Piastri et Norris. Hamilton termine finalement à un demi-seconde en P6, devant Antonelli, Lawson, Hadjar et Gasly qui bouclent le top 10.</p>
+    <p>Leclerc vient ensuite devancer Norris de seulement 0,019s, mais malgré ses efforts, Hamilton ne peut faire mieux que la P3 derrière lui, son temps retombant en fin de tour. Il reste alors juste assez de temps pour que Red Bull vienne tout renverser : Verstappen frappe fort dès le premier secteur et conserve cet élan sur l'ensemble du tour pour s'emparer de la pole du Sprint, sans qu'aucun rival ne puisse répondre à son 1:31,156 final. Russell se classe au plus près pour Mercedes, suivi de Leclerc, Piastri et Norris. Hamilton termine finalement à un demi-seconde en P6, devant Antonelli.</p>
+    <p>Derrière ces sept premiers, Lawson complète le top 8 (1:32,341), devant Gasly (1:33,319) — plus lent que son propre temps de SQ2 (1:33,155), mais c'est bien le temps signé en SQ3 qui compte pour le classement, pas le meilleur chrono toutes phases confondues. Hadjar, lui, ferme le top 10 sans le moindre temps officiel en SQ3 : son tour, pourtant plus rapide que ceux de Lawson et Gasly, a été supprimé pour dépassement des limites de piste au tout dernier virage de sa tentative finale.</p>
     <blockquote class="pull-quote">« C'est toujours serré ici à Singapour. Et le tour lui-même aussi — on pousse aussi fort qu'on pense que c'est possible, en frôlant les murs à certains endroits. Une fois les pneus tendres montés, la voiture a clairement pris vie, mais je ne m'attendais pas à ça. Évidemment, très content d'être devant. » <cite>— Max Verstappen</cite></blockquote>
   </div>
 </section>
@@ -64,7 +89,7 @@ export const ROUND17_SPRINTQUALI_FR_HTML = `
   <div class="sec-marker"><span class="n">04</span><span class="t"></span></div>
   <div class="prose">
     <h2 class="sectitle"><span class="num">04</span> Classement complet Sprint Qualifying</h2>
-    <p>La grille du Sprint de samedi (21 tours, départ à 17h00 heure locale) reprend directement ce classement — aucune pénalité de grille n'a été annoncée à l'heure de la rédaction.</p>
+    <p>La grille du Sprint de samedi (21 tours, départ à 17h00 heure locale) reprend directement ce classement — aucune pénalité de grille n'a été annoncée à l'heure de la rédaction. Classement officiel par phase (SQ1/SQ2/SQ3), recoupé entre Formula1.com et PlanetF1 ; voir le commentaire de sourcing en tête de fichier pour le détail des deux corrections qu'a imposées ce recoupement (positions 8-10, et un désaccord non résolu sur les positions 20/22).</p>
   </div>
   <div class="tablewrap prose" style="max-width:100%;">
     <table>
@@ -77,9 +102,9 @@ export const ROUND17_SPRINTQUALI_FR_HTML = `
         <tr><td>5</td><td class="driver"><span class="dot" style="background:#FF8000"></span> Norris</td><td>McLaren</td><td>1:31,587</td><td>+0,431s</td></tr>
         <tr><td>6</td><td class="driver"><span class="dot" style="background:#E8002D"></span> Hamilton</td><td>Ferrari</td><td>1:31,702</td><td>+0,546s</td></tr>
         <tr><td>7</td><td class="driver"><span class="dot" style="background:#00A19B"></span> Antonelli</td><td>Mercedes</td><td>1:31,849</td><td>+0,693s</td></tr>
-        <tr><td>8</td><td class="driver"><span class="dot" style="background:#1B3A93"></span> Hadjar</td><td>Red Bull Racing</td><td>1:32,048</td><td>+0,892s</td></tr>
-        <tr><td>9</td><td class="driver"><span class="dot" style="background:#2B4562"></span> Lawson</td><td>Racing Bulls</td><td>1:32,341</td><td>+1,185s</td></tr>
-        <tr><td>10</td><td class="driver"><span class="dot" style="background:#FF87BC"></span> Gasly</td><td>Alpine</td><td>1:33,155</td><td>+1,999s</td></tr>
+        <tr><td>8</td><td class="driver"><span class="dot" style="background:#2B4562"></span> Lawson</td><td>Racing Bulls</td><td>1:32,341</td><td>+1,185s</td></tr>
+        <tr><td>9</td><td class="driver"><span class="dot" style="background:#FF87BC"></span> Gasly</td><td>Alpine</td><td>1:33,319</td><td>+2,163s</td></tr>
+        <tr><td>10</td><td class="driver"><span class="dot" style="background:#1B3A93"></span> Hadjar</td><td>Red Bull Racing</td><td>— (pas de temps)</td><td>Tour de SQ3 supprimé pour limites de piste au dernier virage — classé devant les éliminés de SQ2</td></tr>
         <tr><td>11</td><td class="driver"><span class="dot" style="background:#FF87BC"></span> Colapinto</td><td>Alpine</td><td>1:33,249</td><td>+2,093s (éliminé en SQ2)</td></tr>
         <tr><td>12</td><td class="driver"><span class="dot" style="background:#00302B"></span> Hülkenberg</td><td>Audi</td><td>1:33,420</td><td>+2,264s (éliminé en SQ2)</td></tr>
         <tr><td>13</td><td class="driver"><span class="dot" style="background:#B6BABD"></span> Bearman</td><td>Haas F1 Team</td><td>1:33,423</td><td>+2,267s (éliminé en SQ2)</td></tr>
@@ -91,7 +116,7 @@ export const ROUND17_SPRINTQUALI_FR_HTML = `
         <tr><td>19</td><td class="driver"><span class="dot" style="background:#6C98FF"></span> Albon</td><td>Williams</td><td>1:36,130</td><td>+4,974s (éliminé en SQ1, "voiture complètement différente de la séance d'essais")</td></tr>
         <tr><td>20</td><td class="driver"><span class="dot" style="background:#C9A24B"></span> Bottas</td><td>Cadillac</td><td>1:36,868</td><td>+5,712s (éliminé en SQ1)</td></tr>
         <tr><td>21</td><td class="driver"><span class="dot" style="background:#6C98FF"></span> Sainz</td><td>Williams</td><td>1:37,376</td><td>+6,220s (éliminé en SQ1)</td></tr>
-        <tr><td>22</td><td class="driver"><span class="dot" style="background:#C9A24B"></span> Pérez</td><td>Cadillac</td><td>1:37,830</td><td>+6,674s (accident virage 4, drapeau rouge en SQ1)</td></tr>
+        <tr><td>22</td><td class="driver"><span class="dot" style="background:#C9A24B"></span> Pérez</td><td>Cadillac</td><td>1:37,830</td><td>+6,674s (accident virage 4, drapeau rouge en SQ1 ; PlanetF1 publie 1:36,760 et le classe 20<sup>e</sup>, en contradiction avec son propre papier Formula1.com qui place Pérez et Sainz sur la dernière ligne de la grille — voir note de sourcing)</td></tr>
       </tbody>
     </table>
   </div>
@@ -107,7 +132,7 @@ export const ROUND17_SPRINTQUALI_FR_HTML = `
 
 <section class="block" id="sec-sq-6">
   <details class="sources">
-    <summary>Sources utilisées — Sprint Qualifying Singapour (1 lien externe)</summary>
+    <summary>Sources utilisées — Sprint Qualifying Singapour (2 liens externes)</summary>
     <div class="srcgroup">
       <h5>Données de séance</h5>
       <ul>
@@ -118,6 +143,7 @@ export const ROUND17_SPRINTQUALI_FR_HTML = `
       <h5>Déroulé SQ1/SQ2/SQ3, enquête et citation</h5>
       <ul>
         <li><a href="https://www.formula1.com/en/latest/article/verstappen-clinches-pole-position-in-singapore-sprint-qualifying-ahead-of-russell.4dvkvpkCXftdhX7sLI2dcQ" data-desc="Rapport officiel de la Sprint Qualifying, fetché en primaire — déroulé complet par phase, enquête sur le drapeau jaune de Verstappen, citation.">Formula1.com — rapport Sprint Qualifying</a><span class="desc">Formula1.com — primaire</span></li>
+        <li><a href="https://www.planetf1.com/news/f1-results-singapore-grand-prix-2026-sprint-qualifying" data-desc="Classement chiffré détaillé des trois phases SQ1/SQ2/SQ3, fetché en primaire — a révélé la suppression du tour de Hadjar en SQ3 et un désaccord avec Formula1.com sur les positions 20/22.">PlanetF1 — résultats détaillés par phase</a><span class="desc">PlanetF1 — primaire</span></li>
       </ul>
     </div>
   </details>
