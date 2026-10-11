@@ -22,7 +22,8 @@ import psycopg
 
 BOT_PATTERN = re.compile(
     r"bot|crawler|spider|slurp|pingdom|uptimerobot|facebookexternalhit|bingpreview|headlesschrome|nomorevibe"
-    r"|go-http-client|python-requests|axios|okhttp|libwww-perl|scrapy|node-fetch|^curl/|^wget/|^java/",
+    r"|go-http-client|python-requests|axios|okhttp|libwww-perl|scrapy|node-fetch|^curl/|^wget/|^java/"
+    r"|^vercel-",
     re.IGNORECASE,
 )
 
