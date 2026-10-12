@@ -80,6 +80,8 @@ Il n'y a pas d'interface d'édition ni de CMS. Un article est un fichier JS stat
 - Il faut aussi inclure obligatoirement (en le précisant clairement dans l'article) des éléments de communications repris directement par les pilotes, sur leurs sites ou leurs réseaux sociaux
 - La section `details.sources` de l'article doit refléter ce sourcing élargi (lister chaque source effectivement utilisée, pas seulement les deux premières consultées).
 
+Liste de référence des sources (par catégorie institutionnelle/généraliste/technique, par langue, journalistes indépendants, avec incertitudes signalées) : [`docs/SOURCES.md`](SOURCES.md). Document vivant tenu à jour avec l'utilisateur — s'y référer avant de chercher une source, et le compléter/corriger au fil de l'eau plutôt que de refaire la recherche depuis zéro à chaque article.
+
 ## Passer à une nouvelle saison
 
 `season = 2026` est **codé en dur** à quatre endroits : `web/app/page.jsx`, `web/app/courses/page.jsx`, `web/app/courses/[round]/page.jsx`, `web/app/classement/page.jsx`. Pas de variable d'environnement ni de détection automatique. Au changement de saison, mettre à jour les quatre (et le `default: "2026"` des deux workflows OpenF1).
