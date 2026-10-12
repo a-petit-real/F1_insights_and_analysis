@@ -76,16 +76,12 @@
 //   seul n'est jamais une garantie suffisante, seule la lecture du contenu
 //   fetché fait foi. Aucune citation directe de pilote n'a donc été ajoutée
 //   à cet article faute de source vérifiée pour ce round précis.
-// - scripts/race_briefing.py confirme qu'aucune donnée tour-par-tour
-//   (lap_times/tyre_stints/pit-stops) n'est encore ingérée en base pour le
-//   round 17 — seules la météo et les race_control_messages le sont. Les
-//   sources techniques pointues ajoutées à docs/SOURCES.md (TracingInsights,
-//   Armchair Strategist, etc.) ne pouvaient donc pas être appliquées à ce
-//   round précis sous forme de télémétrie chiffrée ; l'enrichissement ci-
-//   dessous applique plutôt la même rigueur analytique directement aux
-//   race_control_messages déjà en base, via une relecture complète
-//   (scripts/race_briefing_full_rcm.py, non filtrée) plutôt que le résumé
-//   partiel utilisé pour la première rédaction.
+// - scripts/race_briefing.py confirmait à ce moment-là qu'aucune donnée
+//   tour-par-tour (lap_times/tyre_stints/pit-stops) n'était encore ingérée
+//   en base pour le round 17 — seules la météo et les race_control_messages
+//   l'étaient, ce qui limitait cette première passe à une relecture plus
+//   fine des race_control_messages plutôt qu'à une vraie analyse de rythme
+//   (voir note du 2026-10-12 ci-dessous, en deux temps, pour la suite).
 // - Cette relecture complète corrige une imprécision de la version publiée :
 //   les quatre dépassements de limites de piste d'Antonelli n'étaient PAS
 //   tous au virage 2 (seuls les tours 19 et 20 le sont ; le tour 35 est au
@@ -105,6 +101,30 @@
 //   systémique du circuit cette année-là, jamais signalé comme tel par
 //   aucune des quatre sources médiatiques utilisées pour la version
 //   initiale, qui ne mentionnaient chacune que le cas Antonelli isolément.
+//
+// Suite (2026-10-12, même journée) : l'utilisateur a jugé, à raison, que
+// l'enrichissement ci-dessus (limites de piste) ne constituait pas une
+// vraie analyse technique voiture/stratégie — c'était un renforcement de
+// rigueur sur les incidents, pas sur le rythme ou la performance. Cause
+// identifiée : le round 17 venait de se terminer la veille (10 octobre),
+// et le pipeline OpenF1 bloque tout accès (y compris aux données
+// historiques) tant qu'une séance F1 est live quelque part — lap_times et
+// tyre_stints n'avaient donc jamais été ingérés pour ce round. La course
+// étant terminée, une ré-ingestion (workflow ingest-openf1.yml, round 17)
+// a permis de récupérer 1240 lignes de lap_times et 47 lignes de
+// tyre_stints réelles. race_briefing.py et race_briefing_laptimes.py
+// résolvent le nom du pilote via une jointure sur `results` (pipeline
+// Jolpica), encore vide pour ce round — d'où l'ajout d'un script dédié
+// (scripts/race_briefing_laptimes_by_car.py) interrogeant lap_times/
+// tyre_stints directement par numéro de voiture. Toutes les moyennes de
+// rythme et vitesses de pointe citées plus bas dans l'article (Hamilton
+// vs Leclerc/Antonelli en fin de course, gestion de Verstappen, écart de
+// vitesse de pointe Red Bull/McLaren/Mercedes) viennent de cette requête,
+// avec une méthode simple et explicite : moyenne des tours d'un relais
+// donné, tours d'entrée/sortie de stand exclus, puis tours encore
+// supérieurs à 103% de la médiane du relais également exclus (pour
+// neutraliser l'effet des phases sous VSC/trafic plutôt que de les
+// confondre avec un vrai delta de performance).
 export const ROUND17_ANALYSE_FR_HTML = `
 <div class="hero prose">
       <p class="eyebrow">Grand Prix de Singapour · Marina Bay · 2026</p>
@@ -165,19 +185,19 @@ export const ROUND17_ANALYSE_FR_HTML = `
         <h2 class="sectitle"><span class="num">03</span> Les principales décisions stratégiques</h2>
 
         <h3 class="subtitle">Ferrari — un arrêt précoce payant pour Hamilton, un débat stratégique qui coûte le podium</h3>
-        <p>Premier pilote du haut du classement à s'arrêter (tour 19), Hamilton bénéficie d'un train de pneus frais qui lui permet de remonter jusqu'à la 3<sup>e</sup> place avant que l'écurie ne débatte en interne de la pertinence d'un second arrêt. Le choix de ne pas en effectuer un — une décision que Hamilton reconnaîtra lui-même par radio en fin de course — le laisse exposé sur des gommes vieillissantes face à Antonelli et Norris dans les derniers tours, le reléguant à la 6<sup>e</sup> place. Leclerc, grâce à deux arrêts mieux temporisés autour de la seconde Voiture de Sécurité Virtuelle, complète lui une remontée jusqu'à la 2<sup>e</sup> place.</p>
+        <p>Premier pilote du haut du classement à s'arrêter (tour 19), Hamilton bénéficie d'un train de pneus frais qui lui permet de remonter jusqu'à la 3<sup>e</sup> place avant que l'écurie ne débatte en interne de la pertinence d'un second arrêt. Le choix de ne pas en effectuer un — une décision que Hamilton reconnaîtra lui-même par radio en fin de course — le laisse exposé sur des gommes vieillissantes face à Antonelli et Norris dans les derniers tours, le reléguant à la 6<sup>e</sup> place. Les temps au tour confirment l'ampleur du coût : sur son unique relais tendre, étiré sur 44 tours (19 à 62), Hamilton tourne à 1:37,82 de moyenne (tours représentatifs, hors entrée/sortie de stand et phases neutralisées) — contre 1:36,24 pour Leclerc sur son dernier relais, également en tendre mais chaussé 15 tours plus tard (tour 40) et donc nettement plus frais en fin de course. Cet écart de près de 1,6 seconde au tour, pas un incident de pilotage, explique mécaniquement pourquoi Antonelli puis Norris et Piastri l'ont rattrapé puis dépassé dans les derniers tours. Leclerc, grâce à deux arrêts mieux temporisés autour de la seconde Voiture de Sécurité Virtuelle, complète lui une remontée jusqu'à la 2<sup>e</sup> place.</p>
 
         <h3 class="subtitle">Mercedes — Antonelli sur le podium malgré quatre avertissements à trois virages différents, Russell pénalisé par le timing de son arrêt</h3>
-        <p>Antonelli signe un podium à la 3<sup>e</sup> place malgré quatre dépassements des limites de piste répartis sur trois virages différents — au 2 (tours 19 et 20), au 19 (tour 35) puis au 7 (tour 40) — sans qu'aucun ne déclenche la pénalité automatique de cinq secondes habituellement appliquée à la quatrième infraction. Le troisième de ces dépassements (tour 35, virage 19) lui vaut un drapeau noir et blanc d'avertissement, le signal le plus sévère avant la pénalité ferme — sans conséquence sportive, Antonelli profitant ensuite d'un second arrêt bien placé autour de la Voiture de Sécurité Virtuelle pour s'intercaler entre les deux McLaren puis prendre la 3<sup>e</sup> place à Hamilton dans les derniers tours. Russell, lui, paie le prix d'un arrêt effectué juste à la reprise de la VSC plutôt que pendant — un décalage de quelques secondes qui l'empêche de profiter du même gain que ses rivaux — et reste ensuite bloqué derrière Hülkenberg jusqu'au drapeau, à une place de faire encore mieux ; sa remontée depuis la 19<sup>e</sup> place jusqu'à la 9<sup>e</sup> reste néanmoins l'une des plus solides du jour.</p>
+        <p>Antonelli signe un podium à la 3<sup>e</sup> place malgré quatre dépassements des limites de piste répartis sur trois virages différents — au 2 (tours 19 et 20), au 19 (tour 35) puis au 7 (tour 40) — sans qu'aucun ne déclenche la pénalité automatique de cinq secondes habituellement appliquée à la quatrième infraction. Le troisième de ces dépassements (tour 35, virage 19) lui vaut un drapeau noir et blanc d'avertissement, le signal le plus sévère avant la pénalité ferme — sans conséquence sportive, Antonelli profitant ensuite d'un second arrêt bien placé autour de la Voiture de Sécurité Virtuelle pour s'intercaler entre les deux McLaren puis prendre la 3<sup>e</sup> place à Hamilton dans les derniers tours. Sur ce dernier relais (tours 40-62, tendre comme Hamilton), Antonelli tourne à 1:36,59 de moyenne — à peine plus lent que Leclerc et plus d'une seconde devant Hamilton sur une gomme équivalente, confirmant que son dépassement au virage 16 tenait autant au rythme qu'au geste de pilotage. Russell, lui, paie le prix d'un arrêt effectué juste à la reprise de la VSC plutôt que pendant — un décalage de quelques secondes qui l'empêche de profiter du même gain que ses rivaux — et reste ensuite bloqué derrière Hülkenberg jusqu'au drapeau, à une place de faire encore mieux. Son premier relais (medium, 39 tours — le plus long relais sur cette gomme de toute la course) tourne à 1:39,31 de moyenne, le rythme le plus lent des sept pilotes de tête analysés sur cette phase, cohérent avec une remontée méthodique plutôt qu'une attaque pure depuis le fond de grille ; sa remontée depuis la 19<sup>e</sup> place jusqu'à la 9<sup>e</sup> reste néanmoins l'une des plus solides du jour.</p>
 
         <h3 class="subtitle">Aston Martin — Stroll sous enquête avant même le départ, puis averti en piste</h3>
         <p>Dès le départ simulé, un incident impliquant Stroll pour un possible manquement aux instructions de la direction de course est signalé et renvoyé à une enquête après la course — enquête dont l'issue n'apparaît pas dans les messages de course disponibles avant le drapeau à damier. En course, Stroll écope lui aussi d'un drapeau noir et blanc pour limites de piste (tour 36, virage 7), après deux dépassements déjà notés au virage 2 (tours 19 et 20) — comme pour Antonelli, sans pénalité automatique déclenchée. Son week-end s'achève de toute façon prématurément par l'abandon du 36<sup>e</sup> tour pour un problème d'embrayage.</p>
 
-        <h3 class="subtitle">Red Bull — Verstappen imperturbable, Hadjar récompensé par sa remontée</h3>
-        <p>Verstappen ne cède jamais la tête de la course, gérant son unique arrêt (tour 33) sans jamais perdre le commandement — une deuxième victoire consécutive obtenue par une gestion de course sans la moindre erreur, malgré des soucis radio en fin de parcours. Hadjar, parti de la voie des stands après sa panne en qualifications, boucle une remontée jusqu'à la 10<sup>e</sup> place et marque son premier point du week-end sur ce format, un résultat à mettre en miroir avec sa performance similaire en Sprint Qualifying la veille.</p>
+        <h3 class="subtitle">Red Bull — Verstappen imperturbable malgré le plus petit moteur en ligne droite du plateau, Hadjar récompensé par sa remontée</h3>
+        <p>Verstappen ne cède jamais la tête de la course, gérant son unique arrêt (tour 33) sans jamais perdre le commandement — une deuxième victoire consécutive obtenue par une gestion de course sans la moindre erreur, malgré des soucis radio en fin de parcours. Son rythme progresse même au fil de la course plutôt que de se dégrader : 1:37,72 de moyenne sur son relais tendre (tours 1-32) puis 1:36,75 sur le relais medium final (tours 33-62), signe d'une gestion prudente du train usé avant l'arrêt suivie d'une attaque maîtrisée sur gomme fraîche. Fait technique notable : sa vitesse de pointe relevée en ligne droite (295 km/h) est la plus faible des sept pilotes de tête analysés ici, loin derrière Russell (308 km/h) ou les deux McLaren (306-307 km/h) — un compromis appuyance/traînée assumé par Red Bull plutôt qu'un handicap, puisqu'il reste imbattable sur l'ensemble du tour. Hadjar, parti de la voie des stands après sa panne en qualifications, boucle une remontée jusqu'à la 10<sup>e</sup> place et marque son premier point du week-end sur ce format, un résultat à mettre en miroir avec sa performance similaire en Sprint Qualifying la veille.</p>
 
-        <h3 class="subtitle">McLaren — une fin de course payante pour Norris et Piastri</h3>
-        <p>Les deux McLaren profitent des derniers tours pour grappiller chacune une place dans le money-time du Grand Prix : Norris reprend la 4<sup>e</sup> place à un Hamilton en difficulté sur ses pneus, et Piastri imite le mouvement un instant plus tard pour s'emparer de la 5<sup>e</sup> place au même pilote, au même virage. Un résultat qui doit davantage à la gestion des pneus adverses qu'à une performance brute dominante ce dimanche.</p>
+        <h3 class="subtitle">McLaren — une fin de course payante pour Norris et Piastri, la vitesse de pointe la plus régulière du plateau</h3>
+        <p>Les deux McLaren profitent des derniers tours pour grappiller chacune une place dans le money-time du Grand Prix : Norris reprend la 4<sup>e</sup> place à un Hamilton en difficulté sur ses pneus, et Piastri imite le mouvement un instant plus tard pour s'emparer de la 5<sup>e</sup> place au même pilote, au même virage. Les temps au tour confirment que ce n'est pas qu'une question de pneus adverses : sur leurs relais finaux (medium pour Norris, tours 33-62, à 1:37,18 de moyenne ; tendre pour Piastri, tours 42-62 après un second arrêt précipité par une lente crevaison, à 1:36,38), les deux McLaren affichent un rythme supérieur à celui de Hamilton (1:37,82) sur la même phase de course, avec parmi les vitesses de pointe en ligne droite les plus élevées du peloton de tête (306-307 km/h, derrière Russell à 308).</p>
       </div>
     </section>
 
@@ -291,8 +311,9 @@ export const ROUND17_ANALYSE_FR_HTML = `
         <div class="srcgroup">
           <h5>Données de course</h5>
           <ul>
-            <li><span class="desc">The Pit Wall — pipeline production (météo/messages de course via scripts/ingest_openf1.py), primaire ; classement officiel, grille de départ et points via Formula1.com en l'absence de résultats Jolpica/temps au tour disponibles en base pour ce round à l'heure de la rédaction.</span></li>
+            <li><span class="desc">The Pit Wall — pipeline production (météo/messages de course/temps au tour/pneus via scripts/ingest_openf1.py), primaire ; classement officiel, grille de départ et points via Formula1.com en l'absence de résultats Jolpica disponibles en base pour ce round à l'heure de la rédaction.</span></li>
             <li><span class="desc">Relecture complète et non filtrée des race_control_messages (scripts/race_briefing_full_rcm.py), ajoutée le 12 octobre 2026 à la demande explicite de l'utilisateur d'un sourcing plus technique : corrige l'attribution par virage des dépassements de limites de piste d'Antonelli et ajoute les faits Stroll (drapeau noir et blanc, enquête dès le départ simulé) et le constat agrégé sur le virage 2, absents de la version initiale et d'aucune des quatre sources médiatiques ci-dessous.</span></li>
+            <li><span class="desc">Temps au tour et relais pneus par numéro de voiture (scripts/race_briefing_laptimes_by_car.py, nouveau), ajoutés le 12 octobre 2026 après ré-ingestion OpenF1 post-course (lap_times/tyre_stints n'étaient pas encore en base lors de la rédaction initiale) : moyennes de rythme par relais, vitesses de pointe en ligne droite — source de tous les chiffres de rythme chiffré et de vitesse de pointe cités dans la section 03.</span></li>
           </ul>
         </div>
         <div class="srcgroup">
