@@ -79,6 +79,7 @@ Il n'y a pas d'interface d'édition ni de CMS. Un article est un fichier JS stat
 - Pour chaque article, il faut minimum (plus serait très apprécié) 2 sites généralistes et 2 sites plus techniques avec des analyses pointues. En plus de ces sources, il faut aller chercher sur tous les sites institutionnels de chacune des écuries, de Pirelli, des instances dirigeantes de la F1.
 - Il faut aussi inclure obligatoirement (en le précisant clairement dans l'article) des éléments de communications repris directement par les pilotes, sur leurs sites ou leurs réseaux sociaux
 - La section `details.sources` de l'article doit refléter ce sourcing élargi (lister chaque source effectivement utilisée, pas seulement les deux premières consultées).
+- **Zéro contenu "people"** : aucune information sur la vie privée des pilotes/personnel (couples, famille, rumeurs, controverses hors piste) ne doit jamais apparaître dans un article, même si la source utilisée par ailleurs pour le factuel en publie à côté (plusieurs sites listés dans `docs/SOURCES.md` sont marqués "tabloïd" — leur contenu course/technique reste utilisable, leur volet "people" jamais).
 
 Liste de référence des sources (par catégorie institutionnelle/généraliste/technique, par langue, journalistes indépendants, avec incertitudes signalées) : [`docs/SOURCES.md`](SOURCES.md). Document vivant tenu à jour avec l'utilisateur — s'y référer avant de chercher une source, et le compléter/corriger au fil de l'eau plutôt que de refaire la recherche depuis zéro à chaque article.
 
