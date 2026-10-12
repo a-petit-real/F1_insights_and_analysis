@@ -155,6 +155,22 @@ ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS t_s REAL[];
 ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS x_m REAL[];
 ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS y_m REAL[];
 
+-- Canaux complémentaires FastF1 (scripts/ingest_fastf1.py, runner
+-- auto-hébergé — cf. ce script pour le pourquoi) : OpenF1 (ci-dessus) ne
+-- donne que position + vitesse en accès gratuit, pas gaz/frein/rapport/
+-- régime/DRS. Colonnes nullable, remplies UNIQUEMENT quand l'ingestion
+-- FastF1 a pu tourner (dépend du runner auto-hébergé de l'utilisateur,
+-- jamais garanti) — un article ne doit jamais supposer leur présence.
+-- Grille temporelle PROPRE à FastF1 (t_s_fastf1, secondes depuis le début
+-- du tour selon FastF1), distincte de t_s (grille OpenF1 ci-dessus) :
+-- échantillonnages différents, ne jamais zipper les deux par index.
+ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS throttle_pct REAL[];
+ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS brake BOOLEAN[];
+ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS n_gear SMALLINT[];
+ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS rpm REAL[];
+ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS drs SMALLINT[];
+ALTER TABLE lap_telemetry ADD COLUMN IF NOT EXISTS t_s_fastf1 REAL[];
+
 -- Séances d'essais libres (EL1/EL2/EL3) — schéma séparé des tables de course
 -- ci-dessus plutôt qu'une extension de celles-ci : une course a exactement
 -- une session de course mais jusqu'à trois séances d'essais, donc la clé

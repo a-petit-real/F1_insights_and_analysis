@@ -1,0 +1,33 @@
+name: Ingestion FastF1 (gaz/frein/rapport/régime/DRS — runner auto-hébergé)
+
+# Ne tourne PAS sur un runner GitHub-hébergé : livetiming.formula1.com (la
+# source de FastF1) bloque les IP datacenter, cf. scripts/ingest_fastf1.py.
+# Nécessite un runner auto-hébergé enregistré sur ce repo avec le label
+# "fastf1" (en plus du label "self-hosted" par défaut) — voir les
+# instructions d'installation fournies séparément. Si ce runner n'est pas
+# en ligne, le job reste en file d'attente côté GitHub plutôt que d'échouer ;
+# aucun autre workflow de ce repo n'en dépend.
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2026"
+      round:
+        description: "Round (course uniquement pour l'instant — cf. ingest_fastf1.py)"
+        required: true
+      cars:
+        description: "Numéros de voiture séparés par des virgules (vide = tout le plateau)"
+        required: false
+
+jobs:
+  ingest:
+    runs-on: [self-hosted, fastf1]
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -r scripts/requirements-fastf1.txt
+      - run: |
+          python scripts/ingest_fastf1.py --season "${{ inputs.season }}" --round "${{ inputs.round }}" \
+            ${{ inputs.cars != '' && format('--cars {0}', inputs.cars) || '' }}
