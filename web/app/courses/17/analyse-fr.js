@@ -12,29 +12,54 @@
 // également fetché en primaire, daté du 11 octobre 2026 à 14h06 UTC — soit
 // moins d'une heure après le drapeau à damier réel (13:45:40 UTC d'après les
 // messages de course en base). Recoupé avec un second rapport indépendant,
-// RacingNews365 ("2026 F1 Singapore Grand Prix results"), également daté du
-// 11 octobre, qui confirme en prose les mêmes faits clés (victoire du
-// départ au drapeau, écart de 7,3s sur Leclerc, podium d'Antonelli, remontée
-// de Russell du 19<sup>e</sup> au 9<sup>e</sup> rang) — aucune divergence
-// entre les deux sources sur ce round. Classement des pilotes après course
-// (Antonelli 340, Russell 238, écart de 102 points, six manches restantes)
-// = page officielle Formula1.com results/2026/drivers, qui confirme mot pour
-// mot le chiffre de 102 points avancé par RacingNews365. Horodatages VSC et
-// drapeaux = race_control_messages en base (pipeline scripts/ingest_openf1.py),
-// qui recoupent les deux fenêtres de Voiture de Sécurité Virtuelle
-// mentionnées par Formula1.com (arrêt de Bortoleto en tout début de course,
-// arrêt de Stroll au virage 15 vers le tour 36) sans qu'aucune Safety Car
-// complète n'ait été déployée de la course.
+// RacingNews365 ("2026 F1 Singapore Grand Prix results"), f1-fansite.com
+// ("Race Report & Results 2026 Singapore Formula 1 Grand Prix", daté du 11
+// octobre, classement complet et tableau châssis/moteur recoupés ligne à
+// ligne avec la base) et The Race ("F1 2026 Singapore Grand Prix race
+// result", daté du 11 octobre, 1 min read) — quatre sources indépendantes au
+// total, aucune divergence entre elles sur ce round. Classement des pilotes
+// après course (Antonelli 340, Russell 238, écart de 102 points, six manches
+// restantes) = page officielle Formula1.com results/2026/drivers, qui
+// confirme mot pour mot le chiffre de 102 points avancé par RacingNews365 ;
+// l'écart avant la course (89 points) vient d'un commentaire de lecteur
+// f1-fansite daté du jour même et recolle exactement avec l'arithmétique du
+// résultat (Antonelli +15, Russell +2 → +13, soit 89 → 102). Le détail des
+// quatre dépassements de limites de piste signalés à Antonelli (tours 19,
+// 20, 35 et 40, plus un drapeau noir et blanc) vient directement des
+// race_control_messages en base — recoupé par le titre d'un article The
+// Race ("Why Antonelli avoided a penalty") évoquant le même nombre de
+// quatre incidents sans que la pénalité automatique ne s'applique. Le
+// détail selon lequel Russell est resté bloqué derrière Hülkenberg jusqu'au
+// drapeau (l'empêchant de gagner une place supplémentaire) vient d'un
+// commentaire de lecteur f1-fansite, cohérent avec les temps au tour en
+// base (écart quasi constant entre les deux voitures en fin de course).
+// Horodatages VSC et drapeaux = race_control_messages en base (pipeline
+// scripts/ingest_openf1.py), qui recoupent les deux fenêtres de Voiture de
+// Sécurité Virtuelle mentionnées par Formula1.com (arrêt de Bortoleto en
+// tout début de course, arrêt de Stroll au virage 15 vers le tour 36) sans
+// qu'aucune Safety Car complète n'ait été déployée de la course.
 //
-// Point de rigueur : une première recherche a fait remonter un article
-// VelocityNews ("Norris powers to crushing Singapore Grand Prix victory over
-// Verstappen") au titre proche de ce round — écarté après vérification du
-// contenu réellement récupéré, qui décrit la VRAIE course de 2024 (Norris
-// vainqueur, aucune Safety Car de toute l'histoire du circuit à l'époque),
-// pas la suite fictive 2026 de ce projet. Même classe d'erreur que les cas
-// Suzuka/Madring et Bahreïn/Malaisie déjà rencontrés sur les rounds
-// précédents — seule la lecture du contenu fetché, jamais le résumé de
-// recherche, permet de la repérer à chaque fois.
+// Point de rigueur : plusieurs pièges rencontrés en cherchant des sources
+// additionnelles pour ce round, tous repérés en lisant le contenu
+// réellement fetché plutôt que le résumé de recherche :
+// - Un article VelocityNews ("Norris powers to crushing Singapore Grand
+//   Prix victory over Verstappen") décrit en réalité la VRAIE course de
+//   2024 (Norris vainqueur, aucune Safety Car de toute l'histoire du
+//   circuit à l'époque), pas la suite fictive 2026 de ce projet.
+// - Un article à l'URL Formula1.com « article.report-hamilton-extends-
+//   championship-advantage-with-faultless-singapore....html » (notation
+//   avec points, différente du format habituel « article/slug.ID » des
+//   pages 2026 confirmées) décrit en réalité la VRAIE course de 2018
+//   (Vettel, pneus hypersoft/ultrasoft, prochaine étape « Sochi dans deux
+//   semaines », « titre 2018 » explicitement mentionné). Plusieurs autres
+//   résultats de recherche (crash.net, sbs.com.au) reprenaient la même
+//   trame Hamilton-vainqueur — tout ce cluster a été écarté. Heuristique
+//   retenue pour la suite : une URL Formula1.com au format
+//   « article.<slug>.<ID>.html » s'est révélée deux fois de suite être du
+//   contenu non lié à ce round — à vérifier systématiquement par lecture
+//   avant usage, jamais par la seule URL.
+// Même classe d'erreur que les cas Suzuka/Madring et Bahreïn/Malaisie déjà
+// rencontrés sur les rounds précédents.
 export const ROUND17_ANALYSE_FR_HTML = `
 <div class="hero prose">
       <p class="eyebrow">Grand Prix de Singapour · Marina Bay · 2026</p>
@@ -46,7 +71,7 @@ export const ROUND17_ANALYSE_FR_HTML = `
         <div class="chip"><span class="pos">P4</span> <span class="dot" style="background:#FF8000"></span><span class="drv">Norris</span> <span class="gap">McLaren · +40,506s</span></div>
         <div class="chip"><span class="pos">P5</span> <span class="dot" style="background:#FF8000"></span><span class="drv">Piastri</span> <span class="gap">McLaren · +49,644s</span></div>
       </div>
-      <p class="subverdict">Auteur de sa 50<sup>e</sup> pole et de sa première victoire au Sprint la veille, Verstappen conclut un week-end parfait en menant les 62 tours de bout en bout, malgré des soucis radio en fin de course. Derrière lui, Leclerc profite d'une gestion de pneus mieux temporisée pour boucler une remontée jusqu'au podium, pendant que Hamilton, pourtant premier à s'arrêter, recule à la 6<sup>e</sup> place après un débat stratégique interne chez Ferrari — et qu'Antonelli complète le podium malgré deux sorties de piste signalées pour limites de piste. Russell, parti 19<sup>e</sup> après une pénalité moteur, et Hadjar, parti de la voie des stands après une panne en qualifications, signent chacun une remontée solide jusqu'au 9<sup>e</sup> et au 10<sup>e</sup> rang. Trois abandons ponctuent l'après-midi : Stroll (embrayage), Colapinto (transmission) et Bortoleto (boîte de vitesses, avec un départ de feu maîtrisé par les commissaires).</p>
+      <p class="subverdict">Auteur de sa 50<sup>e</sup> pole et de sa première victoire au Sprint la veille, Verstappen conclut un week-end parfait en menant les 62 tours de bout en bout, malgré des soucis radio en fin de course. Derrière lui, Leclerc profite d'une gestion de pneus mieux temporisée pour boucler une remontée jusqu'au podium, pendant que Hamilton, pourtant premier à s'arrêter, recule à la 6<sup>e</sup> place après un débat stratégique interne chez Ferrari — et qu'Antonelli complète le podium malgré quatre dépassements des limites de piste signalés en course. Russell, parti 19<sup>e</sup> après une pénalité moteur, et Hadjar, parti de la voie des stands après une panne en qualifications, signent chacun une remontée solide jusqu'au 9<sup>e</sup> et au 10<sup>e</sup> rang — Russell restant toutefois bloqué derrière Hülkenberg jusqu'au drapeau, à une place de faire encore mieux. Trois abandons ponctuent l'après-midi : Stroll (embrayage), Colapinto (transmission) et Bortoleto (boîte de vitesses, avec un départ de feu maîtrisé par les commissaires).</p>
     </div>
 
     <section class="block" data-num="01" id="sec-r1">
@@ -94,8 +119,8 @@ export const ROUND17_ANALYSE_FR_HTML = `
         <h3 class="subtitle">Ferrari — un arrêt précoce payant pour Hamilton, un débat stratégique qui coûte le podium</h3>
         <p>Premier pilote du haut du classement à s'arrêter (tour 19), Hamilton bénéficie d'un train de pneus frais qui lui permet de remonter jusqu'à la 3<sup>e</sup> place avant que l'écurie ne débatte en interne de la pertinence d'un second arrêt. Le choix de ne pas en effectuer un — une décision que Hamilton reconnaîtra lui-même par radio en fin de course — le laisse exposé sur des gommes vieillissantes face à Antonelli et Norris dans les derniers tours, le reléguant à la 6<sup>e</sup> place. Leclerc, grâce à deux arrêts mieux temporisés autour de la seconde Voiture de Sécurité Virtuelle, complète lui une remontée jusqu'à la 2<sup>e</sup> place.</p>
 
-        <h3 class="subtitle">Mercedes — Antonelli sur le podium malgré les avertissements, Russell pénalisé par le timing de son arrêt</h3>
-        <p>Antonelli signe un podium à la 3<sup>e</sup> place malgré deux séries d'avertissements pour dépassement des limites de piste au virage 2, profitant d'un second arrêt bien placé autour de la Voiture de Sécurité Virtuelle pour s'intercaler entre les deux McLaren puis prendre la 3<sup>e</sup> place à Hamilton dans les derniers tours. Russell, lui, paie le prix d'un arrêt effectué juste à la reprise de la VSC plutôt que pendant — un décalage de quelques secondes qui l'empêche de profiter du même gain que ses rivaux, mais sa remontée depuis la 19<sup>e</sup> place jusqu'à la 9<sup>e</sup> reste l'une des plus solides du jour.</p>
+        <h3 class="subtitle">Mercedes — Antonelli sur le podium malgré quatre avertissements, Russell pénalisé par le timing de son arrêt</h3>
+        <p>Antonelli signe un podium à la 3<sup>e</sup> place malgré quatre dépassements des limites de piste au virage 2 (tours 19, 20, 35 et 40, plus un drapeau noir et blanc), sans qu'aucun ne déclenche la pénalité automatique de cinq secondes habituellement appliquée à la quatrième infraction — profitant d'un second arrêt bien placé autour de la Voiture de Sécurité Virtuelle pour s'intercaler entre les deux McLaren puis prendre la 3<sup>e</sup> place à Hamilton dans les derniers tours. Russell, lui, paie le prix d'un arrêt effectué juste à la reprise de la VSC plutôt que pendant — un décalage de quelques secondes qui l'empêche de profiter du même gain que ses rivaux — et reste ensuite bloqué derrière Hülkenberg jusqu'au drapeau, à une place de faire encore mieux ; sa remontée depuis la 19<sup>e</sup> place jusqu'à la 9<sup>e</sup> reste néanmoins l'une des plus solides du jour.</p>
 
         <h3 class="subtitle">Red Bull — Verstappen imperturbable, Hadjar récompensé par sa remontée</h3>
         <p>Verstappen ne cède jamais la tête de la course, gérant son unique arrêt (tour 33) sans jamais perdre le commandement — une deuxième victoire consécutive obtenue par une gestion de course sans la moindre erreur, malgré des soucis radio en fin de parcours. Hadjar, parti de la voie des stands après sa panne en qualifications, boucle une remontée jusqu'à la 10<sup>e</sup> place et marque son premier point du week-end sur ce format, un résultat à mettre en miroir avec sa performance similaire en Sprint Qualifying la veille.</p>
@@ -117,13 +142,13 @@ export const ROUND17_ANALYSE_FR_HTML = `
           <tbody>
             <tr><td class="driver"><span class="dot" style="background:#1B3A93"></span>Max Verstappen</td><td class="pos">1 → 1<span class="delta neutral">=</span></td><td>Départ à l'arrivée sans la moindre faute pour sa deuxième victoire consécutive de la saison et sa toute première à Marina Bay, malgré des soucis radio en fin de course qui n'ont jamais menacé son avance.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#E8002D"></span>Charles Leclerc</td><td class="pos">2 → 2<span class="delta neutral">=</span></td><td>Deuxième place conforme à sa position de départ, obtenue grâce à deux arrêts bien temporisés autour de la seconde Voiture de Sécurité Virtuelle, qui lui permettent de reprendre l'avantage sur Hamilton en fin de course.</td></tr>
-            <tr><td class="driver"><span class="dot" style="background:#00A19B"></span>Andrea Kimi Antonelli</td><td class="pos">4 → 3<span class="delta good">+1</span></td><td>Podium obtenu malgré deux séries d'avertissements pour limites de piste au virage 2, scellé par un dépassement sur Hamilton au virage 16 dans les derniers tours. Étend son avance au championnat à 102 points.</td></tr>
+            <tr><td class="driver"><span class="dot" style="background:#00A19B"></span>Andrea Kimi Antonelli</td><td class="pos">4 → 3<span class="delta good">+1</span></td><td>Podium obtenu malgré quatre dépassements des limites de piste au virage 2, sans pénalité, scellé par un dépassement sur Hamilton au virage 16 dans les derniers tours. Étend son avance au championnat de 89 à 102 points.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#FF8000"></span>Lando Norris</td><td class="pos">5 → 4<span class="delta good">+1</span></td><td>Profite de la dégradation de Hamilton en fin de course pour lui reprendre la 4<sup>e</sup> place, après avoir brièvement été signalé pour les limites de piste au tour 54 — sans suite.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#FF8000"></span>Oscar Piastri</td><td class="pos">6 → 5<span class="delta good">+1</span></td><td>Deuxième arrêt pour une lente crevaison au 42<sup>e</sup> tour, puis remontée jusqu'à la 5<sup>e</sup> place grâce au même dépassement que son coéquipier sur un Hamilton en difficulté, au même virage.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#E8002D"></span>Lewis Hamilton</td><td class="pos">3 → 6<span class="delta bad">-3</span></td><td>Premier pilote du haut du classement à s'arrêter (tour 19), ce qui lui vaut une remontée jusqu'au podium virtuel avant qu'un débat stratégique interne sur un second arrêt ne le laisse exposé en fin de course — il s'excusera lui-même par radio auprès de son écurie.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#2B4562"></span>Liam Lawson</td><td class="pos">8 → 7<span class="delta good">+1</span></td><td>Course solide et sans incident individuel notable, légèrement remontée par rapport à sa position de départ sur l'ensemble du week-end.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#00302B"></span>Nico Hülkenberg</td><td class="pos">10 → 8<span class="delta good">+2</span></td><td>Remontée propre sans incident individuel notable relevé, décrochant des points précieux pour Audi.</td></tr>
-            <tr><td class="driver"><span class="dot" style="background:#00A19B"></span>George Russell</td><td class="pos">19 → 9<span class="delta good">+10</span></td><td>Grosse remontée depuis le fond de grille (pénalité de groupe propulseur), freinée par un arrêt déclenché juste à la reprise de la seconde VSC plutôt que pendant — un décalage de quelques secondes qui lui coûte le gain complet dont ont profité ses rivaux.</td></tr>
+            <tr><td class="driver"><span class="dot" style="background:#00A19B"></span>George Russell</td><td class="pos">19 → 9<span class="delta good">+10</span></td><td>Grosse remontée depuis le fond de grille (pénalité de groupe propulseur), freinée par un arrêt déclenché juste à la reprise de la seconde VSC plutôt que pendant — un décalage de quelques secondes qui lui coûte le gain complet dont ont profité ses rivaux — puis par Hülkenberg, qu'il ne parvient jamais à dépasser jusqu'au drapeau.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#1B3A93"></span>Isack Hadjar</td><td class="pos">22 (voie des stands) → 10<span class="delta good">+12</span></td><td>Deuxième remontée spectaculaire du week-end depuis la voie des stands après sa panne de groupe propulseur en qualifications — en miroir de sa performance en Sprint Qualifying la veille.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#FF87BC"></span>Pierre Gasly</td><td class="pos">7 → 11<span class="delta bad">-4</span></td><td>Recul progressif après son arrêt au 30<sup>e</sup> tour, dépassé par Russell au virage 7 en fin de course — hors des points sur un week-end sans éclat pour Alpine.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#B6BABD"></span>Oliver Bearman</td><td class="pos">11 → 12<span class="delta bad">-1</span></td><td>Course discrète, hors des points, sans incident individuel notable relevé.</td></tr>
@@ -154,7 +179,7 @@ export const ROUND17_ANALYSE_FR_HTML = `
           <tbody>
             <tr><td class="driver"><span class="dot" style="background:#1B3A93"></span>Red Bull</td><td>Week-end parfait complété par une deuxième victoire consécutive de Verstappen, sans la moindre faute, et par la remontée spectaculaire de Hadjar jusqu'à la 10<sup>e</sup> place depuis la voie des stands.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#E8002D"></span>Ferrari</td><td>Résultat en demi-teinte : Leclerc complète une 2<sup>e</sup> place conforme à son départ grâce à une stratégie de pneus mieux temporisée, tandis que Hamilton, pourtant premier à s'arrêter et longtemps sur le podium virtuel, recule à la 6<sup>e</sup> place après un débat stratégique interne sur un second arrêt.</td></tr>
-            <tr><td class="driver"><span class="dot" style="background:#00A19B"></span>Mercedes</td><td>Antonelli signe un podium malgré deux avertissements pour limites de piste et étend son avance au championnat à 102 points sur son propre coéquipier ; Russell, pénalisé par le timing de son arrêt autour de la VSC, boucle néanmoins une remontée solide du 19<sup>e</sup> au 9<sup>e</sup> rang.</td></tr>
+            <tr><td class="driver"><span class="dot" style="background:#00A19B"></span>Mercedes</td><td>Antonelli signe un podium malgré quatre dépassements des limites de piste et étend son avance au championnat de 89 à 102 points sur son propre coéquipier ; Russell, pénalisé par le timing de son arrêt autour de la VSC puis bloqué derrière Hülkenberg, boucle néanmoins une remontée solide du 19<sup>e</sup> au 9<sup>e</sup> rang.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#FF8000"></span>McLaren</td><td>Les deux pilotes profitent de la fin de course pour grappiller chacun une place sur un Hamilton affaibli par ses pneus — Norris 4<sup>e</sup>, Piastri 5<sup>e</sup> — un résultat qui doit davantage à la gestion adverse qu'à une performance dominante.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#2B4562"></span>Racing Bulls</td><td>Résultat contrasté : Lawson ramène une 7<sup>e</sup> place solide, tandis que Lindblad recule nettement sans incident individuel notable pour l'expliquer, après sa performance remarquée du Sprint.</td></tr>
             <tr><td class="driver"><span class="dot" style="background:#00302B"></span>Audi</td><td>Hülkenberg marque des points précieux en 8<sup>e</sup> place, tandis que Bortoleto abandonne dès le début de course pour un problème de boîte de vitesses, sa monoplace prenant feu une fois repoussée au garage.</td></tr>
@@ -179,7 +204,7 @@ export const ROUND17_ANALYSE_FR_HTML = `
               <li><strong>Verstappen et Red Bull</strong>, deuxième victoire consécutive de la saison et première à Marina Bay, obtenue sans la moindre faute sur l'ensemble du week-end.</li>
               <li><strong>Hadjar</strong>, remontée du fond de la voie des stands jusqu'à la 10<sup>e</sup> place — la deuxième performance marquante du week-end après sa Sprint Qualifying.</li>
               <li><strong>Russell</strong>, remontée du 19<sup>e</sup> au 9<sup>e</sup> rang depuis le fond de grille malgré un arrêt mal temporisé.</li>
-              <li><strong>Antonelli</strong>, podium malgré deux avertissements pour limites de piste, qui étend son avance au championnat à 102 points.</li>
+              <li><strong>Antonelli</strong>, podium malgré quatre dépassements des limites de piste sans pénalité, qui étend son avance au championnat de 89 à 102 points.</li>
             </ul>
           </div>
           <div class="verdictcol lose">
@@ -211,7 +236,7 @@ export const ROUND17_ANALYSE_FR_HTML = `
 
     <section class="block" id="sec-r7">
       <details class="sources">
-        <summary>Sources utilisées — GP de Singapour (3 liens)</summary>
+        <summary>Sources utilisées — GP de Singapour (5 liens)</summary>
         <div class="srcgroup">
           <h5>Données de course</h5>
           <ul>
@@ -219,10 +244,12 @@ export const ROUND17_ANALYSE_FR_HTML = `
           </ul>
         </div>
         <div class="srcgroup">
-          <h5>Déroulé de course et classement officiel</h5>
+          <h5>Déroulé de course et classement officiel — quatre sources indépendantes recoupées</h5>
           <ul>
             <li><a href="https://www.formula1.com/en/latest/article/verstappen-seals-commanding-singapore-grand-prix-victory-from-leclerc-and-antonelli.49wDzysiVqi5cloGjle40A" data-desc="Rapport officiel de la course, fetché en primaire — déroulé complet, citation de Verstappen, contexte.">Formula1.com — Verstappen remporte le Grand Prix de Singapour</a><span class="desc">Formula1.com — primaire</span></li>
-            <li><a href="https://racingnews365.com/2026-f1-singapore-grand-prix-results" data-desc="Second rapport indépendant, confirmant les mêmes faits clés (écart, podium, remontée de Russell) sans divergence.">RacingNews365 — résultats du GP de Singapour 2026</a><span class="desc">RacingNews365 — confirmation</span></li>
+            <li><a href="https://racingnews365.com/2026-f1-singapore-grand-prix-results" data-desc="Rapport indépendant, confirmant les mêmes faits clés (écart, podium, remontée de Russell) sans divergence.">RacingNews365 — résultats du GP de Singapour 2026</a><span class="desc">RacingNews365 — confirmation</span></li>
+            <li><a href="https://www.f1-fansite.com/f1-result/race-report-results-2026-singapore-formula-1-grand-prix/" data-desc="Classement complet (châssis/moteur), classement pilotes après course, et commentaires de lecteurs apportant le détail Russell/Hülkenberg utilisé dans l'article.">F1-Fansite.com — compte-rendu et classement du GP de Singapour 2026</a><span class="desc">F1-Fansite.com — confirmation + contexte additionnel</span></li>
+            <li><a href="https://www.the-race.com/formula-1/f1-2026-singapore-grand-prix-race-result/" data-desc="Classement confirmé, et titres d'articles d'analyse indépendants (pénalité évitée par Antonelli, échec stratégique de Hamilton) recoupés avec les race_control_messages en base.">The Race — résultat du GP de Singapour 2026</a><span class="desc">The Race — confirmation + contexte additionnel</span></li>
           </ul>
         </div>
       </details>
