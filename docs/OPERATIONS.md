@@ -71,6 +71,13 @@ Il n'y a pas d'interface d'édition ni de CMS. Un article est un fichier JS stat
 
 **Anti-spoiler** : tout round ≥ `SPOILER_FROM_ROUND` (13 actuellement, dans `web/lib/spoilerGuard.js`) est masqué par défaut derrière le bouton "J'ai regardé". Rien à faire côté publication — c'est purement client-side (`localStorage`), pas une option de l'article.
 
+**Sourcing minimal — règle explicite de l'utilisateur (demandée plusieurs fois)** : deux sources (typiquement Formula1.com + un seul autre site) ne suffisent pas, en particulier pour `analyse-fr.js`/`analyse-en.js` (le compte-rendu de course). L'utilisateur juge ces articles "pauvres" quand ils ne sont qu'une reformulation de deux sites de F1. Avant de considérer le sourcing d'un article de course comme fait :
+
+- Fetcher (via `fetch-url.yml`) **au moins 3-4 sites indépendants**, pas seulement Formula1.com + un second — piocher parmi PlanetF1, RacingNews365, Autosport, Motorsport.com, GPFans, Crash.net, The Race, GrandPrix247, speedsport.com, etc. Deux sources confirmées restent un minimum absolu pour les séances EL/Quali (moins de matière narrative disponible), mais la course (l'article le plus lu, le plus riche en incidents/stratégie) doit viser plus large.
+- Ne pas se contenter de confirmer les mêmes 4-5 faits de haut niveau (vainqueur, podium, écarts) sur chaque site — chercher dans les sources additionnelles du contexte que Formula1.com n'a pas forcément développé : réactions de pilotes/ingénieurs non citées par F1.com, angle technique (Autosport/Motorsport.com), analyse stratégique indépendante, éventuels désaccords entre médias à documenter plutôt qu'à ignorer.
+- Toujours vérifier (lecture du contenu réellement fetché, jamais du résumé WebSearch) que chaque source correspond bien à la bonne course et à la bonne année avant de l'utiliser — même piège que les cas Suzuka/Madring et VelocityNews/2024 déjà rencontrés.
+- La section `details.sources` de l'article doit refléter ce sourcing élargi (lister chaque source effectivement utilisée, pas seulement les deux premières consultées).
+
 ## Passer à une nouvelle saison
 
 `season = 2026` est **codé en dur** à quatre endroits : `web/app/page.jsx`, `web/app/courses/page.jsx`, `web/app/courses/[round]/page.jsx`, `web/app/classement/page.jsx`. Pas de variable d'environnement ni de détection automatique. Au changement de saison, mettre à jour les quatre (et le `default: "2026"` des deux workflows OpenF1).
