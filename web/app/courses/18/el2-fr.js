@@ -24,6 +24,40 @@
 // round 17 côté course) : moyenne des tours d'un relais donné, tour de sortie
 // de stand exclu, puis tours encore supérieurs à 103% de la médiane du relais
 // également exclus. Aucune donnée inventée.
+//
+// Passe d'enrichissement technique (2026-10-24) — voir le commentaire détaillé
+// de sourcing de web/app/courses/18/el1-fr.js pour le détail complet des
+// sources cherchées/trouvées/écartées sur le plancher Ferrari et la plainte
+// de direction de Verstappen (même recherche, pas répétée ici). Deux apports
+// propres à EL2, tous deux lus intégralement via fetch-url.yml avant usage :
+// - Crash.net, « Charles Leclerc casts judgement on much-hyped Ferrari US GP
+//   upgrade » (Lewis Larkam, 24 oct. 2026) : citation directe de Leclerc après
+//   les deux séances — « ce n'est définitivement pas ce que tout le monde
+//   imagine en termes d'évolution et de gain au tour » — qui recoupe
+//   directement, et de façon non triviale, le constat déjà fait par calcul
+//   sur les données brutes du projet en section 02 (écart de rythme en relais
+//   long resté quasi nul face à Red Bull/Mercedes) : la retenue de Leclerc
+//   n'est pas qu'une posture médiatique, elle colle au chiffre. Le même
+//   article confirme aussi que Leclerc identifie lui-même Verstappen et
+//   Antonelli (pas McLaren) comme la vraie menace de rythme — même lecture
+//   que la section 02 ci-dessous, par une voie totalement indépendante
+//   (le pilote lui-même, pas notre requête SQL).
+// - Crash.net, « George Russell gets rare warning for Charles Leclerc US GP
+//   practice near-miss » (Lewis Larkam, 24 oct. 2026) : correction d'une
+//   imprécision de la version précédente de cet article, qui décrivait deux
+//   incidents distincts (un drapeau noir et blanc pour avoir « poussé un
+//   autre pilote » puis un accrochage séparé avec Leclerc au virage 18). Le
+//   verdict des commissaires cité texto par Crash.net montre qu'il s'agit en
+//   réalité d'un seul et même épisode, en plusieurs étapes administratives
+//   (drapeau noir et blanc → renvoi aux commissaires → classement sans
+//   suite) : Leclerc tente de dépasser Russell au virage 18 sur un tour de
+//   préparation, Russell se déplace vers la gauche, Leclerc sort de piste et
+//   se rabat devant lui. Corrigé ci-dessous en section 04. L'article ajoute
+//   un angle technique réel absent de la version précédente : le consultant
+//   Sky Sports F1 Anthony Davidson (ex-pilote F1) attribue en partie
+//   l'incident à un écart de puissance entre les deux monoplaces à cet
+//   instant — une hypothèse technique nommée et attribuée, pas une
+//   affirmation établie, présentée comme telle dans le texte.
 export const ROUND18_EL2_FR_HTML = `
 <section class="block">
   <div class="prose">
@@ -36,7 +70,7 @@ export const ROUND18_EL2_FR_HTML = `
       <div class="chip"><span class="pos">4</span> <span class="dot" style="background:#E8002D"></span><span class="drv">Hamilton</span> <span class="gap">+0,615s</span></div>
       <div class="chip"><span class="pos">5</span> <span class="dot" style="background:#00A19B"></span><span class="drv">Russell</span> <span class="gap">+0,744s</span></div>
     </div>
-    <p class="subverdict">La piste a gagné près de huit dixièmes par rapport à l'EL1 (1:36,052 à 1:35,291 pour Leclerc), mais la hiérarchie de tête, elle, se resserre : Ferrari reste devant, cette fois sur pneu tendre, mais Antonelli n'est plus qu'à 0,042s et Verstappen à 0,189s — contre 0,084s et 0,245s en EL1. L'analyse des relais longs (section 02) montre que ce resserrement est réel, pas un artefact de trafic : Ferrari, Red Bull et Mercedes tournent à un rythme quasiment identique à charge de carburant plus réaliste. Russell écope d'un drapeau noir et blanc pour avoir poussé un concurrent hors piste, et un second incident avec Leclerc au virage 18 est classé sans suite après enquête. Côté Williams, Sainz qualifie sa monoplace de « catastrophe » tandis qu'Albon continue de lutter contre un fort décrochage dans les virages Esses.</p>
+    <p class="subverdict">La piste a gagné près de huit dixièmes par rapport à l'EL1 (1:36,052 à 1:35,291 pour Leclerc), mais la hiérarchie de tête, elle, se resserre : Ferrari reste devant, cette fois sur pneu tendre, mais Antonelli n'est plus qu'à 0,042s et Verstappen à 0,189s — contre 0,084s et 0,245s en EL1. L'analyse des relais longs (section 02) montre que ce resserrement est réel, pas un artefact de trafic : Ferrari, Red Bull et Mercedes tournent à un rythme quasiment identique à charge de carburant plus réaliste. Russell écope d'un drapeau noir et blanc après un quasi-accrochage avec Leclerc au virage 18, classé sans suite après enquête. Côté Williams, Sainz qualifie sa monoplace de « catastrophe » tandis qu'Albon continue de lutter contre un fort décrochage dans les virages Esses.</p>
   </div>
 </section>
 
@@ -71,6 +105,7 @@ export const ROUND18_EL2_FR_HTML = `
   </div>
   <div class="prose">
     <p>Le plus frappant n'est pas l'ordre — Verstappen, Leclerc et Norris restent dans un mouchoir de 0,07s — mais l'endurance : Leclerc a fait durer un même train de pneus tendres sur 18 tours, pour une moyenne (1:41,508) à peine moins bonne que Verstappen sur un relais deux fois plus court. Lawson, à l'inverse, illustre une vraie courbe de dégradation sur ses pneus medium usés, passant de 1:41,4 à 1:43,2 sur onze tours — soit près de deux secondes perdues, un signal à surveiller pour Racing Bulls en vue d'une course qui s'annonce à un seul arrêt selon Pirelli.</p>
+    <p>Ce resserrement calculé sur les données brutes du projet n'est pas qu'une lecture interne : Leclerc, interrogé après les deux séances sur le plancher révisé de sa Ferrari, tient le même discours que le chiffre. <em>« Le ressenti est plutôt bon mais il faut rester prudent, on n'est que vendredi »</em>, a-t-il déclaré, avant d'ajouter : <em>« On voit ce qu'on attendait, mais ce n'est clairement pas ce que tout le monde imagine en termes d'évolution et de gain au tour. »</em> Mieux : invité à nommer la vraie menace du week-end, Leclerc écarte McLaren (<em>« je ne pense pas qu'ils aient encore tout assemblé »</em>) et pointe exactement les deux équipes que les relais longs désignent ici — <em>« Kimi et Max semblent très, très forts »</em> — une convergence entre le ressenti du pilote et le calcul qui vaut d'être relevée, plutôt qu'un simple commentaire d'après-séance à prendre pour argent comptant.</p>
   </div>
 </section>
 
@@ -85,8 +120,8 @@ export const ROUND18_EL2_FR_HTML = `
 <section class="block" data-num="04" id="sec-el2-4">
   <div class="sec-marker"><span class="n">04</span><span class="t"></span></div>
   <div class="prose">
-    <h2 class="sectitle"><span class="num">04</span> Russell signalé, Williams en difficulté</h2>
-    <p>George Russell a été montré le drapeau noir et blanc pour avoir poussé un autre pilote hors de la piste plus tôt dans la séance ; un second accrochage avec Leclerc au virage 18, en fin d'heure, a fait l'objet d'une enquête distincte classée sans suite. Côté Williams, la séance reste compliquée : Sainz a qualifié sa monoplace de <em>« catastrophe »</em>, tandis qu'Albon a lutté contre un fort décrochage dans l'enchaînement rapide des virages Esses, terminant dernier (1:43,426) après la suppression d'un tour à 1:38,035 pour limites de piste au virage 15.</p>
+    <h2 class="sectitle"><span class="num">04</span> Russell averti pour un quasi-accrochage avec Leclerc, Williams en difficulté</h2>
+    <p>Russell et Leclerc sont passés tout près du contact au virage 18 : Leclerc, sur un tour de préparation, tentait de dépasser la Mercedes ; Russell s'est déplacé vers la gauche, forçant Leclerc à sortir de la piste pour se rabattre finalement devant lui. La direction de course a sanctionné Russell d'un drapeau noir et blanc pour avoir forcé un autre pilote à sortir de la piste, puis renvoyé l'incident aux commissaires pour enquête formelle — classée sans suite, les commissaires jugeant la manœuvre <em>« sans rien de dangereux »</em> dans le contexte d'une séance d'essais, les deux monoplaces étant alors sur des tours de préparation. Anthony Davidson, consultant Sky Sports F1 et ancien pilote de F1, avance une explication technique à ce quasi-accrochage plutôt qu'un simple excès d'agressivité : <em>« Je pense qu'il y avait une différence de puissance entre les deux voitures à ce moment-là »</em> — une hypothèse nommée et attribuée, pas un fait établi, mais plus spécifique que le simple constat de l'incident. Côté Williams, la séance reste compliquée : Sainz a qualifié sa monoplace de <em>« catastrophe »</em>, tandis qu'Albon a lutté contre un fort décrochage dans l'enchaînement rapide des virages Esses, terminant dernier (1:43,426) après la suppression d'un tour à 1:38,035 pour limites de piste au virage 15.</p>
   </div>
 </section>
 
@@ -137,7 +172,7 @@ export const ROUND18_EL2_FR_HTML = `
 
 <section class="block" id="sec-el2-7">
   <details class="sources">
-    <summary>Sources utilisées — EL2 Austin (2 liens externes)</summary>
+    <summary>Sources utilisées — EL2 Austin (4 liens externes)</summary>
     <div class="srcgroup">
       <h5>Données de séance</h5>
       <ul>
@@ -155,6 +190,13 @@ export const ROUND18_EL2_FR_HTML = `
       <h5>Recoupement et contexte narratif</h5>
       <ul>
         <li><a href="https://www.grandprix.com/races/united-states-gp-2026-practice-2-report.html" data-desc="Déroulé complet par secteurs, citations d'Antonelli, Hamilton et Sainz, incidents Russell.">Grandprix.com — rapport EL2</a><span class="desc">Grandprix.com</span></li>
+      </ul>
+    </div>
+    <div class="srcgroup">
+      <h5>Analyse technique (nouveau cette passe)</h5>
+      <ul>
+        <li><a href="https://www.crash.net/f1/news/1108213/1/charles-leclerc-casts-judgement-much-hyped-ferrari-us-gp-upgrade" data-desc="Citations directes de Leclerc après les deux séances sur le plancher révisé et sur Verstappen/Antonelli comme menaces de rythme — recoupe directement le calcul de la section 02. Daté du 24 oct. 2026 (Lewis Larkam), lu intégralement via fetch-url.yml.">Crash.net — le jugement de Leclerc sur l'évolution Ferrari</a><span class="desc">Crash.net</span></li>
+        <li><a href="https://www.crash.net/f1/news/1108139/1/george-russell-gets-rare-warning-charles-leclerc-us-gp-practice-near-miss" data-desc="Verdict texto des commissaires et commentaire technique d'Anthony Davidson (Sky Sports F1, ex-pilote) sur l'incident Russell/Leclerc au virage 18 — corrige la description en deux incidents distincts de la version précédente. Daté du 24 oct. 2026 (Lewis Larkam), lu intégralement via fetch-url.yml.">Crash.net — l'avertissement de Russell pour son quasi-accrochage avec Leclerc</a><span class="desc">Crash.net</span></li>
       </ul>
     </div>
   </details>
