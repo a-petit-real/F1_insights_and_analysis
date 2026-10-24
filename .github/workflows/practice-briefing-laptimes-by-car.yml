@@ -1,0 +1,39 @@
+name: Practice briefing lap times by car number (read-only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2026"
+      round:
+        default: "18"
+      session:
+        description: "Nom de séance OpenF1"
+        required: false
+        default: "Practice 1"
+        type: choice
+        options:
+          - "Practice 1"
+          - "Practice 2"
+          - "Practice 3"
+          - "Qualifying"
+          - "Sprint Qualifying"
+          - "Sprint"
+      cars:
+        description: "Paires numéro:label séparées par des espaces, ex. '3:VER 16:LEC'"
+        required: true
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+      - run: |
+          python scripts/practice_briefing_laptimes_by_car.py --season "${{ inputs.season }}" --round "${{ inputs.round }}" \
+            --session "${{ inputs.session }}" --cars ${{ inputs.cars }}
