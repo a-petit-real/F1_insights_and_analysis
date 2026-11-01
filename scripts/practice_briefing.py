@@ -50,14 +50,14 @@ def main():
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT pd.car_number, COALESCE(pd.full_name, 'inconnu'), pd.team_name,
+                SELECT pl.car_number, COALESCE(pd.full_name, 'inconnu (absent de practice_drivers)'), pd.team_name,
                        MIN(pl.lap_time) AS best_lap,
                        COUNT(*) FILTER (WHERE pl.lap_time IS NOT NULL) AS laps_chronometres,
                        COUNT(*) AS laps_total
                 FROM practice_laps pl
                 LEFT JOIN practice_drivers pd ON pd.session_key = pl.session_key AND pd.car_number = pl.car_number
                 WHERE pl.session_key = %s
-                GROUP BY pd.car_number, pd.full_name, pd.team_name
+                GROUP BY pl.car_number, pd.full_name, pd.team_name
                 ORDER BY best_lap NULLS LAST
                 """,
                 (session_key,),
