@@ -64,6 +64,7 @@ import { ROUND20_EL1_FR_HTML } from "../20/el1-fr";
 import { ROUND20_EL2_FR_HTML } from "../20/el2-fr";
 import { ROUND20_EL3_FR_HTML } from "../20/el3-fr";
 import { ROUND20_QUALI_FR_HTML } from "../20/quali-fr";
+import { ROUND20_ANALYSE_FR_HTML } from "../20/analyse-fr";
 import { useRoundSpoilerState } from "../../../lib/spoilerGuard";
 import { useLangPref } from "../../../lib/langPref";
 import { PTW_PICKS } from "../../../lib/ptwPicks";
@@ -499,6 +500,7 @@ const ANALYSE_FR_HTML = {
   17: ROUND17_ANALYSE_FR_HTML,
   18: ROUND18_ANALYSE_FR_HTML,
   19: ROUND19_ANALYSE_FR_HTML,
+  20: ROUND20_ANALYSE_FR_HTML,
 };
 
 // Duel course en dur (cf. GHOST_LAP_REPLAYS pour les qualifications, même
