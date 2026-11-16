@@ -1,0 +1,22 @@
+name: Audit transversal données toutes courses (lecture seule)
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2026"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r scripts/requirements.txt
+      - run: >
+          python scripts/data_audit_all_rounds.py
+          --season "${{ inputs.season }}"
