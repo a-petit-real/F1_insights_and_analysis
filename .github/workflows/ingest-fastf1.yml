@@ -7,6 +7,12 @@ name: Ingestion FastF1 (gaz/frein/rapport/régime/DRS — runner auto-hébergé)
 # instructions d'installation fournies séparément. Si ce runner n'est pas
 # en ligne, le job reste en file d'attente côté GitHub plutôt que d'échouer ;
 # aucun autre workflow de ce repo n'en dépend.
+#
+# `py -3.12` plutôt que `python` : sur le runner Windows de l'utilisateur,
+# la version Python par défaut (3.15) est trop récente pour que pandas y
+# trouve une roue précompilée sur PyPI — pip retombe sur une compilation
+# depuis les sources, qui échoue faute d'outils Visual Studio. 3.12 est
+# installée à côté (`py install 3.12`) spécifiquement pour ce job.
 
 on:
   workflow_dispatch:
@@ -27,7 +33,7 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
-      - run: python -m pip install -r scripts/requirements-fastf1.txt
+      - run: py -3.12 -m pip install -r scripts/requirements-fastf1.txt
       - run: |
-          python scripts/ingest_fastf1.py --season "${{ inputs.season }}" --round "${{ inputs.round }}" \
+          py -3.12 scripts/ingest_fastf1.py --season "${{ inputs.season }}" --round "${{ inputs.round }}" \
             ${{ inputs.cars != '' && format('--cars {0}', inputs.cars) || '' }}
