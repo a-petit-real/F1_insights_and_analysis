@@ -34,6 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: py -3.12 -m pip install -r scripts/requirements-fastf1.txt
-      - run: |
-          py -3.12 scripts/ingest_fastf1.py --season "${{ inputs.season }}" --round "${{ inputs.round }}" \
-            ${{ inputs.cars != '' && format('--cars {0}', inputs.cars) || '' }}
+      # Tout sur une seule ligne : le `\` de continuation bash ne marche pas
+      # sous PowerShell (shell par défaut de ce runner Windows), qui l'aurait
+      # transmis tel quel au script comme argument positionnel.
+      - run: py -3.12 scripts/ingest_fastf1.py --season "${{ inputs.season }}" --round "${{ inputs.round }}" ${{ inputs.cars != '' && format('--cars {0}', inputs.cars) || '' }}
