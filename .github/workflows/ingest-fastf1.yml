@@ -31,6 +31,14 @@ jobs:
     runs-on: [self-hosted, fastf1]
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # Requis depuis le test réel du 16/11/2026 : livetiming.formula1.com
+      # exige désormais une authentification pour servir timing/télémétrie/
+      # position (auparavant accessible sans compte) — fastf1 lit ces deux
+      # variables directement, cf. son propre message d'erreur quand elles
+      # sont absentes ("Set the environment variables F1_USERNAME and
+      # F1_PASSWORD"). Aucun changement nécessaire côté ingest_fastf1.py.
+      F1_USERNAME: ${{ secrets.F1_USERNAME }}
+      F1_PASSWORD: ${{ secrets.F1_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - run: py -3.12 -m pip install -r scripts/requirements-fastf1.txt
